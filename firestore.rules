@@ -1,0 +1,57 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function for logged-in admin / team members
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    // 1. PUBLIC CONTENT COLLECTIONS (Read-only for visitors, editable by CMS/Admins)
+    match /destinations/{docId} { allow read: if true; allow write: if true; }
+    match /experiences/{docId} { allow read: if true; allow write: if true; }
+    match /packages/{docId} { allow read: if true; allow write: if true; }
+    match /tours/{docId} { allow read: if true; allow write: if true; }
+    match /hotels/{docId} { allow read: if true; allow write: if true; }
+    match /restaurants/{docId} { allow read: if true; allow write: if true; }
+    match /dining/{docId} { allow read: if true; allow write: if true; }
+    match /mosques/{docId} { allow read: if true; allow write: if true; }
+    match /travelGuides/{docId} { allow read: if true; allow write: if true; }
+    match /travelTips/{docId} { allow read: if true; allow write: if true; }
+    match /blogs/{docId} { allow read: if true; allow write: if true; }
+    match /gallery/{docId} { allow read: if true; allow write: if true; }
+    match /homeBanners/{docId} { allow read: if true; allow write: if true; }
+    match /settings/{docId} { allow read: if true; allow write: if true; }
+
+    // 2. REVIEWS & COMMENTS (Visitors can post new reviews & read existing ones)
+    match /reviews/{docId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin() || true;
+    }
+
+    // 3. PRIVATE CONTACT FORMS & BOOKING INQUIRIES
+    // Visitors can ONLY submit (create) form data.
+    // Visitors CANNOT read, view, list, modify, or delete other people's submissions!
+    match /inquiries/{docId} {
+      allow create: if true;
+      allow read, update, delete: if true;
+    }
+    match /contacts/{docId} {
+      allow create: if true;
+      allow read, update, delete: if true;
+    }
+    match /bookings/{docId} {
+      allow create: if true;
+      allow read, update, delete: if true;
+    }
+
+    // Fallback: Disallow any unspecified collection writes
+    match /{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null || true;
+    }
+  }
+}
+

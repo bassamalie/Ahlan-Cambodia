@@ -1,0 +1,217 @@
+{
+  "entities": {
+    "Destination": {
+      "title": "Destination",
+      "description": "A luxury travel destination in Cambodia.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "region": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "rating": { "type": "number" },
+        "highlights": { "type": "array" },
+        "insights": { "type": "array" },
+        "overviewText": { "type": "string" }
+      },
+      "required": ["id", "name", "region", "description", "image", "rating", "highlights"]
+    },
+    "Experience": {
+      "title": "Experience",
+      "description": "A luxury day experience or cultural itinerary.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "shortDescription": { "type": "string" },
+        "image": { "type": "string" },
+        "location": { "type": "string" },
+        "duration": { "type": "string" },
+        "highlights": { "type": "array" },
+        "isFamilyFriendly": { "type": "boolean" },
+        "destinationId": { "type": "string" },
+        "overviewText": { "type": "string" },
+        "overviewImage": { "type": "string" },
+        "gallery": { "type": "array" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "distanceFromCityCenter": { "type": "string" },
+        "faqs": { "type": "array" }
+      },
+      "required": ["id", "name", "category", "description", "image", "location", "duration", "highlights"]
+    },
+    "TourPackage": {
+      "title": "TourPackage",
+      "description": "A custom luxury tour package.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "duration": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "price": { "type": "number" },
+        "rating": { "type": "number" },
+        "features": { "type": "array" },
+        "itineraryOverview": { "type": "array" },
+        "brief": { "type": "string" },
+        "destinations": { "type": "array" },
+        "exclusions": { "type": "array" },
+        "hotelIds": { "type": "array" },
+        "keyHighlights": { "type": "array" },
+        "customHotel": { "type": "object" },
+        "gallery": { "type": "array" },
+        "faqs": { "type": "array" }
+      },
+      "required": ["id", "name", "duration", "description", "image", "price", "rating", "features", "itineraryOverview"]
+    },
+    "Hotel": {
+      "title": "Hotel",
+      "description": "A partner luxury hotel or resort.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "location": { "type": "string" },
+        "rating": { "type": "number" },
+        "price": { "type": "number" },
+        "image": { "type": "string" },
+        "stars": { "type": "number" },
+        "prayerFacilities": { "type": "string" },
+        "halalBreakfast": { "type": "string" },
+        "nearbyMosque": { "type": "string" },
+        "description": { "type": "string" },
+        "highlights": { "type": "array" },
+        "priceRange": { "type": "string" },
+        "amenities": { "type": "array" },
+        "extendedDescription": { "type": "string" },
+        "atmosphere": { "type": "string" },
+        "muslimFacilitiesDetail": { "type": "string" },
+        "halalBreakfastDetail": { "type": "string" },
+        "mosqueDetail": { "type": "string" },
+        "prayerFacilitiesLabel": { "type": "string" },
+        "halalBreakfastLabel": { "type": "string" },
+        "nearbyMosqueLabel": { "type": "string" },
+        "amenitiesList": { "type": "array" },
+        "galleryImages": { "type": "array" },
+        "roomTiers": { "type": "array" },
+        "faqs": { "type": "array" },
+        "nearbyAttractions": { "type": "array" },
+        "address": { "type": "string" },
+        "mapUrl": { "type": "string" },
+        "halalCertified": { "type": "boolean" },
+        "privatePool": { "type": "boolean" }
+      },
+      "required": ["id", "name", "location", "rating", "price", "image", "stars", "prayerFacilities", "halalBreakfast", "nearbyMosque", "description"]
+    },
+    "Restaurant": {
+      "title": "Restaurant",
+      "description": "A curated halal dining restaurant.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "cuisine": { "type": "string" },
+        "rating": { "type": "number" },
+        "image": { "type": "string" },
+        "halalCertified": { "type": "boolean" },
+        "muslimOwned": { "type": "boolean" },
+        "muslimFriendly": { "type": "boolean" },
+        "prayerRoomNearby": { "type": "string" },
+        "location": { "type": "string" },
+        "description": { "type": "string" },
+        "about": { "type": "string" },
+        "ambianceStyle": { "type": "string" },
+        "halalStanding": { "type": "string" },
+        "googleMapsUrl": { "type": "string" },
+        "openingHours": { "type": "string" },
+        "contactNumber": { "type": "string" },
+        "address": { "type": "string" },
+        "signatureDishes": { "type": "array" },
+        "halalDietaryPolicyDesc": { "type": "string" },
+        "halalDietaryPolicyBullets": { "type": "array" },
+        "prayerSpaceDesc": { "type": "string" },
+        "prayerSpaceNote": { "type": "string" },
+        "faqs": { "type": "array" },
+        "socialVideos": { "type": "array" }
+      },
+      "required": ["id", "name", "cuisine", "rating", "image", "halalCertified", "muslimOwned", "prayerRoomNearby", "location", "description"]
+    },
+    "Mosque": {
+      "title": "Mosque",
+      "description": "A sacred house of worship or Islamic center.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "location": { "type": "string" },
+        "image": { "type": "string" },
+        "fridayPrayerTime": { "type": "string" },
+        "capacity": { "type": "string" },
+        "description": { "type": "string" },
+        "nearbyRestaurants": { "type": "array" },
+        "isHeritageCenter": { "type": "boolean" },
+        "isActiveJummah": { "type": "boolean" },
+        "extendedDescription": { "type": "string" },
+        "architectureType": { "type": "string" },
+        "historicalContext": { "type": "string" },
+        "address": { "type": "string" },
+        "amenities": { "type": "array" },
+        "visitorGuidelines": { "type": "array" },
+        "prayerTimes": { "type": "object" }
+      },
+      "required": ["id", "name", "location", "image", "fridayPrayerTime", "capacity", "description", "nearbyRestaurants"]
+    },
+    "TravelGuide": {
+      "title": "TravelGuide",
+      "description": "A travel blog guide or chronicle.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "image": { "type": "string" },
+        "readTime": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string" },
+        "content": { "type": "string" },
+        "highlights": { "type": "array" },
+        "quoteExcerpt": { "type": "string" }
+      },
+      "required": ["id", "title", "category", "image", "readTime", "description", "date", "content"]
+    }
+  },
+  "firestore": {
+    "/destinations/{destId}": {
+      "schema": "Destination",
+      "description": "Collection of luxury destinations."
+    },
+    "/experiences/{expId}": {
+      "schema": "Experience",
+      "description": "Collection of luxury experiences."
+    },
+    "/packages/{pkgId}": {
+      "schema": "TourPackage",
+      "description": "Collection of custom tour packages."
+    },
+    "/hotels/{hotelId}": {
+      "schema": "Hotel",
+      "description": "Collection of luxury hospitality properties."
+    },
+    "/restaurants/{restId}": {
+      "schema": "Restaurant",
+      "description": "Collection of curated dining venues."
+    },
+    "/mosques/{mosqueId}": {
+      "schema": "Mosque",
+      "description": "Collection of sacred houses of worship."
+    },
+    "/travelGuides/{guideId}": {
+      "schema": "TravelGuide",
+      "description": "Collection of editorial guides and narratives."
+    }
+  }
+}

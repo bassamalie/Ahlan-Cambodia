@@ -1,0 +1,6 @@
+{
+  "name": "Ahlan Cambodia",
+  "description": "The official digital gateway for Muslim travellers visiting Cambodia. Discover authentic experiences, trusted local experts, halal-friendly stays, prayer times, Qibla compass, and personalized AI itineraries.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

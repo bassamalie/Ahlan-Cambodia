@@ -1,0 +1,277 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Plus Jakarta Sans", "Inter", sans-serif;
+  --font-mono: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-logo-script: "Plus Jakarta Sans", sans-serif;
+  --font-logo-sans: "Plus Jakarta Sans", sans-serif;
+  
+  --color-brand-green: #0F1626;
+  --color-brand-blue: #0F1626;
+  --color-brand-red: #E00025;
+  --color-brand-blue-accent: #0056B3;
+  --color-brand-warmwhite: #F4F7FB;
+  --color-brand-lightbg: #F0F4F9;
+  --color-brand-charcoal: #1A1A1A;
+  --color-brand-softgrey: #888F94;
+  --color-cambodia-blue: #002366;
+  --color-cambodia-red: #E00025;
+}
+
+/* Base styling */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-brand-warmwhite);
+  color: #1F2937;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6, .font-serif, .font-serif-heading {
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* Custom scrollbar to match luxury aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #FAF8F4;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-brand-blue-accent);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-green);
+}
+
+/* Hero gradient overlay */
+.hero-gradient {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.7) 100%);
+}
+
+/* Smooth transitions */
+.transition-luxury {
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(250, 248, 244, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-panel-dark {
+  background: rgba(3, 47, 111, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 86, 179, 0.2);
+}
+
+/* Rich Text Editor and Blog Article Content List & Image Formatting */
+.prose h1, .prose h1 *,
+[contenteditable] h1, [contenteditable] h1 *,
+.blog-content-body h1, .blog-content-body h1 * {
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  font-size: 1.75rem !important;
+  font-weight: 800 !important;
+  color: #0F1626 !important;
+  line-height: 1.25 !important;
+}
+
+.prose h1,
+[contenteditable] h1,
+.blog-content-body h1 {
+  margin-top: 2rem !important;
+  margin-bottom: 0.85rem !important;
+  display: block !important;
+}
+
+.prose h2, .prose h2 *,
+[contenteditable] h2, [contenteditable] h2 *,
+.blog-content-body h2, .blog-content-body h2 * {
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  font-size: 1.45rem !important;
+  font-weight: 800 !important;
+  color: #0F1626 !important;
+  line-height: 1.3 !important;
+}
+
+.prose h2,
+[contenteditable] h2,
+.blog-content-body h2 {
+  margin-top: 1.75rem !important;
+  margin-bottom: 0.75rem !important;
+  display: block !important;
+}
+
+.prose h3, .prose h3 *,
+[contenteditable] h3, [contenteditable] h3 *,
+.blog-content-body h3, .blog-content-body h3 * {
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  font-size: 1.25rem !important;
+  font-weight: 800 !important;
+  color: #0F1626 !important;
+  line-height: 1.35 !important;
+}
+
+.prose h3,
+[contenteditable] h3,
+.blog-content-body h3 {
+  margin-top: 1.5rem !important;
+  margin-bottom: 0.5rem !important;
+  display: block !important;
+}
+
+.prose h4, .prose h4 *,
+[contenteditable] h4, [contenteditable] h4 *,
+.blog-content-body h4, .blog-content-body h4 * {
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  font-size: 1.1rem !important;
+  font-weight: 800 !important;
+  color: #0F1626 !important;
+  line-height: 1.4 !important;
+}
+
+.prose h4,
+[contenteditable] h4,
+.blog-content-body h4 {
+  margin-top: 1.25rem !important;
+  margin-bottom: 0.4rem !important;
+  display: block !important;
+}
+
+.prose p,
+[contenteditable] p,
+.blog-content-body p {
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.75rem !important;
+  line-height: 1.75 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  color: #334155 !important;
+}
+
+.prose strong, .prose b,
+[contenteditable] strong, [contenteditable] b,
+.blog-content-body strong, .blog-content-body b {
+  color: #0F1626 !important;
+  font-weight: 700 !important;
+}
+
+.prose blockquote,
+[contenteditable] blockquote,
+.blog-content-body blockquote,
+blockquote,
+.prose blockquote *,
+[contenteditable] blockquote *,
+.blog-content-body blockquote *,
+blockquote *,
+blockquote .font-serif,
+.blog-content-body blockquote .font-serif {
+  border-left-color: #0056B3 !important;
+  font-style: italic !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+blockquote cite,
+blockquote cite *,
+.blog-content-body blockquote cite,
+.blog-content-body blockquote cite * {
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  font-style: normal !important;
+}
+
+.prose blockquote,
+[contenteditable] blockquote,
+.blog-content-body blockquote,
+blockquote {
+  border-left-width: 4px !important;
+  border-left-style: solid !important;
+  padding-left: 1rem !important;
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+  color: #475569 !important;
+  background-color: #F8FAFC !important;
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+  border-radius: 0 0.5rem 0.5rem 0 !important;
+}
+
+.prose ul,
+[contenteditable] ul,
+.blog-content-body ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.prose ol,
+[contenteditable] ol,
+.blog-content-body ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.prose li,
+[contenteditable] li,
+.blog-content-body li {
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+  display: list-item !important;
+}
+
+/* Image alignment helper classes */
+.img-align-left,
+img[data-align="left"] {
+  display: block !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  clear: both !important;
+}
+
+.img-float-left,
+img[data-align="float-left"] {
+  float: left !important;
+  margin-right: 1.5rem !important;
+  margin-bottom: 1rem !important;
+  margin-left: 0 !important;
+  max-width: 50% !important;
+}
+
+.img-align-center,
+img[data-align="center"] {
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  clear: both !important;
+}
+
+.img-align-right,
+img[data-align="right"] {
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: 0 !important;
+  clear: both !important;
+}
+
