@@ -6,7 +6,6 @@ import {
   fetchDocument, 
   saveDocument 
 } from "./dbService";
-import { migrateDataFromOldDatabase } from "./migrateOldDb";
 import { 
   Compass, Heart, MapPin, Star, Search, Menu, X, Globe, Sparkles, 
   Calculator, Sun, Moon, Sunset, Calendar, ArrowRight, Utensils, 
@@ -353,14 +352,6 @@ export default function App() {
     async function loadAllDBData() {
       try {
         setIsLoadingDB(true);
-
-        // First automatically pull data from previous AI Studio project if not migrated yet
-        const migrationDone = localStorage.getItem("ahlan_migration_completed");
-        if (!migrationDone) {
-          console.log("Migrating previous dataset from old database...");
-          await migrateDataFromOldDatabase();
-          localStorage.setItem("ahlan_migration_completed", "true");
-        }
 
         const [
           dbDestinations,
