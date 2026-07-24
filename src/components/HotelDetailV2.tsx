@@ -328,7 +328,7 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
     <div className="min-h-screen bg-white text-[#0F1626] font-sans pb-24 selection:bg-brand-blue-accent/20">
       
       {/* 1. TOP BREADCRUMB & HEADER ACTIONS */}
-      <div className="bg-[#0F1626] border-b border-white/10 sticky top-0 z-30 shadow-md">
+      <div className="bg-[#0F1626] border-b border-white/10 sticky top-[73px] sm:top-[89px] z-30 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs font-mono font-bold tracking-wider uppercase text-slate-300 overflow-x-auto scrollbar-none">
             <button
@@ -378,6 +378,16 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
               <Share2 className="w-4 h-4 text-white/70" />
               <span className="hidden sm:inline">Share</span>
             </button>
+
+            <a
+              href={bookingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-brand-blue-accent hover:bg-sky-500 text-white text-xs font-mono font-bold tracking-wider uppercase transition-all shadow-md cursor-pointer shrink-0 border border-sky-300/30 hover:scale-[1.02]"
+            >
+              <span>BOOK NOW</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
           </div>
         </div>
       </div>
