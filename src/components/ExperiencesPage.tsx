@@ -37,8 +37,25 @@ export default function ExperiencesPage({
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
 
-  // Fetch live Viator activities with pagination support
+  // Fetch live Viator activities with pagination support and sessionStorage caching for instant performance
   const fetchViatorActivities = (start = 1, isLoadMore = false) => {
+    // Check client sessionStorage cache for instant loading on initial render
+    if (!isLoadMore && start === 1) {
+      try {
+        const cachedStr = sessionStorage.getItem("viator_activities_cache");
+        if (cachedStr) {
+          const cachedData = JSON.parse(cachedStr);
+          if (Array.isArray(cachedData.activities) && cachedData.activities.length > 0) {
+            setViatorActivities(cachedData.activities);
+            setViatorConfigured(true);
+            setViatorEnv(cachedData.environment || "production");
+          }
+        }
+      } catch (e) {
+        // Ignore cache parse errors
+      }
+    }
+
     if (isLoadMore) {
       setLoadingMore(true);
     } else {
@@ -73,10 +90,17 @@ export default function ExperiencesPage({
               setViatorActivities(prev => {
                 const existingIds = new Set(prev.map(item => item.id));
                 const newItems = data.activities.filter((item: Experience) => !existingIds.has(item.id));
-                return [...prev, ...newItems];
+                const updated = [...prev, ...newItems];
+                try {
+                  sessionStorage.setItem("viator_activities_cache", JSON.stringify({ activities: updated, environment: data.environment }));
+                } catch (e) {}
+                return updated;
               });
             } else {
               setViatorActivities(data.activities);
+              try {
+                sessionStorage.setItem("viator_activities_cache", JSON.stringify({ activities: data.activities, environment: data.environment }));
+              } catch (e) {}
             }
           }
         } else {

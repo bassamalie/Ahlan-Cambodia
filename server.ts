@@ -561,6 +561,14 @@ You must return your output strictly matching the provided JSON schema. Do not i
   }
 });
 
+// In-Memory Cache for Viator API Proxy (15-minute TTL to accelerate connection speed)
+interface ViatorCacheEntry {
+  timestamp: number;
+  data: any;
+}
+const viatorCache = new Map<string, ViatorCacheEntry>();
+const VIATOR_CACHE_TTL = 15 * 60 * 1000; // 15 minutes in milliseconds
+
 // Viator Partner API Proxy Endpoint for Cambodia Activities
 app.get("/api/viator/activities", async (req, res) => {
   try {
@@ -578,6 +586,17 @@ app.get("/api/viator/activities", async (req, res) => {
     const startParam = Math.max(1, parseInt(req.query.start as string, 10) || 1);
     const countParam = Math.max(1, parseInt(req.query.count as string, 10) || 12);
     const searchTermParam = (req.query.searchTerm as string) || (req.query.q as string) || "Siem Reap Phnom Penh Cambodia";
+
+    // Create unique cache key for instantaneous response (<5ms)
+    const cacheKey = `${cleanApiKey.slice(0, 8)}_${startParam}_${countParam}_${searchTermParam}_${requestedEnv}`;
+    const cachedEntry = viatorCache.get(cacheKey);
+    if (cachedEntry && (Date.now() - cachedEntry.timestamp < VIATOR_CACHE_TTL)) {
+      console.log(`[Viator Cache HIT] Returning cached activities for key: ${cacheKey}`);
+      return res.json({
+        ...cachedEntry.data,
+        fromCache: true
+      });
+    }
 
     // Auto-detect environment based on Viator key prefix or user configuration
     let env = "production";
@@ -628,31 +647,37 @@ app.get("/api/viator/activities", async (req, res) => {
     for (const ep of endpoints) {
       try {
         console.log(`[Viator API] Sending POST request to Free-Text Search endpoint [${ep.env}] ${ep.url}`);
-        console.log(`[Viator API] Headers: exp-api-key: ${cleanApiKey.slice(0, 4)}***, Accept: application/json;version=2.0, Accept-Language: en-US`);
-        console.log(`[Viator API] Search Payload:`, JSON.stringify(freetextPayload, null, 2));
+        
+        // Fast 6-second timeout signal to avoid hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-        const response = await fetch(ep.url, {
-          method: "POST",
-          headers: {
-            "exp-api-key": cleanApiKey,
-            "Accept": "application/json;version=2.0",
-            "Content-Type": "application/json",
-            "Accept-Language": "en-US"
-          },
-          body: JSON.stringify(freetextPayload)
-        });
+        try {
+          const response = await fetch(ep.url, {
+            method: "POST",
+            signal: controller.signal,
+            headers: {
+              "exp-api-key": cleanApiKey,
+              "Accept": "application/json;version=2.0",
+              "Content-Type": "application/json",
+              "Accept-Language": "en-US"
+            },
+            body: JSON.stringify(freetextPayload)
+          });
 
-        console.log(`[Viator API] Response Status: ${response.status}`);
+          console.log(`[Viator API] Response Status: ${response.status}`);
 
-        if (response.ok) {
-          data = await response.json();
-          successfulEnv = ep.env;
-          console.log(`Viator Raw Response:`, JSON.stringify(data));
-          break;
-        } else {
-          const errText = await response.text();
-          console.error(`[Viator API Error] HTTP ${response.status}:`, errText);
-          lastError = { status: response.status, details: errText, env: ep.env };
+          if (response.ok) {
+            data = await response.json();
+            successfulEnv = ep.env;
+            break;
+          } else {
+            const errText = await response.text();
+            console.error(`[Viator API Error] HTTP ${response.status}:`, errText);
+            lastError = { status: response.status, details: errText, env: ep.env };
+          }
+        } finally {
+          clearTimeout(timeoutId);
         }
       } catch (err: any) {
         console.error(`[Viator API Exception] (${ep.env}):`, err);
@@ -775,10 +800,23 @@ app.get("/api/viator/activities", async (req, res) => {
         ? `${Math.round(p.duration.fixedDurationInMinutes / 60)} Hours` 
         : (p.duration?.description || "Full Day");
 
+      // Smart Category Assignment for Viator Tours
+      const textForCategory = (title + " " + (p.description || "")).toLowerCase();
+      let category = "Heritage";
+      if (textForCategory.includes("quad") || textForCategory.includes("atv") || textForCategory.includes("kayak") || textForCategory.includes("bike") || textForCategory.includes("cycling") || textForCategory.includes("zip") || textForCategory.includes("trek") || textForCategory.includes("adventure")) {
+        category = "Adventure";
+      } else if (textForCategory.includes("waterfall") || textForCategory.includes("floating") || textForCategory.includes("lake") || textForCategory.includes("tonle") || textForCategory.includes("national park") || textForCategory.includes("jungle") || textForCategory.includes("nature") || textForCategory.includes("bird") || textForCategory.includes("sunset")) {
+        category = "Nature";
+      } else if (textForCategory.includes("cook") || textForCategory.includes("food") || textForCategory.includes("tast") || textForCategory.includes("market") || textForCategory.includes("dance") || textForCategory.includes("apsara") || textForCategory.includes("village") || textForCategory.includes("art") || textForCategory.includes("craft") || textForCategory.includes("culinary")) {
+        category = "Culture";
+      } else if (textForCategory.includes("temple") || textForCategory.includes("angkor") || textForCategory.includes("history") || textForCategory.includes("museum") || textForCategory.includes("palace") || textForCategory.includes("pagoda") || textForCategory.includes("heritage")) {
+        category = "Heritage";
+      }
+
       return {
         id: pCode,
         name: title,
-        category: "Heritage",
+        category: category,
         duration: durationStr,
         location: p.primaryDestinationName || p.destinationName || "Siem Reap / Phnom Penh, Cambodia",
         image: image,
@@ -791,7 +829,7 @@ app.get("/api/viator/activities", async (req, res) => {
       };
     });
 
-    res.json({
+    const responsePayload = {
       configured: true,
       environment: successfulEnv,
       count: activities.length,
@@ -799,7 +837,15 @@ app.get("/api/viator/activities", async (req, res) => {
       hasMore: activities.length >= countParam,
       activities,
       rawViatorResponse: data
+    };
+
+    // Store in cache for 15-minute speed boost
+    viatorCache.set(cacheKey, {
+      timestamp: Date.now(),
+      data: responsePayload
     });
+
+    res.json(responsePayload);
   } catch (err: any) {
     console.error("Error fetching Viator activities:", err);
     res.json({ configured: true, error: err.message || "Failed to fetch from Viator API", activities: [] });
