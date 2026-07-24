@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { 
-  Compass, Heart, Search, ArrowLeft, SlidersHorizontal, MapPin, Sparkles, Clock, Tag, Globe, ExternalLink, ShieldCheck
+  Compass, Heart, Search, ArrowLeft, SlidersHorizontal, MapPin, Sparkles, Clock, Tag, Globe, ExternalLink, ShieldCheck, Loader2
 } from "lucide-react";
 import { Experience } from "../types";
 
@@ -32,23 +32,52 @@ export default function ExperiencesPage({
   const [viatorErrorDetails, setViatorErrorDetails] = useState<string | null>(null);
   const [showViatorOnly, setShowViatorOnly] = useState<boolean>(false);
 
-  // Fetch live Viator activities
-  const fetchViatorActivities = () => {
-    setLoadingViator(true);
+  // Pagination state
+  const [startIndex, setStartIndex] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
+
+  // Fetch live Viator activities with pagination support
+  const fetchViatorActivities = (start = 1, isLoadMore = false) => {
+    if (isLoadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoadingViator(true);
+    }
     setViatorError(null);
     setViatorErrorDetails(null);
-    fetch("/api/viator/activities")
-      .then((res) => res.json())
+
+    fetch(`/api/viator/activities?start=${start}&count=12`)
+      .then(async (res) => {
+        console.log("[Viator Browser Console] API Proxy Response Status:", res.status);
+        const data = await res.json();
+        console.log("[Viator Browser Console] Response Body:", data);
+        if (data.rawViatorResponse) {
+          console.log("[Viator Browser Console] Raw Viator JSON Response:", data.rawViatorResponse);
+        }
+        return data;
+      })
       .then((data) => {
         if (data.configured) {
           setViatorConfigured(true);
-          setViatorEnv(data.environment || "sandbox");
+          setViatorEnv(data.environment || "production");
+          setStartIndex(data.start || start);
+          setHasMore(data.hasMore ?? (Array.isArray(data.activities) && data.activities.length >= 12));
+
           if (data.error) {
             setViatorError(data.error);
             setViatorErrorDetails(data.details || null);
-            setViatorActivities([]);
+            if (!isLoadMore) setViatorActivities([]);
           } else if (Array.isArray(data.activities)) {
-            setViatorActivities(data.activities);
+            if (isLoadMore) {
+              setViatorActivities(prev => {
+                const existingIds = new Set(prev.map(item => item.id));
+                const newItems = data.activities.filter((item: Experience) => !existingIds.has(item.id));
+                return [...prev, ...newItems];
+              });
+            } else {
+              setViatorActivities(data.activities);
+            }
           }
         } else {
           setViatorConfigured(false);
@@ -60,12 +89,18 @@ export default function ExperiencesPage({
       })
       .finally(() => {
         setLoadingViator(false);
+        setLoadingMore(false);
       });
   };
 
   useEffect(() => {
-    fetchViatorActivities();
+    fetchViatorActivities(1, false);
   }, []);
+
+  const handleLoadMore = () => {
+    const nextStart = startIndex + 12;
+    fetchViatorActivities(nextStart, true);
+  };
 
   // Combined dataset
   const combinedExperiences = useMemo(() => {
@@ -154,7 +189,13 @@ export default function ExperiencesPage({
                 </h4>
                 {viatorError ? (
                   <span className="bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[9px] font-mono px-2 py-0.5 rounded-md font-bold uppercase">
-                    401 Unauthorized
+                    {viatorError.includes("400") 
+                      ? "400 BAD REQUEST" 
+                      : viatorError.includes("403") 
+                      ? "403 FORBIDDEN" 
+                      : viatorError.includes("429") 
+                      ? "429 RATE LIMITED" 
+                      : "API ERROR"}
                   </span>
                 ) : viatorConfigured ? (
                   <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-mono px-2 py-0.5 rounded-md font-bold uppercase">
@@ -206,24 +247,36 @@ export default function ExperiencesPage({
           </div>
         </div>
 
-        {/* --- Viator 401 Troubleshooting Helper Card --- */}
+        {/* --- Viator API Troubleshooting Helper Card --- */}
         {viatorError && (
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 text-amber-900 space-y-3 animate-fade-in">
             <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
               <ShieldCheck className="w-4 h-4 text-amber-600" />
-              <span>How to fix the 401 Unauthorized error:</span>
+              <span>Viator API Integration Checklist:</span>
             </div>
             <ul className="text-xs text-amber-900/90 space-y-2 list-disc list-inside font-sans leading-relaxed">
               <li>
-                <strong>24-Hour Activation Window:</strong> Newly issued Viator API keys take up to 24 hours to propagate across Viator's auth servers. During this window, Viator responds with <code className="bg-amber-200/60 text-amber-950 px-1 py-0.5 rounded font-mono">401 UNAUTHORIZED</code>.
+                <strong>Header Name:</strong> The key MUST be passed using header <code className="bg-amber-200/60 text-amber-950 px-1 py-0.5 rounded font-mono">exp-api-key</code> (not <code className="bg-amber-200/60 text-amber-950 px-1 py-0.5 rounded font-mono">api-key</code>, <code className="bg-amber-200/60 text-amber-950 px-1 py-0.5 rounded font-mono">Authorization</code>, or URL params).
               </li>
               <li>
-                <strong>Key Mismatch (Sandbox vs. Production):</strong> A Sandbox key will fail on Production, and a Production key will fail on Sandbox. Ensure your key matches the environment you created it for in the Viator Partner Portal.
+                <strong>Base URL Match:</strong> Sandbox keys (e.g. starting with <code className="bg-amber-200/60 text-amber-950 px-1 py-0.5 rounded font-mono">296B</code>) use <code className="bg-amber-200/60 text-amber-950 px-1 py-0.5 rounded font-mono">https://api.sandbox.viator.com/partner/</code>. Production keys (e.g. starting with <code className="bg-amber-200/60 text-amber-950 px-1 py-0.5 rounded font-mono">086F</code>) use <code className="bg-amber-200/60 text-amber-950 px-1 py-0.5 rounded font-mono">https://api.viator.com/partner/</code>.
               </li>
               <li>
-                <strong>Check for Extra Characters:</strong> In your AI Studio <strong>Settings</strong>, check that <code className="bg-amber-200/60 text-amber-950 px-1 py-0.5 rounded font-mono">VIATOR_API_KEY</code> does not contain extra spaces or quotation marks (<code className="bg-amber-200/60 text-amber-950 px-1 py-0.5 rounded font-mono">"..."</code>).
+                <strong>Required Headers:</strong> Must include <code className="bg-amber-200/60 text-amber-950 px-1 py-0.5 rounded font-mono">Accept: application/json</code> and <code className="bg-amber-200/60 text-amber-950 px-1 py-0.5 rounded font-mono">Content-Type: application/json</code>.
+              </li>
+              <li>
+                <strong>Endpoint Permissions:</strong> Catalog search uses Basic Access. Booking/hold endpoints require Full Access or Booking Access permissions in the Viator Partner Portal.
               </li>
             </ul>
+
+            {viatorErrorDetails && (
+              <div className="mt-3 pt-3 border-t border-amber-500/20">
+                <p className="text-[11px] font-bold text-amber-900 mb-1">Viator API Error Response Body:</p>
+                <pre className="bg-amber-950/90 text-amber-200 p-2.5 rounded-xl text-[10px] font-mono whitespace-pre-wrap overflow-x-auto max-h-40 border border-amber-800/40">
+                  {viatorErrorDetails}
+                </pre>
+              </div>
+            )}
           </div>
         )}
 
@@ -419,6 +472,35 @@ export default function ExperiencesPage({
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Load More Pagination Control */}
+          {viatorConfigured && (
+            <div className="pt-10 pb-6 text-center flex flex-col items-center gap-3">
+              {hasMore ? (
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadingMore || loadingViator}
+                  className="bg-[#0F1626] hover:bg-brand-blue-accent text-white px-8 py-3.5 rounded-2xl font-mono text-xs font-bold uppercase tracking-wider shadow-lg hover:shadow-xl transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-brand-blue-accent" />
+                      <span>Loading More Experiences...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-brand-blue-accent" />
+                      <span>Load More Experiences ({viatorActivities.length} Loaded)</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <div className="bg-brand-lightbg border border-brand-blue-accent/15 px-6 py-3 rounded-xl text-xs font-mono text-brand-charcoal/60">
+                  ✨ All available Phnom Penh & Siem Reap tours loaded
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -117,7 +117,7 @@ async function extractSocialMediaMetadata(rawUrl: string) {
         const redirectRes = await fetch(trimmed, { 
           method: "HEAD", 
           redirect: "follow", 
-          signal: AbortSignal.timeout(3000),
+          signal: AbortSignal.timeout(4000),
           headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
           }
@@ -130,7 +130,11 @@ async function extractSocialMediaMetadata(rawUrl: string) {
 
     try {
       const oembedRes = await fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(canonicalUrl)}`, {
-        signal: AbortSignal.timeout(3500)
+        signal: AbortSignal.timeout(4000),
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "application/json"
+        }
       });
       if (oembedRes.ok) {
         const json: any = await oembedRes.json();
@@ -142,8 +146,8 @@ async function extractSocialMediaMetadata(rawUrl: string) {
           fetchSuccess = true;
         }
       }
-    } catch (err) {
-      console.error("TikTok oEmbed fetch error:", err);
+    } catch (err: any) {
+      console.log(`TikTok oEmbed notice (${err?.name || "Timeout/Network"}): seamlessly defaulting to handle parser.`);
     }
 
     if (!fetchSuccess) {
@@ -560,8 +564,8 @@ You must return your output strictly matching the provided JSON schema. Do not i
 // Viator Partner API Proxy Endpoint for Cambodia Activities
 app.get("/api/viator/activities", async (req, res) => {
   try {
-    const apiKey = process.env.VIATOR_API_KEY;
-    if (!apiKey) {
+    const rawApiKey = process.env.VIATOR_API_KEY;
+    if (!rawApiKey) {
       return res.json({ 
         configured: false, 
         message: "VIATOR_API_KEY environment variable is not set. Using local curated experiences.",
@@ -569,88 +573,232 @@ app.get("/api/viator/activities", async (req, res) => {
       });
     }
 
+    const cleanApiKey = rawApiKey.trim().replace(/^["']|["']$/g, "");
     const requestedEnv = (req.query.env as string) || process.env.VIATOR_ENV || "sandbox";
-    const primaryIsSandbox = requestedEnv.toLowerCase() === "sandbox";
+    const startParam = Math.max(1, parseInt(req.query.start as string, 10) || 1);
+    const countParam = Math.max(1, parseInt(req.query.count as string, 10) || 12);
+    const searchTermParam = (req.query.searchTerm as string) || (req.query.q as string) || "Siem Reap Phnom Penh Cambodia";
 
-    const endpoints = primaryIsSandbox
-      ? [
-          { env: "sandbox", url: "https://api.sandbox.viator.com/partner/products/search" },
-          { env: "production", url: "https://api.viator.com/partner/products/search" }
-        ]
-      : [
-          { env: "production", url: "https://api.viator.com/partner/products/search" },
-          { env: "sandbox", url: "https://api.sandbox.viator.com/partner/products/search" }
-        ];
+    // Auto-detect environment based on Viator key prefix or user configuration
+    let env = "production";
+    let isAutoDetected = false;
 
-    let lastError: any = null;
+    if (cleanApiKey.toLowerCase().startsWith("086f")) {
+      env = "production";
+      isAutoDetected = true;
+    } else if (cleanApiKey.toLowerCase().startsWith("296b")) {
+      env = "sandbox";
+      isAutoDetected = true;
+    } else {
+      env = requestedEnv.toLowerCase() === "sandbox" ? "sandbox" : "production";
+    }
+
+    // Set Base URL prioritizing Production first: https://api.viator.com/partner/search/freetext
+    const primaryUrl = env === "production"
+      ? "https://api.viator.com/partner/search/freetext"
+      : "https://api.sandbox.viator.com/partner/search/freetext";
+
+    const alternateUrl = env === "production"
+      ? "https://api.sandbox.viator.com/partner/search/freetext"
+      : "https://api.viator.com/partner/search/freetext";
+
+    const endpoints = isAutoDetected
+      ? [{ env, url: primaryUrl }]
+      : [{ env, url: primaryUrl }, { env: env === "production" ? "sandbox" : "production", url: alternateUrl }];
+
+    let lastError: { status: number; details: string; env: string } | null = null;
     let successfulEnv = "";
     let data: any = null;
 
+    // Free-text Search Payload specifically targeting Siem Reap & Phnom Penh, Cambodia with pagination
+    const freetextPayload = {
+      searchTerm: searchTermParam,
+      currency: "USD",
+      searchTypes: [
+        {
+          searchType: "PRODUCTS",
+          pagination: {
+            start: startParam,
+            count: countParam
+          }
+        }
+      ]
+    };
+
     for (const ep of endpoints) {
       try {
+        console.log(`[Viator API] Sending POST request to Free-Text Search endpoint [${ep.env}] ${ep.url}`);
+        console.log(`[Viator API] Headers: exp-api-key: ${cleanApiKey.slice(0, 4)}***, Accept: application/json;version=2.0, Accept-Language: en-US`);
+        console.log(`[Viator API] Search Payload:`, JSON.stringify(freetextPayload, null, 2));
+
         const response = await fetch(ep.url, {
           method: "POST",
           headers: {
-            "exp-api-key": apiKey.trim(),
-            "Accept-Language": "en-US",
+            "exp-api-key": cleanApiKey,
             "Accept": "application/json;version=2.0",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Accept-Language": "en-US"
           },
-          body: JSON.stringify({
-            searchTerm: "Cambodia",
-            currency: "USD",
-            pagination: { start: 1, count: 20 }
-          })
+          body: JSON.stringify(freetextPayload)
         });
+
+        console.log(`[Viator API] Response Status: ${response.status}`);
 
         if (response.ok) {
           data = await response.json();
           successfulEnv = ep.env;
+          console.log(`Viator Raw Response:`, JSON.stringify(data));
           break;
         } else {
           const errText = await response.text();
-          console.error(`Viator API (${ep.env}) error:`, response.status, errText);
+          console.error(`[Viator API Error] HTTP ${response.status}:`, errText);
           lastError = { status: response.status, details: errText, env: ep.env };
         }
       } catch (err: any) {
+        console.error(`[Viator API Exception] (${ep.env}):`, err);
         lastError = { status: 500, details: err.message || String(err), env: ep.env };
       }
     }
 
     if (!data) {
+      const status = lastError?.status || 401;
+      let errorTitle = `Viator API Error (HTTP ${status})`;
+
+      if (status === 400) {
+        errorTitle += ": Bad Request - Invalid parameters or headers";
+      } else if (status === 401) {
+        errorTitle += ": Invalid API Key or Unauthorized (Key & Base URL mismatch)";
+      } else if (status === 403) {
+        errorTitle += ": Forbidden - Access restricted";
+      } else if (status === 429) {
+        errorTitle += ": Rate Limit Exceeded";
+      } else {
+        errorTitle += ": Connection Failed";
+      }
+
       return res.json({
         configured: true,
-        error: `Viator API Error (HTTP ${lastError?.status || 401}): Invalid API Key or Unauthorized`,
+        error: errorTitle,
         details: lastError?.details,
-        status: lastError?.status,
+        status,
+        environment: env,
         activities: []
       });
     }
 
-    const rawProducts = data.products || data.data || [];
+    // Extract products safely from response.products.results, response.products, response.data, or response.results
+    const rawProducts = 
+      data?.products?.results || 
+      data?.products?.data || 
+      data?.products || 
+      data?.data?.products?.results ||
+      data?.data?.products ||
+      data?.data?.results ||
+      data?.data || 
+      data?.results || 
+      [];
 
-    const activities = rawProducts.map((p: any) => ({
-      id: p.productCode || p.code || `viator-${Math.random().toString(36).substring(2, 7)}`,
-      name: p.title || p.name || "Cambodia Guided Tour",
-      category: "Heritage",
-      duration: p.duration?.fixedDurationInMinutes 
+    if (rawProducts.length === 0) {
+      console.log("Viator Raw Response:", JSON.stringify(data));
+    } else {
+      console.log(`[Viator API] Successfully extracted ${rawProducts.length} product items from /search/freetext response.`);
+    }
+
+    // Validation Check: Ensure only items related to Cambodia or without conflicting destination labels are mapped
+    const cambodiaKeywords = ["cambodia", "siem reap", "angkor", "phnom penh", "kampot", "battambang", "sihanoukville", "tonle sap", "bayon", "ta prohm", "kep", "koh rong"];
+    const filteredProducts = rawProducts.filter((p: any) => {
+      const destIds = [p.primaryDestinationId, p.destinationId, ...(p.destinationIds || []), ...(p.destIds || [])].map(String);
+      if (destIds.includes("97") || destIds.includes("68")) {
+        return true;
+      }
+      const textToSearch = `${p.title || p.name || ""} ${p.description || p.shortDescription || ""} ${p.primaryDestinationName || p.destinationName || ""}`.toLowerCase();
+      return textToSearch.length === 0 || cambodiaKeywords.some(keyword => textToSearch.includes(keyword));
+    });
+
+    const productsToMap = filteredProducts.length > 0 ? filteredProducts : rawProducts;
+
+    // Helper function to extract high-resolution variant images from Viator product image payload
+    const extractHighResImage = (p: any): string => {
+      const defaultFallback = "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&q=80&w=1200";
+      const imgList = Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.primaryImage ? [p.primaryImage] : []);
+      
+      let chosenUrl = "";
+
+      for (const img of imgList) {
+        if (!img) continue;
+        if (typeof img === "string") {
+          chosenUrl = img;
+          break;
+        }
+        // Inspect variants array and pick the variant with largest resolution/dimensions
+        if (Array.isArray(img.variants) && img.variants.length > 0) {
+          const sorted = [...img.variants].sort((a: any, b: any) => {
+            const aArea = (a.width || 0) * (a.height || 0);
+            const bArea = (b.width || 0) * (b.height || 0);
+            if (bArea !== aArea) return bArea - aArea;
+            return (b.width || 0) - (a.width || 0);
+          });
+          if (sorted[0]?.url) {
+            chosenUrl = sorted[0].url;
+            break;
+          }
+        }
+        // Check direct URL fields
+        const directUrl = img.url || img.highResUrl || img.originalUrl || img.largeUrl;
+        if (directUrl) {
+          chosenUrl = directUrl;
+          break;
+        }
+      }
+
+      if (!chosenUrl && typeof p.image === "string") {
+        chosenUrl = p.image;
+      }
+
+      if (!chosenUrl) return defaultFallback;
+
+      // Replace low-resolution sub-paths or URL parameters with high-res specs (e.g. 1000x667, 1200w)
+      return chosenUrl
+        .replace(/\/\d+x\d+\//g, "/1000x667/")
+        .replace(/\.\d+x\d+\./g, ".1000x667.")
+        .replace(/w=\d+/g, "w=1200")
+        .replace(/width=\d+/g, "width=1200")
+        .replace(/q=\d+/g, "q=90");
+    };
+
+    const activities = productsToMap.map((p: any) => {
+      const pCode = p.productCode || p.code || p.id || `viator-${Math.random().toString(36).substring(2, 7)}`;
+      const title = p.title || p.name || p.text || "Cambodia Guided Tour";
+      const image = extractHighResImage(p);
+      const priceVal = p.pricing?.summary?.fromPrice || p.price || p.fromPrice;
+      const durationStr = p.duration?.fixedDurationInMinutes 
         ? `${Math.round(p.duration.fixedDurationInMinutes / 60)} Hours` 
-        : (p.duration?.description || "Full Day"),
-      location: p.primaryDestinationName || "Cambodia",
-      image: p.images?.[0]?.variants?.[0]?.url || p.images?.[0]?.url || "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&q=80&w=1200",
-      description: p.description || p.shortDescription || "Unforgettable Viator tour in Cambodia with professional guides and seamless transfers.",
-      shortDescription: p.shortDescription || (p.description ? p.description.slice(0, 150) + "..." : "Guided tour in Cambodia"),
-      highlights: p.flags || ["Viator Verified", "Instant Booking", "English Speaking Guide"],
-      isViator: true,
-      price: p.pricing?.summary?.fromPrice ? `$${p.pricing.summary.fromPrice}` : undefined,
-      productUrl: p.productUrl || `https://www.viator.com/tours/${p.productCode}`
-    }));
+        : (p.duration?.description || "Full Day");
+
+      return {
+        id: pCode,
+        name: title,
+        category: "Heritage",
+        duration: durationStr,
+        location: p.primaryDestinationName || p.destinationName || "Siem Reap / Phnom Penh, Cambodia",
+        image: image,
+        description: p.description || p.shortDescription || "Unforgettable Viator tour in Cambodia with professional guides and seamless transfers.",
+        shortDescription: p.shortDescription || (p.description ? p.description.slice(0, 150) + "..." : "Guided tour in Cambodia"),
+        highlights: p.flags || ["Viator Verified", "Instant Booking", "English Speaking Guide"],
+        isViator: true,
+        price: priceVal ? `$${priceVal}` : undefined,
+        productUrl: p.productUrl || p.webURL || `https://www.viator.com/tours/${pCode}`
+      };
+    });
 
     res.json({
       configured: true,
       environment: successfulEnv,
       count: activities.length,
-      activities
+      start: startParam,
+      hasMore: activities.length >= countParam,
+      activities,
+      rawViatorResponse: data
     });
   } catch (err: any) {
     console.error("Error fetching Viator activities:", err);
