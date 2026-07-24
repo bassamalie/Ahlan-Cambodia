@@ -16,6 +16,8 @@ import RichTextEditor from "./RichTextEditor";
 import { SocialVideoCard } from "./SocialVideoCard";
 import { uploadToFirebaseStorage, listAllUploadedFiles, deleteFromFirebaseStorage } from "../firebase";
 import { saveDocInCollection } from "../dbService";
+import { sanitizeHotelPhotoGallery, NO_PHOTO_AVAILABLE_PLACEHOLDER, isValidPhotoUrl } from "../googlePlacesPhotoService";
+import { getEffectiveRoomTiers } from "./HotelDetailV2";
 
 interface AdminCMSProps {
   destinations: Destination[];
@@ -1133,6 +1135,9 @@ export default function AdminCMS({
         return;
       }
       const h = data.hotel;
+      const { primaryImage, validPhotos } = sanitizeHotelPhotoGallery(h.photoUrls, h.image);
+      const effectiveTiers = (h.roomTiers && h.roomTiers.length > 0) ? h.roomTiers : getEffectiveRoomTiers(h);
+
       const newHotel: Hotel = {
         id: `gp-${Date.now()}`,
         name: h.name,
@@ -1142,15 +1147,16 @@ export default function AdminCMS({
         price: h.lowestPrice || 350,
         lowestPrice: h.lowestPrice || 350,
         stars: 5,
-        image: h.photoUrls?.[0] || "",
-        photoUrls: h.photoUrls || [],
-        galleryImages: h.photoUrls || [],
+        image: primaryImage,
+        photoUrls: validPhotos,
+        galleryImages: validPhotos,
         description: h.editorialDescription || `${h.name} is a luxury estate in ${h.destination || "Cambodia"}.`,
         extendedDescription: h.editorialDescription,
         prayerFacilities: "In-room prayer mats and Qibla direction",
         halalBreakfast: "Certified Halal breakfast options",
         nearbyMosque: `Grand Mosque in ${h.destination || "Cambodia"} (10 mins)`,
         amenities: h.amenities || ["Swimming Pool", "Spa", "Free WiFi", "Halal Options"],
+        roomTiers: effectiveTiers,
         highlights: [
           `Located in ${h.destination || "Cambodia"}`,
           `Rated ${h.rating || 4.8} on Google Places`,
@@ -1205,14 +1211,21 @@ export default function AdminCMS({
         return;
       }
       const updated = data.hotel;
+      const { primaryImage, validPhotos } = sanitizeHotelPhotoGallery(
+        updated.photoUrls,
+        updated.image || hotelItem.image
+      );
+
       const refreshed: Hotel = {
         ...hotelItem,
         rating: updated.rating || hotelItem.rating,
         reviewCount: updated.reviewCount || hotelItem.reviewCount,
         phoneNumber: updated.phoneNumber || hotelItem.phoneNumber,
         website: updated.website || hotelItem.website,
-        photoUrls: updated.photoUrls?.length ? updated.photoUrls : hotelItem.photoUrls,
-        image: updated.photoUrls?.[0] || hotelItem.image,
+        photoUrls: validPhotos,
+        galleryImages: validPhotos,
+        image: primaryImage,
+        roomTiers: (hotelItem.roomTiers && hotelItem.roomTiers.length > 0) ? hotelItem.roomTiers : getEffectiveRoomTiers(updated),
         lastUpdated: new Date().toISOString(),
         guestReviews: updated.guestReviews || hotelItem.guestReviews
       };
@@ -1223,7 +1236,7 @@ export default function AdminCMS({
         await saveDocInCollection("hotels", refreshed);
       }
       setLocalHotels(prev => prev.map(h => h.id === refreshed.id ? refreshed : h));
-      triggerToast(`Refreshed "${refreshed.name}" metrics from Google Places!`, "success");
+      triggerToast(`Refreshed "${refreshed.name}" metrics & authentic photos from Google Places!`, "success");
     } catch (err) {
       console.error("Refresh error:", err);
       alert("Failed to refresh hotel.");
@@ -1800,13 +1813,17 @@ export default function AdminCMS({
     const priceNum = parseFloat(hotelPrice) || 0;
     const finalId = editingHotelId || `hotel-${hotelName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
     
+    const { primaryImage, validPhotos } = sanitizeHotelPhotoGallery(hotelGallery, hotelImage);
+
     const preparedHotel: Hotel = {
       id: finalId,
       name: hotelName,
       location: hotelLocation,
       rating: editingHotelId ? (localHotels.find(h => h.id === editingHotelId)?.rating || 4.9) : 4.9,
       price: priceNum,
-      image: hotelImage || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+      image: primaryImage,
+      photoUrls: validPhotos,
+      galleryImages: validPhotos,
       stars: hotelStars,
       prayerFacilities: hotelPrayerFacilities,
       halalBreakfast: hotelHalalBreakfast,
@@ -1826,7 +1843,6 @@ export default function AdminCMS({
       halalBreakfastDetail: hotelHalalBreakfast,
       mosqueDetail: hotelNearbyMosque,
       amenitiesList: hotelAmenities.filter(a => a.trim() !== "").map(name => ({ name, category: "general" })),
-      galleryImages: hotelGallery.filter(img => img !== ""),
       roomTiers: hotelRooms.filter(r => r.name.trim() !== "").map(r => ({
         name: r.name,
         priceMultiplier: r.priceMultiplier || 1.0,

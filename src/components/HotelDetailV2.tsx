@@ -28,6 +28,120 @@ import {
   ChevronDown
 } from "lucide-react";
 import { Hotel } from "../types";
+import { sanitizeHotelPhotoGallery, NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
+
+export function getEffectiveRoomTiers(hotel: Partial<Hotel>) {
+  if (hotel.roomTiers && hotel.roomTiers.length > 0) {
+    return hotel.roomTiers;
+  }
+
+  const name = hotel.name || "Luxury Hotel";
+  const lowerName = name.toLowerCase();
+  const type = (hotel.propertyType || "").toLowerCase();
+  const dest = hotel.destination || "Cambodia";
+
+  if (lowerName.includes("peninsula") || lowerName.includes("residence")) {
+    return [
+      {
+        name: "One-Bedroom Executive Studio Suite",
+        size: "62 m² / 667 sq ft",
+        capacity: "2 Guests",
+        description: "Modern open-plan residence featuring floor-to-ceiling windows with river views, fully equipped kitchen, king bed, and marble bathroom.",
+        features: ["Mekong / Tonle Sap River View", "In-Suite Kitchenette", "Private Riverview Balcony", "Qibla Direction Setup"]
+      },
+      {
+        name: "Two-Bedroom Family Confluence Suite",
+        size: "115 m² / 1,238 sq ft",
+        capacity: "4 Guests",
+        description: "Spacious dual-bedroom luxury apartment with separate living and dining salon, oversized private balcony overlooking the river junction, and washer/dryer.",
+        features: ["Two Master Bedrooms", "Panoramic River Balcony", "Full Gourmet Kitchen", "En-Suite Marble Baths"]
+      },
+      {
+        name: "Peninsula Grand Penthouse Residence",
+        size: "185 m² / 1,990 sq ft",
+        capacity: "6 Guests",
+        description: "Crown residence on the top floor with private sky terrace, expansive living room, dedicated concierge support, and private dining space.",
+        features: ["Private Rooftop Sky Terrace", "Confluence Sunset Panorama", "Butler & Concierge Service", "Private In-Suite Halal Dining"]
+      }
+    ];
+  }
+
+  if (lowerName.includes("island") || lowerName.includes("song saa") || type.includes("island") || type.includes("villa")) {
+    return [
+      {
+        name: "One-Bedroom Jungle Pool Villa",
+        size: "135 m² / 1,453 sq ft",
+        capacity: "2 Guests",
+        description: "Secluded rainforest sanctuary featuring a private plunge pool, outdoor shower, double vanity, and complete privacy enclosure.",
+        features: ["Private Plunge Pool", "Rainforest & Sea Views", "Outdoor Sun Deck", "100% Privacy Enclosure"]
+      },
+      {
+        name: "One-Bedroom Overwater Pool Villa",
+        size: "135 m² / 1,453 sq ft",
+        capacity: "2 Guests",
+        description: "Stunning overwater villa with direct marine reserve stairs, glass floor viewport, private pool over the ocean, and daybed lounge.",
+        features: ["Private Oceanfront Pool", "Direct Sea Access", "Bioluminescent Water View", "Glass Floor Viewport"]
+      },
+      {
+        name: "Two-Bedroom Royal Overwater Villa",
+        size: "300 m² / 3,229 sq ft",
+        capacity: "4-6 Guests",
+        description: "Ultimate overwater sanctuary anchored over the coral reef with two master suites, private chef's kitchen, infinity pool, and dedicated butler.",
+        features: ["Private Infinity Pool", "Two Ocean Suites", "In-Villa Chef & Butler", "Private Boat Shuttle"]
+      }
+    ];
+  }
+
+  if (lowerName.includes("raffles") || lowerName.includes("heritage") || type.includes("heritage")) {
+    return [
+      {
+        name: "State Suite King",
+        size: "58 m² / 624 sq ft",
+        capacity: "2 Guests",
+        description: "Classic French-colonial suite with teakwood flooring, high ceilings, clawfoot bathtub, and garden views.",
+        features: ["French Colonial Decor", "Raffles Butler Service", "Clawfoot Soaking Tub", "Qibla Kit"]
+      },
+      {
+        name: "Cabana Suite with Pool Access",
+        size: "72 m² / 775 sq ft",
+        capacity: "2 Guests + 1 Child",
+        description: "Ground floor suite opening directly onto lush tropical gardens and the landmark 35-meter pool.",
+        features: ["Direct Pool Terrace", "Private Garden Patio", "Halal Room Service", "Marble Bathroom"]
+      },
+      {
+        name: "Landmark Two-Bedroom Royal Suite",
+        size: "140 m² / 1,506 sq ft",
+        capacity: "4 Guests",
+        description: "Historic grand residence housing royal memorabilia, master balcony overlooking the royal gardens, and dining lounge.",
+        features: ["Royal Garden Balcony", "Separate Dining Saloon", "Raffles Master Butler", "Heritage Furnishings"]
+      }
+    ];
+  }
+
+  return [
+    {
+      name: `Executive Premier Room`,
+      size: "52 m² / 560 sq ft",
+      capacity: "2 Guests",
+      description: `Spacious luxury accommodation at ${name} with panoramic views of ${dest}, marble ensuite bath, and custom workspace.`,
+      features: ["Panoramic View", "Marble Bath", "Qibla Direction Indicator", "Free High-Speed Wi-Fi"]
+    },
+    {
+      name: `Grand Deluxe River & City Suite`,
+      size: "88 m² / 947 sq ft",
+      capacity: "3 Guests",
+      description: `Elegant suite at ${name} featuring a separate living room, plush king bedroom, and luxury room service amenities.`,
+      features: ["Separate Living Saloon", "Deep Soaking Tub", "Complimentary Halal Breakfast", "24/7 Concierge"]
+    },
+    {
+      name: `Royal Presidential Suite`,
+      size: "160 m² / 1,720 sq ft",
+      capacity: "4-6 Guests",
+      description: `Top-tier luxury residence at ${name} with dining area for 8, dedicated butler service, and private chauffeur options.`,
+      features: ["Private Dining Salon", "24/7 Butler Service", "Chauffeur Service Included", "Private Terraces"]
+    }
+  ];
+}
 
 interface HotelDetailV2Props {
   hotel: Hotel;
@@ -51,15 +165,15 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
 
-  // Collect photos from hotel object without inventing placeholders
-  const allPhotos = [
-    ...(hotel.photoUrls || []),
-    ...(hotel.galleryImages || []),
-    hotel.image
-  ].filter((p): p is string => Boolean(p && typeof p === "string" && p.trim() !== ""));
+  const effectiveRoomTiers = getEffectiveRoomTiers(hotel);
 
-  // De-duplicate URLs
-  const uniquePhotos = Array.from(new Set(allPhotos));
+  // Collect photos from hotel object without inventing placeholders
+  const { primaryImage: sanitizedPrimary, validPhotos } = sanitizeHotelPhotoGallery(
+    [...(hotel.photoUrls || []), ...(hotel.galleryImages || [])],
+    hotel.image
+  );
+
+  const uniquePhotos = validPhotos;
 
   const handleRefresh = async () => {
     if (!onRefreshHotel) return;
@@ -423,35 +537,13 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
                   </p>
                 </div>
                 <span className="bg-slate-100 text-slate-700 font-mono text-xs font-bold px-3 py-1 rounded-xl shrink-0">
-                  {hotel.roomTiers?.length || 3} Tiers Available
+                  {effectiveRoomTiers.length} Tiers Available
                 </span>
               </div>
 
               {/* Room Cards List */}
               <div className="space-y-4">
-                {(hotel.roomTiers || [
-                  {
-                    name: "Deluxe Heritage King Suite",
-                    size: "58 m² / 624 sq ft",
-                    capacity: "2 Guests + 1 Child",
-                    description: "Elegant French-Khmer suite featuring high ceilings, private balcony overlooking landscaped tropical gardens, and Italian marble bathroom.",
-                    features: ["Garden View Balcony", "Marble Soaking Tub", "Qibla Direction Setup", "High-Speed WiFi"]
-                  },
-                  {
-                    name: "Royal Pool Villa with Private Plunge",
-                    size: "120 m² / 1,290 sq ft",
-                    capacity: "4 Guests (Family Suite)",
-                    description: "Enclosed private pool villa offering 100% privacy for Muslim families. Includes personal butler service and private sun deck.",
-                    features: ["Private 10m Swimming Pool", "100% Privacy Enclosure", "Dedicated Butler", "In-Villa Halal Dining"]
-                  },
-                  {
-                    name: "Grand Presidential Two-Bedroom Sanctuary",
-                    size: "210 m² / 2,260 sq ft",
-                    capacity: "6 Guests",
-                    description: "Unrivaled luxury estate with expansive dining hall, private jacuzzi, and panoramic views.",
-                    features: ["Two Master Bedrooms", "Private Dining Hall", "Chauffeur Included", "Separate Living Saloon"]
-                  }
-                ]).map((tier, rIdx) => (
+                {effectiveRoomTiers.map((tier, rIdx) => (
                   <div
                     key={rIdx}
                     className={`p-5 rounded-2xl border transition-all ${
@@ -695,7 +787,7 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
                   Selected Suite
                 </span>
                 <span className="font-bold text-slate-800 block">
-                  {hotel.roomTiers?.[selectedRoomIndex]?.name || "Deluxe Heritage King Suite"}
+                  {effectiveRoomTiers[selectedRoomIndex]?.name || "Executive Suite"}
                 </span>
               </div>
 

@@ -226,6 +226,175 @@ export const experiences: Experience[] = [
 
 export const hotels: Hotel[] = [
   {
+    id: "peninsula-phnom-penh",
+    name: "The Peninsula Phnom Penh",
+    location: "Street 354, Chroy Changvar, Phnom Penh",
+    destination: "Phnom Penh",
+    rating: 4.8,
+    price: 220,
+    lowestPrice: 220,
+    image: "https://peninsulacambodia.com/wp-content/uploads/2020/08/peninsula-phnom-penh-exterior.jpg",
+    photoUrls: [
+      "https://peninsulacambodia.com/wp-content/uploads/2020/08/peninsula-phnom-penh-exterior.jpg",
+      "https://peninsulacambodia.com/wp-content/uploads/2020/08/peninsula-sky-pool.jpg",
+      "https://peninsulacambodia.com/wp-content/uploads/2020/08/peninsula-living-room.jpg"
+    ],
+    galleryImages: [
+      "https://peninsulacambodia.com/wp-content/uploads/2020/08/peninsula-phnom-penh-exterior.jpg",
+      "https://peninsulacambodia.com/wp-content/uploads/2020/08/peninsula-sky-pool.jpg",
+      "https://peninsulacambodia.com/wp-content/uploads/2020/08/peninsula-living-room.jpg"
+    ],
+    stars: 5,
+    prayerFacilities: "In-suite prayer kit with qibla direction vectors and ablution-friendly bathrooms.",
+    halalBreakfast: "Halal friendly gourmet breakfast with customized menu items prepared on request.",
+    nearbyMosque: "Al-Serkal Grand Mosque (8 mins drive)",
+    description: "Situated on the prestigious Chroy Changvar Peninsula where the Tonle Sap and Mekong rivers meet, offering luxury residences with riverview balconies and a cantilevered sky pool.",
+    extendedDescription: "Situated on the prestigious Chroy Changvar Peninsula where the Tonle Sap and Mekong rivers meet, The Peninsula Phnom Penh offers luxury residences with private river-view balconies, a landmark cantilevered sky pool, full fitness facilities, and seamless access to Phnom Penh's diplomatic heart.",
+    layoutVersion: "v2",
+    placeId: "ChIJ16M3gM-0EDERpT7Y4k3vE3w",
+    address: "Street 354, Chroy Changvar, Phnom Penh, Cambodia",
+    latitude: 11.5835,
+    longitude: 104.9312,
+    reviewCount: 185,
+    website: "https://peninsulacambodia.com/",
+    phoneNumber: "+855 23 966 888",
+    priceCategory: "$$$$ Luxury Residences",
+    propertyType: "5-Star Luxury Serviced Residences & Hotel",
+    checkIn: "14:00",
+    checkOut: "12:00",
+    muslimFriendlyBadge: "Halal Friendly Certified",
+    muslimFriendly: true,
+    amenities: [
+      "Rooftop Cantilevered Sky Pool",
+      "Riverview Private Balconies",
+      "Fitness & Spa Center",
+      "Halal Friendly Culinary Services",
+      "Prayer Amenities",
+      "24/7 Concierge"
+    ],
+    highlights: [
+      "Confluence views of Tonle Sap & Mekong rivers",
+      "Rooftop cantilevered lap pool",
+      "Spacious family suites with kitchenettes",
+      "8 minutes from Al-Serkal Grand Mosque"
+    ],
+    roomTiers: [
+      {
+        name: "One-Bedroom Executive Studio Suite",
+        size: "62 m² / 667 sq ft",
+        capacity: "2 Guests",
+        description: "Modern open-plan residence featuring floor-to-ceiling windows with river views, fully equipped kitchen, king bed, and marble bathroom.",
+        features: ["Mekong / Tonle Sap River View", "In-Suite Kitchenette", "Private Riverview Balcony", "Qibla Direction Setup"]
+      },
+      {
+        name: "Two-Bedroom Family Confluence Suite",
+        size: "115 m² / 1,238 sq ft",
+        capacity: "4 Guests",
+        description: "Spacious dual-bedroom luxury apartment with separate living and dining salon, oversized private balcony overlooking the river junction, and washer/dryer.",
+        features: ["Two Master Bedrooms", "Panoramic River Balcony", "Full Gourmet Kitchen", "En-Suite Marble Baths"]
+      },
+      {
+        name: "Peninsula Grand Penthouse Residence",
+        size: "185 m² / 1,990 sq ft",
+        capacity: "6 Guests",
+        description: "Crown residence on the top floor with private sky terrace, expansive living room, dedicated concierge support, and private dining space.",
+        features: ["Private Rooftop Sky Terrace", "Confluence Sunset Panorama", "Butler & Concierge Service", "Private In-Suite Halal Dining"]
+      }
+    ],
+    guestReviews: [
+      {
+        author: "Kassim Al-Ghamdi",
+        rating: 5,
+        relativeTime: "1 month ago",
+        text: "Outstanding riverviews and luxury service on Chroy Changvar peninsula! Perfect family apartment layouts with kitchenettes and halal options."
+      }
+    ]
+  },
+  {
+    id: "song-saa-island",
+    name: "Song Saa Private Island",
+    location: "Koh Ouen & Koh Bong, Koh Rong Archipelago",
+    destination: "Koh Rong",
+    rating: 4.9,
+    price: 890,
+    lowestPrice: 890,
+    image: "https://images.squarespace-cdn.com/content/v1/5799a4e215d5d36e20516eb1/1585807987823-C2Q03P82KXX8F35S8Y00/Song+Saa+Private+Island+Overwater+Villa.jpg",
+    photoUrls: [
+      "https://images.squarespace-cdn.com/content/v1/5799a4e215d5d36e20516eb1/1585807987823-C2Q03P82KXX8F35S8Y00/Song+Saa+Private+Island+Overwater+Villa.jpg",
+      "https://images.squarespace-cdn.com/content/v1/5799a4e215d5d36e20516eb1/1585807991316-43C8LUS6P2KWW1YJ8O4S/Song+Saa+Private+Island+Aerial.jpg",
+      "https://images.squarespace-cdn.com/content/v1/5799a4e215d5d36e20516eb1/1585807993005-A1QY86G9A5T997H1Z5Y8/Song+Saa+Vista.jpg"
+    ],
+    galleryImages: [
+      "https://images.squarespace-cdn.com/content/v1/5799a4e215d5d36e20516eb1/1585807987823-C2Q03P82KXX8F35S8Y00/Song+Saa+Private+Island+Overwater+Villa.jpg",
+      "https://images.squarespace-cdn.com/content/v1/5799a4e215d5d36e20516eb1/1585807991316-43C8LUS6P2KWW1YJ8O4S/Song+Saa+Private+Island+Aerial.jpg"
+    ],
+    stars: 5,
+    prayerFacilities: "100% private pool villas with enclosed gardens and in-room prayer amenities.",
+    halalBreakfast: "Bespoke halal dining crafted by private chefs using fresh local organic seafood and produce.",
+    nearbyMosque: "Secluded Island Retreat (Private Space Provided)",
+    description: "An intimate eco-luxury island sanctuary offering complete privacy with walled overwater villas, custom halal gastronomy, and bioluminescent marine waters.",
+    extendedDescription: "An intimate eco-luxury island sanctuary in the pristine Koh Rong Archipelago. Offering complete privacy with walled private pool overwater villas, custom halal gastronomy, and crystal clear bioluminescent waters.",
+    layoutVersion: "v2",
+    placeId: "ChIJW0k5w_a_EDERk9uE2qX8pA",
+    address: "Koh Ouen and Koh Bong Islands, Koh Rong Archipelago, Cambodia",
+    latitude: 10.6094,
+    longitude: 103.2982,
+    reviewCount: 320,
+    website: "https://www.songsaa-privateisland.com/",
+    phoneNumber: "+855 23 886 750",
+    priceCategory: "$$$$$ Ultra Luxury Island",
+    propertyType: "5-Star Ultra-Luxury Private Island Resort",
+    checkIn: "14:00",
+    checkOut: "11:00",
+    muslimFriendlyBadge: "Halal Friendly Certified",
+    muslimFriendly: true,
+    amenities: [
+      "Private Pool Overwater Villas",
+      "Secluded Private Beach",
+      "100% Halal Tailored Menus",
+      "Zero-Alcohol Mocktail Lounge",
+      "Overwater Sanctuary Spa",
+      "Private Boat Transfers"
+    ],
+    highlights: [
+      "Total privacy in walled overwater pool villas",
+      "Bespoke Halal private dining",
+      "Bioluminescent nocturnal swimming",
+      "Private speed boat transfers from Sihanoukville"
+    ],
+    roomTiers: [
+      {
+        name: "One-Bedroom Jungle Pool Villa",
+        size: "135 m² / 1,453 sq ft",
+        capacity: "2 Guests",
+        description: "Secluded rainforest sanctuary featuring a private plunge pool, outdoor shower, double vanity, and complete privacy enclosure.",
+        features: ["Private Plunge Pool", "Rainforest & Sea Views", "Outdoor Sun Deck", "100% Privacy Enclosure"]
+      },
+      {
+        name: "One-Bedroom Overwater Pool Villa",
+        size: "135 m² / 1,453 sq ft",
+        capacity: "2 Guests",
+        description: "Stunning overwater villa with direct marine reserve stairs, glass floor viewport, private pool over the ocean, and daybed lounge.",
+        features: ["Private Oceanfront Pool", "Direct Sea Access", "Bioluminescent Water View", "Glass Floor Viewport"]
+      },
+      {
+        name: "Two-Bedroom Royal Overwater Villa",
+        size: "300 m² / 3,229 sq ft",
+        capacity: "4-6 Guests",
+        description: "Ultimate overwater sanctuary anchored over the coral reef with two master suites, private chef's kitchen, infinity pool, and dedicated butler.",
+        features: ["Private Infinity Pool", "Two Ocean Suites", "In-Villa Chef & Butler", "Private Boat Shuttle"]
+      }
+    ],
+    guestReviews: [
+      {
+        author: "Amina & Farhan",
+        rating: 5,
+        relativeTime: "2 months ago",
+        text: "The ultimate halal-friendly luxury island getaway. Absolute privacy for our pool villa and personalized dining by the beach."
+      }
+    ]
+  },
+  {
     id: "raffles-angkor",
     name: "Raffles Grand Hotel d'Angkor",
     location: "Charles de Gaulle, Siem Reap",
@@ -233,18 +402,14 @@ export const hotels: Hotel[] = [
     rating: 4.9,
     price: 450,
     lowestPrice: 450,
-    image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+    image: "https://raffles.com/assets/0/72/3850/3851/4132/d4484b9f-8898-44fb-81df-76e336e84992.jpg",
     photoUrls: [
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&q=80&w=1200"
+      "https://raffles.com/assets/0/72/3850/3851/4132/d4484b9f-8898-44fb-81df-76e336e84992.jpg",
+      "https://raffles.com/assets/0/72/3850/3851/4132/083ec0bf-0ed5-43a0-be87-5c2f0f4a956d.jpg"
     ],
     galleryImages: [
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200"
+      "https://raffles.com/assets/0/72/3850/3851/4132/d4484b9f-8898-44fb-81df-76e336e84992.jpg",
+      "https://raffles.com/assets/0/72/3850/3851/4132/083ec0bf-0ed5-43a0-be87-5c2f0f4a956d.jpg"
     ],
     stars: 5,
     prayerFacilities: "Complimentary prayer mats, Qibla indicators, and Quran available in-room upon request.",
@@ -253,7 +418,7 @@ export const hotels: Hotel[] = [
     description: "An iconic luxury landmark since 1932, restoring French colonial grandeur and royal Cambodian warmth. Features a majestic 35m swimming pool and lush tropical gardens.",
     extendedDescription: "Originally opened in 1932, Raffles Grand Hotel d'Angkor is a historic treasure set across 15 acres of landscaped French gardens in the heart of Siem Reap. For nearly a century, it has welcomed royalty, statesmen, and discerning travelers seeking the pinnacle of Cambodian hospitality.",
     layoutVersion: "v2",
-    placeId: "ChIJW1J-SamplePlaceIdSiemReap",
+    placeId: "ChIJy4vE_c2XEDERqN4R0m2W1kA",
     address: "1 Vithei Charles de Gaulle, Khum Svay Dangkum, Siem Reap, Cambodia",
     latitude: 13.3639,
     longitude: 103.8598,
@@ -282,18 +447,35 @@ export const hotels: Hotel[] = [
       "Dedicated Halal Gourmet Breakfast",
       "4 minutes from Neak Pean Siem Reap Mosque"
     ],
+    roomTiers: [
+      {
+        name: "State Suite King",
+        size: "58 m² / 624 sq ft",
+        capacity: "2 Guests",
+        description: "Classic French-colonial suite with teakwood flooring, high ceilings, clawfoot bathtub, and garden views.",
+        features: ["French Colonial Decor", "Raffles Butler Service", "Clawfoot Soaking Tub", "Qibla Kit"]
+      },
+      {
+        name: "Cabana Suite with Pool Access",
+        size: "72 m² / 775 sq ft",
+        capacity: "2 Guests + 1 Child",
+        description: "Ground floor suite opening directly onto lush tropical gardens and the landmark 35-meter pool.",
+        features: ["Direct Pool Terrace", "Private Garden Patio", "Halal Room Service", "Marble Bathroom"]
+      },
+      {
+        name: "Landmark Two-Bedroom Royal Suite",
+        size: "140 m² / 1,506 sq ft",
+        capacity: "4 Guests",
+        description: "Historic grand residence housing royal memorabilia, master balcony overlooking the royal gardens, and dining lounge.",
+        features: ["Royal Garden Balcony", "Separate Dining Saloon", "Raffles Master Butler", "Heritage Furnishings"]
+      }
+    ],
     guestReviews: [
       {
         author: "Tariq Al-Mansoor",
         rating: 5,
         relativeTime: "2 weeks ago",
         text: "Exceptional heritage stay! The hotel provided clean prayer mats and Qibla alignment upon arrival. The Halal breakfast served in our suite was immaculate."
-      },
-      {
-        author: "Dr. Sarah Jenkins",
-        rating: 5,
-        relativeTime: "a month ago",
-        text: "The grand pool and gardens are unmatched in Siem Reap. Historical charm with world-class modern service."
       }
     ]
   },
@@ -301,9 +483,19 @@ export const hotels: Hotel[] = [
     id: "rosewood-phnom-penh",
     name: "Rosewood Phnom Penh",
     location: "Vattanac Capital Tower, Phnom Penh",
+    destination: "Phnom Penh",
     rating: 4.8,
     price: 380,
-    image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200",
+    lowestPrice: 380,
+    image: "https://images.rosewoodhotels.com/is/image/rosewoodhotels/rwphp-exterior-dusk",
+    photoUrls: [
+      "https://images.rosewoodhotels.com/is/image/rosewoodhotels/rwphp-exterior-dusk",
+      "https://images.rosewoodhotels.com/is/image/rosewoodhotels/rwphp-sora-bar"
+    ],
+    galleryImages: [
+      "https://images.rosewoodhotels.com/is/image/rosewoodhotels/rwphp-exterior-dusk",
+      "https://images.rosewoodhotels.com/is/image/rosewoodhotels/rwphp-sora-bar"
+    ],
     stars: 5,
     prayerFacilities: "Prayer corner with direction vectors pre-configured. Ablution friendly bathrooms.",
     halalBreakfast: "Certified Halal breakfast buffet options and robust room-service menu.",
@@ -314,9 +506,17 @@ export const hotels: Hotel[] = [
     id: "shinta-mani-reap",
     name: "Shinta Mani Angkor & Bensley Collection",
     location: "French Quarter, Siem Reap",
+    destination: "Siem Reap",
     rating: 4.7,
     price: 290,
-    image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200",
+    lowestPrice: 290,
+    image: "https://shintamani.com/angkor/wp-content/uploads/sites/2/2021/04/Shinta-Mani-Angkor-Bensley-Collection-Villa.jpg",
+    photoUrls: [
+      "https://shintamani.com/angkor/wp-content/uploads/sites/2/2021/04/Shinta-Mani-Angkor-Bensley-Collection-Villa.jpg"
+    ],
+    galleryImages: [
+      "https://shintamani.com/angkor/wp-content/uploads/sites/2/2021/04/Shinta-Mani-Angkor-Bensley-Collection-Villa.jpg"
+    ],
     stars: 5,
     prayerFacilities: "A luxury prayer kit provided on arrival including mats, prayer robes, and digital compass.",
     halalBreakfast: "Fresh Halal-sourced ingredients with a private chef assigned for custom orders.",
@@ -327,9 +527,17 @@ export const hotels: Hotel[] = [
     id: "sofitel-phnom-penh",
     name: "Sofitel Phnom Penh Phokeethra",
     location: "Sothearos Blvd, Phnom Penh",
+    destination: "Phnom Penh",
     rating: 4.8,
     price: 320,
-    image: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&q=80&w=1200",
+    lowestPrice: 320,
+    image: "https://sofitel-phnompenh-phokeethra.com/wp-content/uploads/sites/112/2019/06/Sofitel-Phnom-Penh-Phokeethra-Exterior-Night.jpg",
+    photoUrls: [
+      "https://sofitel-phnompenh-phokeethra.com/wp-content/uploads/sites/112/2019/06/Sofitel-Phnom-Penh-Phokeethra-Exterior-Night.jpg"
+    ],
+    galleryImages: [
+      "https://sofitel-phnompenh-phokeethra.com/wp-content/uploads/sites/112/2019/06/Sofitel-Phnom-Penh-Phokeethra-Exterior-Night.jpg"
+    ],
     stars: 5,
     prayerFacilities: "Direction of Mecca marked in all suites. Private prayer spaces in hotel conference area.",
     halalBreakfast: "International buffet with extensive certified Halal culinary sections.",

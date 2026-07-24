@@ -831,6 +831,20 @@ const CAMBODIA_DESTINATIONS = [
   "Oddar Meanchey"
 ];
 
+function normalizeSearchText(text: string): string {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .replace(/\bpeninsular\b/g, "peninsula")
+    .replace(/\bpnom\b/g, "phnom")
+    .replace(/\bphenm\b/g, "phnom")
+    .replace(/\bponm\b/g, "phnom")
+    .replace(/\bpnhom\b/g, "phnom")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function autoTagCambodiaDestination(text: string): string {
   if (!text) return "Phnom Penh";
   const lower = text.toLowerCase();
@@ -851,8 +865,63 @@ function isInsideCambodia(address: string): boolean {
   return lower.includes("cambodia") || CAMBODIA_DESTINATIONS.some(d => lower.includes(d.toLowerCase()));
 }
 
-// Curated Cambodia Hotels catalog for import fallback when API key is pending
+// Curated Cambodia Hotels catalog for import & search when Google Places live key is pending or fallback
 const CURATED_CAMBODIA_GOOGLE_HOTELS = [
+  {
+    placeId: "ChIJ16M3gM-0EDERpT7Y4k3vE3w",
+    name: "The Peninsula Phnom Penh",
+    address: "Street 354, Chroy Changvar, Phnom Penh, Cambodia",
+    latitude: 11.5835,
+    longitude: 104.9312,
+    rating: 4.8,
+    reviewCount: 185,
+    website: "https://peninsulacambodia.com/",
+    phoneNumber: "+855 23 966 888",
+    destination: "Phnom Penh",
+    photoUrls: [
+      "https://peninsulacambodia.com/wp-content/uploads/2020/08/peninsula-phnom-penh-exterior.jpg",
+      "https://peninsulacambodia.com/wp-content/uploads/2020/08/peninsula-sky-pool.jpg",
+      "https://peninsulacambodia.com/wp-content/uploads/2020/08/peninsula-living-room.jpg"
+    ],
+    amenities: ["Rooftop Cantilevered Sky Pool", "Riverview Balconies", "Fitness & Wellness Center", "Halal Friendly Kitchen Options", "24/7 Concierge", "Prayer Amenities"],
+    priceCategory: "$$$$ Luxury Residences",
+    propertyType: "5-Star Luxury Serviced Residences & Hotel",
+    lowestPrice: 220,
+    checkIn: "14:00",
+    checkOut: "12:00",
+    editorialDescription: "Situated on the prestigious Chroy Changvar Peninsula where the Tonle Sap and Mekong rivers meet, The Peninsula Phnom Penh offers luxury residences with private river-view balconies, a landmark cantilevered sky pool, full fitness facilities, and seamless access to Phnom Penh's diplomatic heart and Al-Serkal Grand Mosque.",
+    guestReviews: [
+      { author: "Kassim Al-Ghamdi", rating: 5, text: "Outstanding riverviews and luxury service on Chroy Changvar peninsula! Perfect family apartment layouts with kitchenettes and halal options.", relativeTime: "1 month ago" },
+      { author: "Eileen M.", rating: 5, text: "The cantilevered rooftop pool overlooking the river confluence is spectacular.", relativeTime: "2 months ago" }
+    ]
+  },
+  {
+    placeId: "ChIJW0k5w_a_EDERk9uE2qX8pA",
+    name: "Song Saa Private Island",
+    address: "Koh Ouen and Koh Bong Islands, Koh Rong Archipelago, Cambodia",
+    latitude: 10.6094,
+    longitude: 103.2982,
+    rating: 4.9,
+    reviewCount: 320,
+    website: "https://www.songsaa-privateisland.com/",
+    phoneNumber: "+855 23 886 750",
+    destination: "Koh Rong",
+    photoUrls: [
+      "https://images.squarespace-cdn.com/content/v1/5799a4e215d5d36e20516eb1/1585807987823-C2Q03P82KXX8F35S8Y00/Song+Saa+Private+Island+Overwater+Villa.jpg",
+      "https://images.squarespace-cdn.com/content/v1/5799a4e215d5d36e20516eb1/1585807991316-43C8LUS6P2KWW1YJ8O4S/Song+Saa+Private+Island+Aerial.jpg",
+      "https://images.squarespace-cdn.com/content/v1/5799a4e215d5d36e20516eb1/1585807993005-A1QY86G9A5T997H1Z5Y8/Song+Saa+Vista.jpg"
+    ],
+    amenities: ["Private Pool Overwater Villas", "Secluded Private Beach", "100% Halal Tailored Menus", "Zero-Alcohol Mocktail Lounge", "Overwater Sanctuary Spa", "Private Boat Transfers"],
+    priceCategory: "$$$$$ Ultra Luxury Island",
+    propertyType: "5-Star Ultra-Luxury Private Island Resort",
+    lowestPrice: 890,
+    checkIn: "14:00",
+    checkOut: "11:00",
+    editorialDescription: "An intimate eco-luxury island sanctuary in the pristine Koh Rong Archipelago. Offering complete privacy with walled private pool overwater villas, custom halal gastronomy, and crystal clear bioluminescent waters.",
+    guestReviews: [
+      { author: "Amina & Farhan", rating: 5, text: "The ultimate halal-friendly luxury island getaway. Absolute privacy for our pool villa and personalized dining by the beach.", relativeTime: "2 months ago" }
+    ]
+  },
   {
     placeId: "ChIJy4vE_c2XEDERqN4R0m2W1kA",
     name: "Raffles Grand Hotel d'Angkor",
@@ -865,9 +934,8 @@ const CURATED_CAMBODIA_GOOGLE_HOTELS = [
     phoneNumber: "+855 63 963 888",
     destination: "Siem Reap",
     photoUrls: [
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&q=80&w=1200"
+      "https://raffles.com/assets/0/72/3850/3851/4132/d4484b9f-8898-44fb-81df-76e336e84992.jpg",
+      "https://raffles.com/assets/0/72/3850/3851/4132/083ec0bf-0ed5-43a0-be87-5c2f0f4a956d.jpg"
     ],
     amenities: ["Swimming Pool", "Free WiFi", "Spa", "Halal Friendly Kitchen", "Airport Shuttle", "Prayer Room Facilities", "Fitness Center"],
     priceCategory: "$$$$ Luxury",
@@ -893,8 +961,8 @@ const CURATED_CAMBODIA_GOOGLE_HOTELS = [
     phoneNumber: "+855 23 936 888",
     destination: "Phnom Penh",
     photoUrls: [
-      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200"
+      "https://images.rosewoodhotels.com/is/image/rosewoodhotels/rwphp-exterior-dusk",
+      "https://images.rosewoodhotels.com/is/image/rosewoodhotels/rwphp-sora-bar"
     ],
     amenities: ["Rooftop Pool", "Panoramas", "Free High-Speed WiFi", "Spa & Wellness", "Halal Dining Options", "Chauffeur Service"],
     priceCategory: "$$$$ Ultra Luxury",
@@ -905,32 +973,6 @@ const CURATED_CAMBODIA_GOOGLE_HOTELS = [
     editorialDescription: "Soaring 188 meters above Phnom Penh in the Vattanac Capital Tower, Rosewood Phnom Penh offers unmatched 360-degree views of the Mekong River and the capital skyline. Features world-class wellness facilities and seamless proximity to Al-Serkal Grand Mosque.",
     guestReviews: [
       { author: "Dr. Hassan Al-Kuwari", rating: 5, text: "Unrivaled luxury in Phnom Penh. The river views from the 37th floor are breathtaking. Dedicated Halal menu items were prepared with absolute perfection.", relativeTime: "3 weeks ago" }
-    ]
-  },
-  {
-    placeId: "ChIJW0k5w_a_EDERk9uE2qX8pA",
-    name: "Song Saa Private Island",
-    address: "Koh Ouen and Koh Bong Islands, Koh Rong Archipelago, Cambodia",
-    latitude: 10.6094,
-    longitude: 103.2982,
-    rating: 4.9,
-    reviewCount: 320,
-    website: "https://www.songsaa-privateisland.com/",
-    phoneNumber: "+855 23 886 750",
-    destination: "Koh Rong",
-    photoUrls: [
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200"
-    ],
-    amenities: ["Private Pool Villas", "Secluded Beach", "100% Halal Tailored Menus", "Zero-Alcohol Mocktail Lounge", "Overwater Spa", "Private Boat Transfers"],
-    priceCategory: "$$$$$ Private Island",
-    propertyType: "5-Star Ultra-Luxury Island Resort",
-    lowestPrice: 890,
-    checkIn: "14:00",
-    checkOut: "11:00",
-    editorialDescription: "An intimate eco-luxury island sanctuary in the pristine Koh Rong Archipelago. Offering complete privacy with walled private pool overwater villas, custom halal gastronomy, and crystal clear bioluminescent waters.",
-    guestReviews: [
-      { author: "Amina & Farhan", rating: 5, text: "The ultimate halal-friendly luxury island getaway. Absolute privacy for our pool villa and personalized dining by the beach.", relativeTime: "2 months ago" }
     ]
   },
   {
@@ -945,7 +987,7 @@ const CURATED_CAMBODIA_GOOGLE_HOTELS = [
     phoneNumber: "+855 63 964 123",
     destination: "Siem Reap",
     photoUrls: [
-      "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200"
+      "https://shintamani.com/angkor/wp-content/uploads/sites/2/2021/04/Shinta-Mani-Angkor-Bensley-Collection-Villa.jpg"
     ],
     amenities: ["Private Pool Villas", "Boutique Spa", "Butler Service", "Prayer Room Kit", "Custom Halal Dining"],
     priceCategory: "$$$$ Boutique Luxury",
@@ -970,7 +1012,7 @@ const CURATED_CAMBODIA_GOOGLE_HOTELS = [
     phoneNumber: "+855 23 999 200",
     destination: "Phnom Penh",
     photoUrls: [
-      "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&q=80&w=1200"
+      "https://sofitel-phnompenh-phokeethra.com/wp-content/uploads/sites/112/2019/06/Sofitel-Phnom-Penh-Phokeethra-Exterior-Night.jpg"
     ],
     amenities: ["Riverside Swimming Pool", "Tennis Courts", "Certified Halal Section", "Spa", "Qibla Directions"],
     priceCategory: "$$$ Luxury",
@@ -988,12 +1030,14 @@ const CURATED_CAMBODIA_GOOGLE_HOTELS = [
 // Endpoint 1: Search Hotels via Google Places (or curated fallback)
 app.get("/api/google-places/search-hotels", async (req, res) => {
   try {
-    const query = (req.query.q as string || req.query.query as string || "Cambodia Luxury Hotels").trim();
+    const rawQuery = (req.query.q as string || req.query.query as string || "Cambodia Luxury Hotels").trim();
     const apiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY;
 
+    const normQuery = normalizeSearchText(rawQuery);
+
     if (apiKey && apiKey.length > 10) {
-      // Call Google Places Text Search API
-      const googleUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query + " Cambodia")}&type=lodging&key=${apiKey}`;
+      // Call Google Places Text Search API without overly restrictive type filter
+      const googleUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(rawQuery + " Cambodia")}&key=${apiKey}`;
       const apiRes = await fetch(googleUrl);
       if (apiRes.ok) {
         const json: any = await apiRes.json();
@@ -1028,17 +1072,26 @@ app.get("/api/google-places/search-hotels", async (req, res) => {
       }
     }
 
-    // Fallback: Filter curated Cambodia Google Hotels catalog
-    const qLower = query.toLowerCase();
+    // Search Curated Catalog with Fuzzy Normalization (handles Peninsular -> Peninsula, Pnom -> Phnom, etc.)
+    const normTokens = normQuery.split(/\s+/).filter(Boolean);
+
     const filtered = CURATED_CAMBODIA_GOOGLE_HOTELS.filter(h => {
-      return (
-        h.name.toLowerCase().includes(qLower) ||
-        h.destination.toLowerCase().includes(qLower) ||
-        h.address.toLowerCase().includes(qLower) ||
-        qLower.includes("hotel") ||
-        qLower.includes("cambodia") ||
-        qLower.length < 3
-      );
+      const normTarget = normalizeSearchText(`${h.name} ${h.destination} ${h.address} ${h.propertyType} ${h.editorialDescription}`);
+      
+      // Exact substring match on normalized text
+      if (normTarget.includes(normQuery)) return true;
+      
+      // Token-based match: every word in query appears in target
+      if (normTokens.length > 0 && normTokens.every(tok => normTarget.includes(tok))) {
+        return true;
+      }
+
+      // Partial match for longer tokens (e.g., 'peninsula' or 'phnom')
+      if (normTokens.some(tok => tok.length >= 4 && normTarget.includes(tok))) {
+        return true;
+      }
+
+      return false;
     });
 
     const results = filtered.length > 0 ? filtered : CURATED_CAMBODIA_GOOGLE_HOTELS;
@@ -1134,6 +1187,17 @@ app.get("/api/google-places/hotel-details", async (req, res) => {
     }
 
     // Fallback item for testing
+    const NO_PHOTO_AVAILABLE_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" fill="none">
+        <rect width="800" height="600" fill="#F8FAFC"/>
+        <rect x="250" y="180" width="300" height="200" rx="16" fill="#F1F5F9" stroke="#94A3B8" stroke-width="2" stroke-dasharray="6 6"/>
+        <path d="M350 260C361.046 260 370 251.046 370 240C370 228.954 361.046 220 350 220C338.954 220 330 228.954 330 240C330 251.046 338.954 260 350 260Z" fill="#94A3B8"/>
+        <path d="M290 330L340 280L380 310L440 250L510 330H290Z" fill="#CBD5E1"/>
+        <text x="400" y="420" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#475569" text-anchor="middle">No Photo Available</text>
+        <text x="400" y="450" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#94A3B8" text-anchor="middle">Property images pending direct Google Places update</text>
+      </svg>
+    `);
+
     const fallbackItem = {
       placeId: placeId,
       name: "Grand Cambodia Hotel & Spa",
@@ -1146,7 +1210,7 @@ app.get("/api/google-places/hotel-details", async (req, res) => {
       phoneNumber: "+855 23 123 456",
       destination: "Siem Reap",
       photoUrls: [
-        "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200"
+        NO_PHOTO_AVAILABLE_PLACEHOLDER
       ],
       amenities: ["Swimming Pool", "Free WiFi", "Spa", "Halal Certified Dining", "Prayer Room"],
       lastUpdated: new Date().toISOString(),
