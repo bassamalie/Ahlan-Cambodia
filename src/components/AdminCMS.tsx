@@ -815,7 +815,9 @@ export default function AdminCMS({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: item.url.trim() })
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch { data = { success: false, error: text }; }
 
       if (data.success) {
         setDiningSocialVideos(prev => {
@@ -1098,6 +1100,8 @@ export default function AdminCMS({
   // --- Google Places Hotel Import & Refresh States ---
   const [gpSearchQuery, setGpSearchQuery] = useState("");
   const [gpSearchResults, setGpSearchResults] = useState<any[]>([]);
+  const [gpSearchSource, setGpSearchSource] = useState<string | null>(null);
+  const [isGpKeyConfigured, setIsGpKeyConfigured] = useState<boolean | null>(null);
   const [isSearchingGp, setIsSearchingGp] = useState(false);
   const [isImportingGpId, setIsImportingGpId] = useState<string | null>(null);
   const [refreshingHotelId, setRefreshingHotelId] = useState<string | null>(null);
@@ -1108,11 +1112,15 @@ export default function AdminCMS({
     setIsSearchingGp(true);
     try {
       const res = await fetch(`/api/google-places/search-hotels?q=${encodeURIComponent(gpSearchQuery)}`);
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch { data = { success: false, error: text || "Rate limit or non-JSON response from server." }; }
       if (data.success && Array.isArray(data.hotels)) {
         setGpSearchResults(data.hotels);
+        setGpSearchSource(data.source || null);
+        setIsGpKeyConfigured(typeof data.apiKeyConfigured === "boolean" ? data.apiKeyConfigured : null);
         if (data.hotels.length === 0) {
-          triggerToast("No hotel results in Cambodia found.", "info");
+          triggerToast("No matching hotels found.", "info");
         }
       } else {
         triggerToast(data.error || "Search failed.", "error");
@@ -1129,7 +1137,9 @@ export default function AdminCMS({
     setIsImportingGpId(placeId);
     try {
       const res = await fetch(`/api/google-places/hotel-details?placeId=${encodeURIComponent(placeId)}`);
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch { data = { success: false, error: text || "Rate limit or non-JSON response from server." }; }
       if (!data.success) {
         alert(data.error || "Failed to import hotel.");
         return;
@@ -1172,8 +1182,9 @@ export default function AdminCMS({
         phoneNumber: h.phoneNumber,
         lastUpdated: new Date().toISOString(),
         layoutVersion: "v2",
-        muslimFriendlyBadge: "Halal Friendly Certified",
-        muslimFriendly: true,
+        isGoogleImport: true,
+        muslimFriendlyBadge: undefined,
+        muslimFriendly: false,
         priceCategory: h.priceCategory || "$$$$ Luxury",
         propertyType: h.propertyType || "5-Star Luxury Resort",
         checkIn: h.checkIn || "14:00",
@@ -1205,7 +1216,9 @@ export default function AdminCMS({
     setRefreshingHotelId(hotelItem.id);
     try {
       const res = await fetch(`/api/google-places/hotel-details?placeId=${encodeURIComponent(hotelItem.placeId)}`);
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch { data = { success: false, error: text || "Rate limit or non-JSON response from server." }; }
       if (!data.success) {
         alert(data.error || "Failed to refresh hotel.");
         return;
@@ -4980,12 +4993,20 @@ export default function AdminCMS({
                           <span>Import Hotel via Google Places API</span>
                         </h3>
                         <p className="text-[11px] text-slate-500 font-sans">
-                          Search for hotels inside Cambodia (e.g. Raffles Siem Reap, Rosewood Phnom Penh, Song Saa) to automatically fetch real photos, rating, and place details into Firebase with layoutVersion="v2".
+                          Search for hotels inside Cambodia (e.g. Fairfield by Marriott, Rosewood Phnom Penh, Raffles Siem Reap) to automatically fetch real photos, ratings, and details into Firebase.
                         </p>
                       </div>
-                      <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg shrink-0">
-                        Cambodia Verification Enabled
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isGpKeyConfigured === false ? (
+                          <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg">
+                            ⚠️ GOOGLE_PLACES_API_KEY Missing (Curated Catalog Mode)
+                          </span>
+                        ) : (
+                          <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg">
+                            Cambodia Verification Enabled
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <form onSubmit={handleSearchGooglePlaces} className="flex gap-2">

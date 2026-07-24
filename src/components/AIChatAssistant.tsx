@@ -49,7 +49,14 @@ export default function AIChatAssistant() {
         })
       });
 
-      const data = await response.json();
+      const text = await response.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { error: text || "Server returned non-JSON response." };
+      }
+
       if (data.error) {
         setMessages((prev) => [
           ...prev,
@@ -58,7 +65,7 @@ export default function AIChatAssistant() {
       } else {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: data.content }
+          { role: "assistant", content: data.content || "No response content received." }
         ]);
       }
     } catch (e: any) {

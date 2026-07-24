@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Hotel, Experience } from "../types";
 import { hotels } from "../data";
+import { NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
 
 interface HotelDetailPageProps {
   hotel: Hotel;
@@ -376,7 +377,7 @@ export default function HotelDetailPage({
     halalBreakfastDetail: hotel.halalBreakfast,
     mosqueDetail: hotel.nearbyMosque,
     amenitiesList: (hotel.amenities || ["Free Wifi", "Halal Dining", "Pool"]).map(a => ({ name: a, category: "leisure" })),
-    galleryImages: [hotel.image, "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200"],
+    galleryImages: (hotel.photoUrls && hotel.photoUrls.length > 0) ? hotel.photoUrls : [hotel.image || NO_PHOTO_AVAILABLE_PLACEHOLDER],
     roomTiers: [
       {
         name: "Deluxe Suite",
@@ -672,11 +673,6 @@ export default function HotelDetailPage({
               </span>
               <span className="hidden sm:inline text-white/30">|</span>
               <span className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-slate-300" />
-                From ${hotel.price} USD / Night
-              </span>
-              <span className="hidden sm:inline text-white/30">|</span>
-              <span className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-slate-300" />
                 <span><span className="text-white font-sans font-medium">{hotel.location}</span></span>
               </span>
@@ -730,9 +726,6 @@ export default function HotelDetailPage({
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-            <span className="text-white/90 font-mono text-xs sm:text-sm">
-              From <span className="text-white font-bold font-sans">${hotel.price}</span> / Night
-            </span>
             <a
               href={stay22Url}
               target="_blank"

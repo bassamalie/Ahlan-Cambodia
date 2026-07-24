@@ -142,6 +142,7 @@ export interface Hotel {
   destination?: string;
   photoUrls?: string[];
   lastUpdated?: string;
+  isGoogleImport?: boolean;
   muslimFriendlyBadge?: string;
   muslimFriendly?: boolean;
   lowestPrice?: number;

@@ -35,14 +35,32 @@ export default function PrayerWeatherWidget() {
     setLoading(true);
     try {
       const prayerRes = await fetch(`/api/prayer-times?city=${encodeURIComponent(city)}`);
-      const prayerJson = await prayerRes.json();
-      setPrayerData(prayerJson);
+      if (prayerRes.ok) {
+        const text = await prayerRes.text();
+        try {
+          const prayerJson = JSON.parse(text);
+          if (prayerJson && prayerJson.prayerTimes) {
+            setPrayerData(prayerJson);
+          }
+        } catch {
+          // Response was text or rate limit message
+        }
+      }
 
       const weatherRes = await fetch("/api/weather");
-      const weatherJson = await weatherRes.json();
-      setWeatherData(weatherJson);
+      if (weatherRes.ok) {
+        const text = await weatherRes.text();
+        try {
+          const weatherJson = JSON.parse(text);
+          if (weatherJson) {
+            setWeatherData(weatherJson);
+          }
+        } catch {
+          // Response was text or rate limit message
+        }
+      }
     } catch (e) {
-      console.error("Error fetching widget data:", e);
+      console.warn("Could not load dynamic widget data, using defaults:", e);
     } finally {
       setLoading(false);
     }

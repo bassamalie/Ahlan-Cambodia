@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Destination, Hotel, TourPackage, Experience, Mosque, Restaurant, TravelGuide } from "../types";
 import { SocialVideoCard } from "./SocialVideoCard";
+import { NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
 
 interface DestinationDetailPageProps {
   destination: Destination;
@@ -767,7 +768,13 @@ export default function DestinationDetailPage({
                   className="bg-white rounded-3xl overflow-hidden border border-brand-blue-accent/15 shadow-sm hover:scale-[1.01] hover:border-brand-blue-accent/30 hover:shadow-lg transition-luxury flex flex-col justify-between"
                 >
                   <div className="h-60 relative overflow-hidden">
-                    <img src={hotel.image} alt={hotel.name} className="w-full h-full object-cover" />
+                    <img 
+                      src={hotel.image || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
+                      alt={hotel.name} 
+                      className="w-full h-full object-cover" 
+                      referrerPolicy="no-referrer"
+                      onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
                     
                     <div className="absolute top-4 left-4 flex gap-1 bg-brand-blue/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-amber-500/20 text-xs font-mono text-amber-400">
@@ -809,10 +816,7 @@ export default function DestinationDetailPage({
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-brand-blue-accent/10 flex items-center justify-between text-xs font-mono">
-                      <span className="text-brand-charcoal/60">
-                        From <span className="text-brand-green font-serif font-bold text-lg sm:text-2xl">${hotel.price}</span> / night
-                      </span>
+                    <div className="pt-4 border-t border-brand-blue-accent/10 flex items-center justify-end text-xs font-mono">
                       <a 
                         href={`/hotels/${(hotel.name || hotel.id).replace(/\s+/g, "-")}`}
                         onClick={(e) => {
@@ -821,9 +825,9 @@ export default function DestinationDetailPage({
                             onSelectItem("hotel", hotel);
                           }
                         }}
-                        className="bg-brand-blue hover:bg-brand-blue-accent text-white font-mono text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-xl border border-brand-blue-accent/20 transition-luxury shadow-md cursor-pointer inline-block text-center"
+                        className="w-full sm:w-auto bg-brand-blue hover:bg-brand-blue-accent text-white font-mono text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-xl border border-brand-blue-accent/20 transition-luxury shadow-md cursor-pointer inline-block text-center"
                       >
-                        Explore →
+                        Explore Property →
                       </a>
                     </div>
                   </div>

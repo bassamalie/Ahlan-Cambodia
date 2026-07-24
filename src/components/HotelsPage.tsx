@@ -3,7 +3,7 @@ import {
   Compass, Heart, Search, ArrowLeft, SlidersHorizontal, MapPin, Sparkles, CheckCircle, Star, Info 
 } from "lucide-react";
 import { Hotel } from "../types";
-import HotelComparer from "./HotelComparer";
+import { NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
 
 interface HotelsPageProps {
   hotels: Hotel[];
@@ -22,7 +22,7 @@ export default function HotelsPage({
 }: HotelsPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStars, setSelectedStars] = useState<number | "All">("All");
-  const [sortBy, setSortBy] = useState<"rating" | "price" | "name">("rating");
+  const [sortBy, setSortBy] = useState<"rating" | "name">("rating");
 
   // Filter and sort hotels
   const filteredAndSortedHotels = useMemo(() => {
@@ -31,8 +31,8 @@ export default function HotelsPage({
         hotel.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         hotel.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
         hotel.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        hotel.prayerFacilities.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        hotel.halalBreakfast.toLowerCase().includes(searchQuery.toLowerCase());
+        (hotel.prayerFacilities && hotel.prayerFacilities.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (hotel.halalBreakfast && hotel.halalBreakfast.toLowerCase().includes(searchQuery.toLowerCase()));
       
       const matchesStars = selectedStars === "All" || hotel.stars === selectedStars;
       
@@ -41,8 +41,6 @@ export default function HotelsPage({
 
     if (sortBy === "rating") {
       result.sort((a, b) => b.rating - a.rating);
-    } else if (sortBy === "price") {
-      result.sort((a, b) => a.price - b.price);
     } else if (sortBy === "name") {
       result.sort((a, b) => a.name.localeCompare(b.name));
     }
@@ -118,11 +116,10 @@ export default function HotelsPage({
                 <span className="hidden sm:inline">Sort:</span>
                 <select 
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as "rating" | "price" | "name")}
+                  onChange={(e) => setSortBy(e.target.value as "rating" | "name")}
                   className="bg-transparent border-none outline-none font-bold text-brand-charcoal text-xs cursor-pointer"
                 >
                   <option value="rating">Highest Rating</option>
-                  <option value="price">Price: Low to High</option>
                   <option value="name">Alphabetical (A-Z)</option>
                 </select>
               </div>
@@ -149,7 +146,7 @@ export default function HotelsPage({
 
         </div>
 
-        {/* --- Hotels Grid --- */}
+        {/* --- Hotels Grid (4 in a row) --- */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <p className="text-xs font-mono text-brand-charcoal/50">
@@ -170,99 +167,82 @@ export default function HotelsPage({
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {filteredAndSortedHotels.map((hotel) => {
                 const isSaved = wishlist.includes(hotel.id);
+                const features = (hotel.amenities && hotel.amenities.length > 0)
+                  ? hotel.amenities.slice(0, 3)
+                  : ["Luxury Swimming Pool & Deck", "Free High-Speed Wi-Fi", "Full Service Spa & Wellness"];
                 
                 return (
                   <div 
                     key={hotel.id}
-                    className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.01] transition-luxury flex flex-col justify-between border border-brand-blue-accent/15"
+                    className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.01] transition-luxury flex flex-col justify-between border border-brand-blue-accent/15"
                   >
                     {/* Cover image with rating */}
-                    <div className="relative h-64 sm:h-72 overflow-hidden">
+                    <div className="relative h-52 sm:h-56 overflow-hidden">
                       <img 
-                        src={hotel.image} 
+                        src={hotel.image || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
                         alt={hotel.name} 
                         className="w-full h-full object-cover hover:scale-105 transition-all duration-700"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                       
                       {/* Floating Stars Tag */}
-                      <div className="absolute top-4 left-4 flex gap-1 bg-brand-blue/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-amber-500/20 text-xs font-mono text-amber-400">
-                        {Array.from({ length: hotel.stars }).map((_, i) => (
-                          <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      <div className="absolute top-3 left-3 flex gap-0.5 bg-brand-blue/80 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-amber-500/20 text-[10px] font-mono text-amber-400">
+                        {Array.from({ length: hotel.stars || 5 }).map((_, i) => (
+                          <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
                         ))}
                       </div>
 
                       {/* Floating Save button */}
                       <button 
                         onClick={() => onToggleWishlist(hotel.id)}
-                        className="absolute top-4 right-4 bg-white/90 hover:bg-white text-brand-charcoal p-2.5 rounded-full shadow border border-brand-blue-accent/20 transition-all cursor-pointer"
+                        className="absolute top-3 right-3 bg-white/90 hover:bg-white text-brand-charcoal p-2 rounded-full shadow border border-brand-blue-accent/20 transition-all cursor-pointer"
                         title={isSaved ? "Saved to wishlist" : "Save Hotel"}
                       >
-                        <Heart className={`w-4 h-4 ${isSaved ? "text-brand-red fill-brand-red" : "text-brand-charcoal/60"}`} />
+                        <Heart className={`w-3.5 h-3.5 ${isSaved ? "text-brand-red fill-brand-red" : "text-brand-charcoal/60"}`} />
                       </button>
 
-                      {/* Region & rating badge */}
-                      <div className="absolute bottom-4 left-6 right-6 text-white space-y-1">
-                        <h3 className="text-xl sm:text-2xl font-serif font-bold tracking-wide">
+                      {/* Title & Region */}
+                      <div className="absolute bottom-3 left-4 right-4 text-white space-y-0.5">
+                        <h3 className="text-base font-serif font-bold tracking-wide line-clamp-1">
                           {hotel.name}
                         </h3>
-                        <p className="text-xs text-white/80 flex items-center gap-1 font-mono">
-                          <MapPin className="w-3.5 h-3.5 text-brand-blue-accent" />
+                        <p className="text-[11px] text-white/80 flex items-center gap-1 font-mono truncate">
+                          <MapPin className="w-3 h-3 text-brand-blue-accent shrink-0" />
                           {hotel.location}
                         </p>
                       </div>
                     </div>
 
                     {/* Card Content body */}
-                    <div className="p-6 sm:p-8 flex-1 flex flex-col justify-between space-y-6">
-                      <p className="text-brand-charcoal/80 text-sm leading-relaxed font-sans">
+                    <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
+                      <p className="text-brand-charcoal/80 text-xs leading-relaxed font-sans line-clamp-2">
                         {hotel.description}
                       </p>
 
-                      {/* Muslim-friendly provisions */}
-                      <div className="space-y-3 bg-brand-lightbg p-5 rounded-2xl border border-brand-blue-accent/15">
-                        <span className="text-[10px] font-mono text-brand-blue-accent tracking-wider uppercase font-bold flex items-center gap-1">
-                          <Sparkles className="w-3.5 h-3.5" />
-                          Islamic Compliancy Attributes
+                      {/* 3 Hotel Features */}
+                      <div className="space-y-2 bg-brand-lightbg p-3 rounded-xl border border-brand-blue-accent/15">
+                        <span className="text-[9px] font-mono text-brand-blue-accent tracking-wider uppercase font-bold flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" />
+                          Hotel Features
                         </span>
                         
-                        <div className="space-y-2.5 text-xs text-brand-charcoal/85">
-                          <div className="flex items-start gap-2 bg-white p-2 rounded-xl border border-brand-blue-accent/5">
-                            <CheckCircle className="w-4 h-4 text-brand-green shrink-0 mt-0.5" />
-                            <div>
-                              <p className="font-bold text-brand-charcoal">{hotel.halalBreakfastLabel || "Gourmet Dining"}</p>
-                              <p className="text-[11px] text-brand-charcoal/70">{hotel.halalBreakfast}</p>
+                        <div className="space-y-1.5 text-[11px] text-brand-charcoal/85">
+                          {features.map((feat, idx) => (
+                            <div key={idx} className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-brand-blue-accent/5">
+                              <CheckCircle className="w-3 h-3 text-brand-green shrink-0" />
+                              <span className="font-medium text-brand-charcoal truncate">{feat}</span>
                             </div>
-                          </div>
-
-                          <div className="flex items-start gap-2 bg-white p-2 rounded-xl border border-brand-blue-accent/5">
-                            <CheckCircle className="w-4 h-4 text-brand-green shrink-0 mt-0.5" />
-                            <div>
-                              <p className="font-bold text-brand-charcoal">{hotel.prayerFacilitiesLabel || "Prayer Provisions"}</p>
-                              <p className="text-[11px] text-brand-charcoal/70">{hotel.prayerFacilities}</p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-start gap-2 bg-white p-2 rounded-xl border border-brand-blue-accent/5">
-                            <Info className="w-4 h-4 text-brand-blue-accent shrink-0 mt-0.5" />
-                            <div>
-                              <p className="font-bold text-brand-charcoal">{hotel.nearbyMosqueLabel || "Nearby Mosques"}</p>
-                              <p className="text-[11px] text-brand-charcoal/70">{hotel.nearbyMosque}</p>
-                            </div>
-                          </div>
+                          ))}
                         </div>
                       </div>
 
                       {/* Card Footer action button */}
-                      <div className="pt-5 border-t border-brand-blue-accent/10 flex items-center justify-between">
-                        <div>
-                          <span className="text-[9px] font-mono text-brand-charcoal/50 block">EXCLUSIVE RATE FROM</span>
-                          <span className="text-lg font-serif font-bold text-brand-green">${hotel.price} <span className="text-[10px] font-mono font-normal text-brand-charcoal/50">/ NIGHT</span></span>
-                        </div>
-                        
+                      <div className="pt-3 border-t border-brand-blue-accent/10 flex items-center justify-end">
                         <a 
                           href={`/hotels/${(hotel.name || hotel.id).replace(/\s+/g, "-")}`}
                           onClick={(e) => {
@@ -271,9 +251,9 @@ export default function HotelsPage({
                               onSelectItem(hotel);
                             }
                           }}
-                          className="bg-brand-blue hover:bg-brand-blue-accent text-white font-mono text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-xl border border-brand-blue-accent/20 transition-luxury shadow-md cursor-pointer inline-block text-center"
+                          className="w-full bg-brand-blue hover:bg-brand-blue-accent text-white font-mono text-xs font-bold uppercase tracking-widest py-2.5 rounded-xl border border-brand-blue-accent/20 transition-luxury shadow-md cursor-pointer text-center"
                         >
-                          Explore →
+                          Explore Property →
                         </a>
                       </div>
 
@@ -285,15 +265,8 @@ export default function HotelsPage({
           )}
         </div>
 
-        {/* --- Unified Comparison Module --- */}
-        <div className="pt-4 border-t border-brand-blue-accent/10">
-          <HotelComparer 
-            wishlistedHotelIds={wishlist} 
-            toggleWishlist={onToggleWishlist} 
-          />
-        </div>
-
       </div>
     </div>
   );
 }
+

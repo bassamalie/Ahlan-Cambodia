@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { destinations, tourPackages, experiences, hotels, restaurants, mosques, travelGuides, testimonials } from "./data";
 import { Destination, TourPackage, Experience, Hotel, Restaurant, Mosque, TravelGuide } from "./types";
+import { NO_PHOTO_AVAILABLE_PLACEHOLDER } from "./googlePlacesPhotoService";
 import InteractiveMap from "./components/InteractiveMap";
 import PrayerWeatherWidget from "./components/PrayerWeatherWidget";
 import AIChatAssistant from "./components/AIChatAssistant";
@@ -1882,7 +1883,13 @@ export default function App() {
               return (
                 <div key={hotel.id} className="bg-white rounded-3xl border border-brand-blue-accent/15 shadow-sm overflow-hidden flex flex-col sm:flex-row hover:border-brand-blue-accent transition-all">
                   <div className="sm:w-2/5 relative min-h-[180px]">
-                    <img src={hotel.image} alt={hotel.name} className="absolute inset-0 w-full h-full object-cover" />
+                    <img 
+                      src={hotel.image || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
+                      alt={hotel.name} 
+                      className="absolute inset-0 w-full h-full object-cover" 
+                      referrerPolicy="no-referrer"
+                      onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
+                    />
                     <button
                       onClick={() => toggleWishlist(hotel.id, "hotels")}
                       className="absolute top-3 right-3 bg-white/80 hover:bg-white p-2 rounded-xl transition-all shadow"
@@ -2523,106 +2530,67 @@ export default function App() {
           }}
         />
       ) : currentView === "hotel-detail" && (activeHotel || allHotels[0]) ? (
-        (activeHotel || allHotels[0])?.layoutVersion === "v2" ? (
-          <HotelDetailV2
-            hotel={activeHotel || allHotels[0]}
-            onBack={() => {
-              if (activeDestination) {
-                setCurrentView("destination-detail");
-              } else {
-                setCurrentView("hotels");
-              }
+        <HotelDetailV2
+          hotel={activeHotel || allHotels[0]}
+          allHotels={allHotels}
+          allRestaurants={allRestaurants}
+          allMosques={allMosques}
+          onSelectHotel={(h) => {
+            setActiveHotel(h);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          onNavigateView={(view) => {
+            setCurrentView(view as any);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          onBack={() => {
+            if (activeDestination) {
+              setCurrentView("destination-detail");
+            } else {
+              setCurrentView("hotels");
+            }
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          onSelectDestination={(destName) => {
+            const found = allDestinations.find(d => d.name.toLowerCase().includes(destName.toLowerCase()));
+            if (found) {
+              setActiveDestination(found);
+              setCurrentView("destination-detail");
               window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            onSelectDestination={(destName) => {
-              const found = allDestinations.find(d => d.name.toLowerCase().includes(destName.toLowerCase()));
-              if (found) {
-                setActiveDestination(found);
-                setCurrentView("destination-detail");
-                window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }}
+          onRefreshHotel={async (hotelId) => {
+            const target = allHotels.find(h => h.id === hotelId);
+            if (!target?.placeId) {
+              alert("This hotel has no Google Place ID registered. Please import it via Admin CMS.");
+              return;
+            }
+            const res = await fetch(`/api/google-places/hotel-details?placeId=${encodeURIComponent(target.placeId)}`);
+            if (res.ok) {
+              try {
+                const text = await res.text();
+                const data = JSON.parse(text);
+                if (data.success && data.hotel) {
+                  const updated: Hotel = {
+                    ...target,
+                    rating: data.hotel.rating || target.rating,
+                    reviewCount: data.hotel.reviewCount || target.reviewCount,
+                    phoneNumber: data.hotel.phoneNumber || target.phoneNumber,
+                    website: data.hotel.website || target.website,
+                    photoUrls: data.hotel.photoUrls?.length ? data.hotel.photoUrls : target.photoUrls,
+                    image: data.hotel.photoUrls?.[0] || target.image,
+                    lastUpdated: new Date().toISOString(),
+                    guestReviews: data.hotel.guestReviews || target.guestReviews
+                  };
+                  await handleUpdateHotel(updated);
+                }
+              } catch {
+                alert("Unable to parse Google Places response.");
               }
-            }}
-            onRefreshHotel={async (hotelId) => {
-              const target = allHotels.find(h => h.id === hotelId);
-              if (!target?.placeId) {
-                alert("This hotel has no Google Place ID registered. Please import it via Admin CMS.");
-                return;
-              }
-              const res = await fetch(`/api/google-places/hotel-details?placeId=${encodeURIComponent(target.placeId)}`);
-              const data = await res.json();
-              if (data.success && data.hotel) {
-                const updated: Hotel = {
-                  ...target,
-                  rating: data.hotel.rating || target.rating,
-                  reviewCount: data.hotel.reviewCount || target.reviewCount,
-                  phoneNumber: data.hotel.phoneNumber || target.phoneNumber,
-                  website: data.hotel.website || target.website,
-                  photoUrls: data.hotel.photoUrls?.length ? data.hotel.photoUrls : target.photoUrls,
-                  image: data.hotel.photoUrls?.[0] || target.image,
-                  lastUpdated: new Date().toISOString(),
-                  guestReviews: data.hotel.guestReviews || target.guestReviews
-                };
-                await handleUpdateHotel(updated);
-              }
-            }}
-            isAdmin={true}
-          />
-        ) : (
-          <HotelDetailPage 
-            hotel={activeHotel || allHotels[0]}
-            onBack={() => {
-              if (activeDestination) {
-                setCurrentView("destination-detail");
-              } else {
-                setCurrentView("hotels");
-              }
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            onNavigateView={(view) => {
-              setCurrentView(view);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            wishlist={wishlist.hotels || []}
-            onToggleWishlist={(id) => {
-              const category = "hotels";
-              const updatedList = wishlist[category]?.includes(id)
-                ? wishlist[category].filter((x) => x !== id)
-                : [...(wishlist[category] || []), id];
-              
-              setWishlist({
-                ...wishlist,
-                [category]: updatedList
-              });
-            }}
-            onInquire={(customDetails) => {
-              console.log("Inquiry details captured for hotel stay:", customDetails);
-              navigateToSection("quote-builder-section");
-            }}
-            allHotels={allHotels}
-            onSelectHotel={(h) => {
-              setActiveHotel(h);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-              addToRecentlyViewed({
-                id: h.id,
-                name: h.name,
-                category: "hotel",
-                image: h.image
-              });
-            }}
-            experiences={allExperiences}
-            onSelectExperience={(exp) => {
-              setActiveExperience(exp);
-              setCurrentView("experience-detail");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-              addToRecentlyViewed({
-                id: exp.id,
-                name: exp.name,
-                category: "experience",
-                image: exp.image
-              });
-            }}
-          />
-        )
+            }
+          }}
+          isAdmin={true}
+        />
       ) : currentView === "dining-detail" && activeRestaurant ? (
         <DiningDetailPage 
           restaurant={activeRestaurant}

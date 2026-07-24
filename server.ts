@@ -147,7 +147,7 @@ async function extractSocialMediaMetadata(rawUrl: string) {
         }
       }
     } catch (err: any) {
-      console.log(`TikTok oEmbed notice (${err?.name || "Timeout/Network"}): seamlessly defaulting to handle parser.`);
+      // Seamlessly fallback to URL handle parser when oEmbed is restricted or times out
     }
 
     if (!fetchSuccess) {
@@ -648,9 +648,9 @@ app.get("/api/viator/activities", async (req, res) => {
       try {
         console.log(`[Viator API] Sending POST request to Free-Text Search endpoint [${ep.env}] ${ep.url}`);
         
-        // Fast 6-second timeout signal to avoid hanging
+        // 8-second timeout signal to avoid hanging
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         try {
           const response = await fetch(ep.url, {
@@ -680,8 +680,13 @@ app.get("/api/viator/activities", async (req, res) => {
           clearTimeout(timeoutId);
         }
       } catch (err: any) {
-        console.error(`[Viator API Exception] (${ep.env}):`, err);
-        lastError = { status: 500, details: err.message || String(err), env: ep.env };
+        if (err?.name === "AbortError" || err?.name === "TimeoutError") {
+          console.warn(`[Viator API Timeout] (${ep.env}): Request timed out after 8s`);
+          lastError = { status: 408, details: "Viator API request timed out (8s limit)", env: ep.env };
+        } else {
+          console.warn(`[Viator API Exception] (${ep.env}): ${err?.message || String(err)}`);
+          lastError = { status: 500, details: err?.message || String(err), env: ep.env };
+        }
       }
     }
 
@@ -1073,75 +1078,173 @@ const CURATED_CAMBODIA_GOOGLE_HOTELS = [
   }
 ];
 
+function formatGooglePhotoUrl(ph: any, apiKey: string): string | null {
+  if (!ph) return null;
+  
+  if (typeof ph === "string") {
+    if (ph.startsWith("http")) return ph;
+    if (ph.startsWith("places/")) {
+      return `https://places.googleapis.com/v1/${ph}/media?key=${apiKey}&maxHeightPx=1200&maxWidthPx=1200`;
+    }
+    return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1200&photo_reference=${encodeURIComponent(ph)}&key=${apiKey}`;
+  }
+
+  if (ph.name && typeof ph.name === "string") {
+    if (ph.name.startsWith("places/")) {
+      return `https://places.googleapis.com/v1/${ph.name}/media?key=${apiKey}&maxHeightPx=1200&maxWidthPx=1200`;
+    }
+    return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1200&photo_reference=${encodeURIComponent(ph.name)}&key=${apiKey}`;
+  }
+
+  const ref = ph.photo_reference || ph.photoReference;
+  if (ref && typeof ref === "string") {
+    if (ref.startsWith("http")) return ref;
+    if (ref.startsWith("places/")) {
+      return `https://places.googleapis.com/v1/${ref}/media?key=${apiKey}&maxHeightPx=1200&maxWidthPx=1200`;
+    }
+    return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1200&photo_reference=${encodeURIComponent(ref)}&key=${apiKey}`;
+  }
+
+  return null;
+}
+
 // Endpoint 1: Search Hotels via Google Places (or curated fallback)
 app.get("/api/google-places/search-hotels", async (req, res) => {
   try {
     const rawQuery = (req.query.q as string || req.query.query as string || "Cambodia Luxury Hotels").trim();
     const apiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY;
+    const isLiveKeyConfigured = Boolean(apiKey && apiKey.length > 10);
 
     const normQuery = normalizeSearchText(rawQuery);
 
-    if (apiKey && apiKey.length > 10) {
-      // Call Google Places Text Search API without overly restrictive type filter
-      const googleUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(rawQuery + " Cambodia")}&key=${apiKey}`;
-      const apiRes = await fetch(googleUrl);
-      if (apiRes.ok) {
-        const json: any = await apiRes.json();
-        if (json.results && Array.isArray(json.results)) {
-          const matched = json.results
-            .filter((p: any) => isInsideCambodia(p.formatted_address || p.name))
-            .map((p: any) => {
-              const addressStr = p.formatted_address || "Cambodia";
-              const taggedDest = autoTagCambodiaDestination(addressStr + " " + p.name);
-              const photoRefs = Array.isArray(p.photos)
-                ? p.photos.map((ph: any) => `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1600&photo_reference=${ph.photo_reference}&key=${apiKey}`)
-                : [];
-              return {
-                placeId: p.place_id,
-                name: p.name,
-                address: addressStr,
-                latitude: p.geometry?.location?.lat || 12.5,
-                longitude: p.geometry?.location?.lng || 104.9,
-                rating: p.rating || 4.8,
-                reviewCount: p.user_ratings_total || 0,
-                destination: taggedDest,
-                photoUrls: photoRefs,
-                priceCategory: p.price_level === 4 ? "$$$$ Luxury" : "$$$ Mid-Range",
-                propertyType: "Hotel & Resort",
-                layoutVersion: "v2"
-              };
-            });
-          if (matched.length > 0) {
-            return res.json({ success: true, hotels: matched, source: "Google Places API" });
+    if (isLiveKeyConfigured && apiKey) {
+      // 1. Try Places API (New) searchText
+      try {
+        const newApiUrl = "https://places.googleapis.com/v1/places:searchText";
+        const newApiRes = await fetch(newApiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": apiKey,
+            "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.websiteUri,places.nationalPhoneNumber,places.photos,places.location"
+          },
+          body: JSON.stringify({
+            textQuery: rawQuery.toLowerCase().includes("cambodia") ? rawQuery : `${rawQuery} Cambodia`
+          })
+        });
+
+        if (newApiRes.ok) {
+          const newApiData: any = await newApiRes.json();
+          if (Array.isArray(newApiData.places) && newApiData.places.length > 0) {
+            const matched = newApiData.places
+              .filter((p: any) => isInsideCambodia((p.formattedAddress || "") + " " + (p.displayName?.text || p.displayName || "")))
+              .map((p: any) => {
+                const name = typeof p.displayName === "string" ? p.displayName : (p.displayName?.text || p.name || "Hotel Partner");
+                const addressStr = p.formattedAddress || "Cambodia";
+                const taggedDest = autoTagCambodiaDestination(addressStr + " " + name);
+                const photoRefs = Array.isArray(p.photos)
+                  ? p.photos.map((ph: any) => formatGooglePhotoUrl(ph, apiKey)).filter((url): url is string => Boolean(url))
+                  : [];
+
+                return {
+                  placeId: p.id,
+                  name: name,
+                  address: addressStr,
+                  latitude: p.location?.latitude || 12.5,
+                  longitude: p.location?.longitude || 104.9,
+                  rating: p.rating || 4.8,
+                  reviewCount: p.userRatingCount || 0,
+                  destination: taggedDest,
+                  photoUrls: photoRefs,
+                  website: p.websiteUri || "",
+                  phoneNumber: p.nationalPhoneNumber || "",
+                  priceCategory: "$$$ Luxury",
+                  propertyType: "Hotel & Resort",
+                  layoutVersion: "v2"
+                };
+              });
+
+            if (matched.length > 0) {
+              return res.json({ success: true, hotels: matched, source: "Google Places API (New)", apiKeyConfigured: true });
+            }
           }
         }
+      } catch (errNew) {
+        console.warn("Places API (New) search error:", errNew);
+      }
+
+      // 2. Fallback to Legacy Places API textsearch
+      try {
+        const googleUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(rawQuery + " Cambodia")}&key=${apiKey}`;
+        const apiRes = await fetch(googleUrl);
+        if (apiRes.ok) {
+          const json: any = await apiRes.json();
+          if (json.results && Array.isArray(json.results) && json.results.length > 0) {
+            const matched = json.results
+              .filter((p: any) => isInsideCambodia(p.formatted_address || p.name))
+              .map((p: any) => {
+                const addressStr = p.formatted_address || "Cambodia";
+                const taggedDest = autoTagCambodiaDestination(addressStr + " " + p.name);
+                const photoRefs = Array.isArray(p.photos)
+                  ? p.photos.map((ph: any) => formatGooglePhotoUrl(ph, apiKey)).filter((url): url is string => Boolean(url))
+                  : [];
+
+                return {
+                  placeId: p.place_id,
+                  name: p.name,
+                  address: addressStr,
+                  latitude: p.geometry?.location?.lat || 12.5,
+                  longitude: p.geometry?.location?.lng || 104.9,
+                  rating: p.rating || 4.8,
+                  reviewCount: p.user_ratings_total || 0,
+                  destination: taggedDest,
+                  photoUrls: photoRefs,
+                  priceCategory: p.price_level === 4 ? "$$$$ Luxury" : "$$$ Mid-Range",
+                  propertyType: "Hotel & Resort",
+                  layoutVersion: "v2"
+                };
+              });
+
+            if (matched.length > 0) {
+              return res.json({ success: true, hotels: matched, source: "Google Places API (Legacy)", apiKeyConfigured: true });
+            }
+          }
+        }
+      } catch (errLegacy) {
+        console.warn("Legacy Places API search error:", errLegacy);
       }
     }
 
-    // Search Curated Catalog with Fuzzy Normalization (handles Peninsular -> Peninsula, Pnom -> Phnom, etc.)
+    // Curated Catalog Fallback (When API key is not set or API returns no results)
     const normTokens = normQuery.split(/\s+/).filter(Boolean);
+    const genericWords = new Set(["phnom", "penh", "siem", "reap", "cambodia", "hotel", "hotels", "resort", "resorts", "the", "and", "by"]);
+    const specificTokens = normTokens.filter(t => !genericWords.has(t) && t.length >= 3);
 
     const filtered = CURATED_CAMBODIA_GOOGLE_HOTELS.filter(h => {
       const normTarget = normalizeSearchText(`${h.name} ${h.destination} ${h.address} ${h.propertyType} ${h.editorialDescription}`);
       
-      // Exact substring match on normalized text
+      // 1. Exact substring match on normalized query
       if (normTarget.includes(normQuery)) return true;
       
-      // Token-based match: every word in query appears in target
+      // 2. All query tokens present in target
       if (normTokens.length > 0 && normTokens.every(tok => normTarget.includes(tok))) {
         return true;
       }
 
-      // Partial match for longer tokens (e.g., 'peninsula' or 'phnom')
-      if (normTokens.some(tok => tok.length >= 4 && normTarget.includes(tok))) {
+      // 3. Match on specific brand/hotel tokens (e.g., 'fairfield', 'marriott', 'raffles', 'rosewood')
+      if (specificTokens.length > 0 && specificTokens.some(tok => normTarget.includes(tok))) {
         return true;
       }
 
       return false;
     });
 
-    const results = filtered.length > 0 ? filtered : CURATED_CAMBODIA_GOOGLE_HOTELS;
-    return res.json({ success: true, hotels: results, source: "Google Places Cambodia Engine" });
+    return res.json({ 
+      success: true, 
+      hotels: filtered, 
+      source: isLiveKeyConfigured ? "Google Places Offline Catalog" : "Curated Fallback Catalog",
+      apiKeyConfigured: isLiveKeyConfigured
+    });
   } catch (err: any) {
     console.error("Error in Google Places search-hotels:", err);
     return res.status(500).json({ success: false, error: err.message || "Failed to search Google Places" });
@@ -1162,63 +1265,138 @@ app.get("/api/google-places/hotel-details", async (req, res) => {
     const curated = CURATED_CAMBODIA_GOOGLE_HOTELS.find(h => h.placeId === placeId);
 
     if (apiKey && apiKey.length > 10) {
-      const googleDetailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=place_id,name,formatted_address,geometry,rating,user_ratings_total,website,formatted_phone_number,photos,reviews,types&key=${apiKey}`;
-      const apiRes = await fetch(googleDetailsUrl);
-      if (apiRes.ok) {
-        const json: any = await apiRes.json();
-        if (json.result) {
-          const p = json.result;
-          const addressStr = p.formatted_address || "Cambodia";
-
-          if (!isInsideCambodia(addressStr)) {
-            return res.status(400).json({ success: false, error: "Only hotels inside Cambodia can be imported." });
+      // 1. Try Places API (New) details
+      try {
+        const newDetailsUrl = `https://places.googleapis.com/v1/places/${placeId}`;
+        const newRes = await fetch(newDetailsUrl, {
+          headers: {
+            "X-Goog-Api-Key": apiKey,
+            "X-Goog-FieldMask": "id,displayName,formattedAddress,location,rating,userRatingCount,websiteUri,nationalPhoneNumber,photos,reviews"
           }
+        });
 
-          const taggedDest = autoTagCambodiaDestination(addressStr + " " + p.name);
-          const photoRefs = Array.isArray(p.photos)
-            ? p.photos.map((ph: any) => `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1600&photo_reference=${ph.photo_reference}&key=${apiKey}`)
-            : (curated?.photoUrls || []);
+        if (newRes.ok) {
+          const p: any = await newRes.json();
+          if (p && (p.id || p.displayName)) {
+            const name = typeof p.displayName === "string" ? p.displayName : (p.displayName?.text || "Hotel Partner");
+            const addressStr = p.formattedAddress || "Cambodia";
 
-          const reviewsList = Array.isArray(p.reviews)
-            ? p.reviews.map((r: any) => ({
-                author: r.author_name || "Guest Reviewer",
-                rating: r.rating || 5,
-                text: r.text || "Wonderful experience in Cambodia.",
-                relativeTime: r.relative_time_description || "Recently",
-                profilePhoto: r.profile_photo_url || ""
-              }))
-            : (curated?.guestReviews || []);
+            if (!isInsideCambodia(addressStr + " " + name)) {
+              return res.status(400).json({ success: false, error: "Only hotels inside Cambodia can be imported." });
+            }
 
-          const updatedHotel = {
-            placeId: p.place_id,
-            name: p.name,
-            address: addressStr,
-            latitude: p.geometry?.location?.lat || 12.5,
-            longitude: p.geometry?.location?.lng || 104.9,
-            rating: p.rating || curated?.rating || 4.8,
-            reviewCount: p.user_ratings_total || curated?.reviewCount || 100,
-            website: p.website || curated?.website || "",
-            phoneNumber: p.formatted_phone_number || curated?.phoneNumber || "",
-            destination: taggedDest,
-            photoUrls: photoRefs,
-            amenities: curated?.amenities || ["Swimming Pool", "Free WiFi", "Spa", "Halal Options", "Prayer Facilities"],
-            lastUpdated: new Date().toISOString(),
-            layoutVersion: "v2",
-            muslimFriendlyBadge: "Halal Friendly Certified",
-            muslimFriendly: true,
-            lowestPrice: curated?.lowestPrice || 250,
-            priceCategory: curated?.priceCategory || "$$$$ Luxury",
-            propertyType: curated?.propertyType || "5-Star Luxury Resort",
-            languages: "English, Khmer, French, Arabic",
-            nearbyHalalFood: "Dedicated Halal kitchen and nearby Muslim-owned restaurants",
-            checkIn: curated?.checkIn || "14:00",
-            checkOut: curated?.checkOut || "12:00",
-            editorialDescription: curated?.editorialDescription || `${p.name} is a premier luxury retreat in ${taggedDest}, Cambodia. Offers tailored Muslim-friendly services and pristine accommodations.`,
-            guestReviews: reviewsList
-          };
+            const taggedDest = autoTagCambodiaDestination(addressStr + " " + name);
+            const photoRefs = Array.isArray(p.photos) && p.photos.length > 0
+              ? p.photos.map((ph: any) => formatGooglePhotoUrl(ph, apiKey)).filter((url): url is string => Boolean(url))
+              : (curated?.photoUrls || []);
 
-          return res.json({ success: true, hotel: updatedHotel, source: "Google Places Live API" });
+            const reviewsList = Array.isArray(p.reviews)
+              ? p.reviews.map((r: any) => ({
+                  author: r.authorAttribution?.displayName || r.author_name || "Guest Reviewer",
+                  rating: r.rating || 5,
+                  text: r.originalText?.text || r.text?.text || r.text || "Wonderful experience in Cambodia.",
+                  relativeTime: r.relativePublishTimeDescription || r.relative_time_description || "Recently",
+                  profilePhoto: r.authorAttribution?.photoUri || r.profile_photo_url || ""
+                }))
+              : (curated?.guestReviews || []);
+
+            const updatedHotel = {
+              placeId: p.id,
+              name: name,
+              address: addressStr,
+              latitude: p.location?.latitude || 12.5,
+              longitude: p.location?.longitude || 104.9,
+              rating: p.rating || curated?.rating || 4.8,
+              reviewCount: p.userRatingCount || curated?.reviewCount || 100,
+              website: p.websiteUri || curated?.website || "",
+              phoneNumber: p.nationalPhoneNumber || curated?.phoneNumber || "",
+              destination: taggedDest,
+              photoUrls: photoRefs,
+              amenities: curated?.amenities || ["Swimming Pool", "Free WiFi", "Spa", "Fitness Center"],
+              lastUpdated: new Date().toISOString(),
+              layoutVersion: "v2",
+              isGoogleImport: true,
+              muslimFriendly: false,
+              lowestPrice: curated?.lowestPrice || 250,
+              priceCategory: curated?.priceCategory || "$$$$ Luxury",
+              propertyType: curated?.propertyType || "5-Star Luxury Resort",
+              languages: "English, Khmer, French, Arabic",
+              nearbyHalalFood: "Nearby dining options available",
+              checkIn: curated?.checkIn || "14:00",
+              checkOut: curated?.checkOut || "12:00",
+              editorialDescription: curated?.editorialDescription || `${name} is a luxury retreat in ${taggedDest}, Cambodia offering premium accommodations.`,
+              guestReviews: reviewsList
+            };
+
+            return res.json({ success: true, hotel: updatedHotel, source: "Google Places API (New)" });
+          }
         }
+      } catch (errNew) {
+        console.warn("Places API (New) details failed, trying legacy:", errNew);
+      }
+
+      // 2. Try Legacy Place Details
+      try {
+        const googleDetailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=place_id,name,formatted_address,geometry,rating,user_ratings_total,website,formatted_phone_number,photos,reviews,types&key=${apiKey}`;
+        const apiRes = await fetch(googleDetailsUrl);
+        if (apiRes.ok) {
+          const json: any = await apiRes.json();
+          if (json.result) {
+            const p = json.result;
+            const addressStr = p.formatted_address || "Cambodia";
+
+            if (!isInsideCambodia(addressStr)) {
+              return res.status(400).json({ success: false, error: "Only hotels inside Cambodia can be imported." });
+            }
+
+            const taggedDest = autoTagCambodiaDestination(addressStr + " " + p.name);
+            const photoRefs = Array.isArray(p.photos) && p.photos.length > 0
+              ? p.photos.map((ph: any) => formatGooglePhotoUrl(ph, apiKey)).filter((url): url is string => Boolean(url))
+              : (curated?.photoUrls || []);
+
+            const reviewsList = Array.isArray(p.reviews)
+              ? p.reviews.map((r: any) => ({
+                  author: r.author_name || "Guest Reviewer",
+                  rating: r.rating || 5,
+                  text: r.text || "Wonderful experience in Cambodia.",
+                  relativeTime: r.relative_time_description || "Recently",
+                  profilePhoto: r.profile_photo_url || ""
+                }))
+              : (curated?.guestReviews || []);
+
+            const updatedHotel = {
+              placeId: p.place_id,
+              name: p.name,
+              address: addressStr,
+              latitude: p.geometry?.location?.lat || 12.5,
+              longitude: p.geometry?.location?.lng || 104.9,
+              rating: p.rating || curated?.rating || 4.8,
+              reviewCount: p.user_ratings_total || curated?.reviewCount || 100,
+              website: p.website || curated?.website || "",
+              phoneNumber: p.formatted_phone_number || curated?.phoneNumber || "",
+              destination: taggedDest,
+              photoUrls: photoRefs,
+              amenities: curated?.amenities || ["Swimming Pool", "Free WiFi", "Spa", "Fitness Center"],
+              lastUpdated: new Date().toISOString(),
+              layoutVersion: "v2",
+              isGoogleImport: true,
+              muslimFriendly: false,
+              lowestPrice: curated?.lowestPrice || 250,
+              priceCategory: curated?.priceCategory || "$$$$ Luxury",
+              propertyType: curated?.propertyType || "5-Star Luxury Resort",
+              languages: "English, Khmer, French, Arabic",
+              nearbyHalalFood: "Dedicated Halal kitchen and nearby Muslim-owned restaurants",
+              checkIn: curated?.checkIn || "14:00",
+              checkOut: curated?.checkOut || "12:00",
+              editorialDescription: curated?.editorialDescription || `${p.name} is a premier luxury retreat in ${taggedDest}, Cambodia. Offers tailored Muslim-friendly services and pristine accommodations.`,
+              guestReviews: reviewsList
+            };
+
+            return res.json({ success: true, hotel: updatedHotel, source: "Google Places API (Legacy)" });
+          }
+        }
+      } catch (errLegacy) {
+        console.warn("Legacy details failed:", errLegacy);
       }
     }
 
@@ -1258,11 +1436,11 @@ app.get("/api/google-places/hotel-details", async (req, res) => {
       photoUrls: [
         NO_PHOTO_AVAILABLE_PLACEHOLDER
       ],
-      amenities: ["Swimming Pool", "Free WiFi", "Spa", "Halal Certified Dining", "Prayer Room"],
+      amenities: ["Swimming Pool", "Free WiFi", "Spa", "Fitness Center"],
       lastUpdated: new Date().toISOString(),
       layoutVersion: "v2",
-      muslimFriendlyBadge: "Halal Friendly Certified",
-      muslimFriendly: true,
+      isGoogleImport: true,
+      muslimFriendly: false,
       lowestPrice: 220,
       priceCategory: "$$$$ Luxury",
       propertyType: "5-Star Luxury Resort",

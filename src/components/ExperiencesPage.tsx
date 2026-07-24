@@ -67,7 +67,13 @@ export default function ExperiencesPage({
     fetch(`/api/viator/activities?start=${start}&count=12`)
       .then(async (res) => {
         console.log("[Viator Browser Console] API Proxy Response Status:", res.status);
-        const data = await res.json();
+        const text = await res.text();
+        let data: any = {};
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { error: text || "Rate limit or invalid JSON response." };
+        }
         console.log("[Viator Browser Console] Response Body:", data);
         if (data.rawViatorResponse) {
           console.log("[Viator Browser Console] Raw Viator JSON Response:", data.rawViatorResponse);
