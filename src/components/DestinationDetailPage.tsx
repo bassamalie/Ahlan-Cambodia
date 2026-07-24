@@ -22,7 +22,7 @@ interface DestinationDetailPageProps {
   onSelectItem: (type: "hotel" | "package" | "experience" | "mosque" | "restaurant" | "guide", item: any) => void;
   onInquire: () => void;
   onUpdateDestination?: (updatedDest: Destination) => void;
-  onNavigateView?: (view: "packages" | "hotels" | "experiences" | "restaurants" | "mosques" | "inspiration") => void;
+  onNavigateView?: (view: "home" | "destinations" | "packages" | "hotels" | "experiences" | "restaurants" | "mosques" | "inspiration") => void;
 }
 
 interface SocialCard {

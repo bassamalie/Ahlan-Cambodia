@@ -229,14 +229,73 @@ export const hotels: Hotel[] = [
     id: "raffles-angkor",
     name: "Raffles Grand Hotel d'Angkor",
     location: "Charles de Gaulle, Siem Reap",
+    destination: "Siem Reap",
     rating: 4.9,
     price: 450,
+    lowestPrice: 450,
     image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+    photoUrls: [
+      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&q=80&w=1200"
+    ],
+    galleryImages: [
+      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200"
+    ],
     stars: 5,
     prayerFacilities: "Complimentary prayer mats, Qibla indicators, and Quran available in-room upon request.",
     halalBreakfast: "Halal options prepared in a dedicated sanitised section of the imperial kitchen.",
     nearbyMosque: "Siem Reap Mosque (4 mins drive, 12 mins walk)",
-    description: "An iconic luxury landmark since 1932, restoring French colonial grandeur and royal Cambodian warmth. Features a majestic 35m swimming pool and lush tropical gardens."
+    description: "An iconic luxury landmark since 1932, restoring French colonial grandeur and royal Cambodian warmth. Features a majestic 35m swimming pool and lush tropical gardens.",
+    extendedDescription: "Originally opened in 1932, Raffles Grand Hotel d'Angkor is a historic treasure set across 15 acres of landscaped French gardens in the heart of Siem Reap. For nearly a century, it has welcomed royalty, statesmen, and discerning travelers seeking the pinnacle of Cambodian hospitality.",
+    layoutVersion: "v2",
+    placeId: "ChIJW1J-SamplePlaceIdSiemReap",
+    address: "1 Vithei Charles de Gaulle, Khum Svay Dangkum, Siem Reap, Cambodia",
+    latitude: 13.3639,
+    longitude: 103.8598,
+    reviewCount: 1284,
+    website: "https://www.raffles.com/siem-reap/",
+    phoneNumber: "+855 63 963 888",
+    priceCategory: "$$$$ Ultra Luxury",
+    propertyType: "5-Star Colonial Heritage Hotel",
+    checkIn: "15:00",
+    checkOut: "12:00",
+    muslimFriendlyBadge: "Halal Certified Kitchen & Facilities",
+    muslimFriendly: true,
+    amenities: [
+      "Iconic 35m Outdoor Pool",
+      "Raffles Spa & Wellness",
+      "24-Hour Butler Service",
+      "Certified Halal Kitchen Option",
+      "Prayer Mats & Qibla Direction",
+      "French & Khmer Fine Dining",
+      "High-Speed Wi-Fi",
+      "Private Airport Transfer"
+    ],
+    highlights: [
+      "Historic 1932 French Colonial Landmark",
+      "Walkable to Siem Reap Royal Gardens & River",
+      "Dedicated Halal Gourmet Breakfast",
+      "4 minutes from Neak Pean Siem Reap Mosque"
+    ],
+    guestReviews: [
+      {
+        author: "Tariq Al-Mansoor",
+        rating: 5,
+        relativeTime: "2 weeks ago",
+        text: "Exceptional heritage stay! The hotel provided clean prayer mats and Qibla alignment upon arrival. The Halal breakfast served in our suite was immaculate."
+      },
+      {
+        author: "Dr. Sarah Jenkins",
+        rating: 5,
+        relativeTime: "a month ago",
+        text: "The grand pool and gardens are unmatched in Siem Reap. Historical charm with world-class modern service."
+      }
+    ]
   },
   {
     id: "rosewood-phnom-penh",

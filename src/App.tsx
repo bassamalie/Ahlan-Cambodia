@@ -44,6 +44,7 @@ import DestinationDetailPage from "./components/DestinationDetailPage";
 import ExperienceDetailPage from "./components/ExperienceDetailPage";
 import PackageDetailPage from "./components/PackageDetailPage";
 import HotelDetailPage from "./components/HotelDetailPage";
+import { HotelDetailV2 } from "./components/HotelDetailV2";
 import DiningDetailPage from "./components/DiningDetailPage";
 import MosqueDetailPage from "./components/MosqueDetailPage";
 import BlogDetailPage from "./components/BlogDetailPage";
@@ -2522,60 +2523,106 @@ export default function App() {
           }}
         />
       ) : currentView === "hotel-detail" && (activeHotel || allHotels[0]) ? (
-        <HotelDetailPage 
-          hotel={activeHotel || allHotels[0]}
-          onBack={() => {
-            if (activeDestination) {
-              setCurrentView("destination-detail");
-            } else {
-              setCurrentView("hotels");
-            }
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          onNavigateView={(view) => {
-            setCurrentView(view);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          wishlist={wishlist.hotels || []}
-          onToggleWishlist={(id) => {
-            const category = "hotels";
-            const updatedList = wishlist[category]?.includes(id)
-              ? wishlist[category].filter((x) => x !== id)
-              : [...(wishlist[category] || []), id];
-            
-            setWishlist({
-              ...wishlist,
-              [category]: updatedList
-            });
-          }}
-          onInquire={(customDetails) => {
-            console.log("Inquiry details captured for hotel stay:", customDetails);
-            navigateToSection("quote-builder-section");
-          }}
-          allHotels={allHotels}
-          onSelectHotel={(h) => {
-            setActiveHotel(h);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            addToRecentlyViewed({
-              id: h.id,
-              name: h.name,
-              category: "hotel",
-              image: h.image
-            });
-          }}
-          experiences={allExperiences}
-          onSelectExperience={(exp) => {
-            setActiveExperience(exp);
-            setCurrentView("experience-detail");
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            addToRecentlyViewed({
-              id: exp.id,
-              name: exp.name,
-              category: "experience",
-              image: exp.image
-            });
-          }}
-        />
+        (activeHotel || allHotels[0])?.layoutVersion === "v2" ? (
+          <HotelDetailV2
+            hotel={activeHotel || allHotels[0]}
+            onBack={() => {
+              if (activeDestination) {
+                setCurrentView("destination-detail");
+              } else {
+                setCurrentView("hotels");
+              }
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            onSelectDestination={(destName) => {
+              const found = allDestinations.find(d => d.name.toLowerCase().includes(destName.toLowerCase()));
+              if (found) {
+                setActiveDestination(found);
+                setCurrentView("destination-detail");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }
+            }}
+            onRefreshHotel={async (hotelId) => {
+              const target = allHotels.find(h => h.id === hotelId);
+              if (!target?.placeId) {
+                alert("This hotel has no Google Place ID registered. Please import it via Admin CMS.");
+                return;
+              }
+              const res = await fetch(`/api/google-places/hotel-details?placeId=${encodeURIComponent(target.placeId)}`);
+              const data = await res.json();
+              if (data.success && data.hotel) {
+                const updated: Hotel = {
+                  ...target,
+                  rating: data.hotel.rating || target.rating,
+                  reviewCount: data.hotel.reviewCount || target.reviewCount,
+                  phoneNumber: data.hotel.phoneNumber || target.phoneNumber,
+                  website: data.hotel.website || target.website,
+                  photoUrls: data.hotel.photoUrls?.length ? data.hotel.photoUrls : target.photoUrls,
+                  image: data.hotel.photoUrls?.[0] || target.image,
+                  lastUpdated: new Date().toISOString(),
+                  guestReviews: data.hotel.guestReviews || target.guestReviews
+                };
+                await handleUpdateHotel(updated);
+              }
+            }}
+            isAdmin={true}
+          />
+        ) : (
+          <HotelDetailPage 
+            hotel={activeHotel || allHotels[0]}
+            onBack={() => {
+              if (activeDestination) {
+                setCurrentView("destination-detail");
+              } else {
+                setCurrentView("hotels");
+              }
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            onNavigateView={(view) => {
+              setCurrentView(view);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            wishlist={wishlist.hotels || []}
+            onToggleWishlist={(id) => {
+              const category = "hotels";
+              const updatedList = wishlist[category]?.includes(id)
+                ? wishlist[category].filter((x) => x !== id)
+                : [...(wishlist[category] || []), id];
+              
+              setWishlist({
+                ...wishlist,
+                [category]: updatedList
+              });
+            }}
+            onInquire={(customDetails) => {
+              console.log("Inquiry details captured for hotel stay:", customDetails);
+              navigateToSection("quote-builder-section");
+            }}
+            allHotels={allHotels}
+            onSelectHotel={(h) => {
+              setActiveHotel(h);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              addToRecentlyViewed({
+                id: h.id,
+                name: h.name,
+                category: "hotel",
+                image: h.image
+              });
+            }}
+            experiences={allExperiences}
+            onSelectExperience={(exp) => {
+              setActiveExperience(exp);
+              setCurrentView("experience-detail");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              addToRecentlyViewed({
+                id: exp.id,
+                name: exp.name,
+                category: "experience",
+                image: exp.image
+              });
+            }}
+          />
+        )
       ) : currentView === "dining-detail" && activeRestaurant ? (
         <DiningDetailPage 
           restaurant={activeRestaurant}

@@ -15,6 +15,7 @@ import TransparentLogo from "./TransparentLogo";
 import RichTextEditor from "./RichTextEditor";
 import { SocialVideoCard } from "./SocialVideoCard";
 import { uploadToFirebaseStorage, listAllUploadedFiles, deleteFromFirebaseStorage } from "../firebase";
+import { saveDocInCollection } from "../dbService";
 
 interface AdminCMSProps {
   destinations: Destination[];
@@ -50,6 +51,19 @@ interface AdminCMSProps {
   onUpdateHomepageSettings?: (updated: any) => void;
   generalConfig?: any;
   onUpdateGeneralConfig?: (updated: any) => void;
+}
+
+// Package Hotel Slot Item
+export interface PackageHotelItem {
+  type: "predefined" | "custom";
+  hotelId?: string;
+  customHotel?: {
+    name: string;
+    location: string;
+    image: string;
+    description: string;
+    highlights: string[];
+  };
 }
 
 // Inquiries Mock Data Type
@@ -1078,6 +1092,145 @@ export default function AdminCMS({
     { q: "Is there a mosque nearby?", a: "" },
     { q: "What halal breakfast options are available?", a: "" }
   ]);
+
+  // --- Google Places Hotel Import & Refresh States ---
+  const [gpSearchQuery, setGpSearchQuery] = useState("");
+  const [gpSearchResults, setGpSearchResults] = useState<any[]>([]);
+  const [isSearchingGp, setIsSearchingGp] = useState(false);
+  const [isImportingGpId, setIsImportingGpId] = useState<string | null>(null);
+  const [refreshingHotelId, setRefreshingHotelId] = useState<string | null>(null);
+
+  const handleSearchGooglePlaces = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!gpSearchQuery.trim()) return;
+    setIsSearchingGp(true);
+    try {
+      const res = await fetch(`/api/google-places/search-hotels?q=${encodeURIComponent(gpSearchQuery)}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.hotels)) {
+        setGpSearchResults(data.hotels);
+        if (data.hotels.length === 0) {
+          triggerToast("No hotel results in Cambodia found.", "info");
+        }
+      } else {
+        triggerToast(data.error || "Search failed.", "error");
+      }
+    } catch (err: any) {
+      console.error("Google Places search error:", err);
+      triggerToast("Error searching Google Places.", "error");
+    } finally {
+      setIsSearchingGp(false);
+    }
+  };
+
+  const handleImportGooglePlacesHotel = async (placeId: string) => {
+    setIsImportingGpId(placeId);
+    try {
+      const res = await fetch(`/api/google-places/hotel-details?placeId=${encodeURIComponent(placeId)}`);
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || "Failed to import hotel.");
+        return;
+      }
+      const h = data.hotel;
+      const newHotel: Hotel = {
+        id: `gp-${Date.now()}`,
+        name: h.name,
+        location: h.address,
+        destination: h.destination || "Phnom Penh",
+        rating: h.rating || 4.8,
+        price: h.lowestPrice || 350,
+        lowestPrice: h.lowestPrice || 350,
+        stars: 5,
+        image: h.photoUrls?.[0] || "",
+        photoUrls: h.photoUrls || [],
+        galleryImages: h.photoUrls || [],
+        description: h.editorialDescription || `${h.name} is a luxury estate in ${h.destination || "Cambodia"}.`,
+        extendedDescription: h.editorialDescription,
+        prayerFacilities: "In-room prayer mats and Qibla direction",
+        halalBreakfast: "Certified Halal breakfast options",
+        nearbyMosque: `Grand Mosque in ${h.destination || "Cambodia"} (10 mins)`,
+        amenities: h.amenities || ["Swimming Pool", "Spa", "Free WiFi", "Halal Options"],
+        highlights: [
+          `Located in ${h.destination || "Cambodia"}`,
+          `Rated ${h.rating || 4.8} on Google Places`,
+          "Halal Certified Gastronomy"
+        ],
+        guestReviews: h.guestReviews || [],
+        placeId: h.placeId,
+        address: h.address,
+        latitude: h.latitude,
+        longitude: h.longitude,
+        reviewCount: h.reviewCount,
+        website: h.website,
+        phoneNumber: h.phoneNumber,
+        lastUpdated: new Date().toISOString(),
+        layoutVersion: "v2",
+        muslimFriendlyBadge: "Halal Friendly Certified",
+        muslimFriendly: true,
+        priceCategory: h.priceCategory || "$$$$ Luxury",
+        propertyType: h.propertyType || "5-Star Luxury Resort",
+        checkIn: h.checkIn || "14:00",
+        checkOut: h.checkOut || "12:00"
+      };
+
+      if (onAddHotel) {
+        await onAddHotel(newHotel);
+      } else {
+        await saveDocInCollection("hotels", newHotel);
+      }
+      setLocalHotels(prev => [newHotel, ...prev]);
+      triggerToast(`Imported "${newHotel.name}" with layoutVersion="v2"!`, "success");
+      setGpSearchResults([]);
+      setGpSearchQuery("");
+    } catch (err) {
+      console.error("Import error:", err);
+      alert("Failed to import hotel.");
+    } finally {
+      setIsImportingGpId(null);
+    }
+  };
+
+  const handleRefreshHotelInCms = async (hotelItem: Hotel) => {
+    if (!hotelItem.placeId) {
+      alert("This hotel does not have a Google Place ID attached. Only imported Google Places hotels can be refreshed.");
+      return;
+    }
+    setRefreshingHotelId(hotelItem.id);
+    try {
+      const res = await fetch(`/api/google-places/hotel-details?placeId=${encodeURIComponent(hotelItem.placeId)}`);
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || "Failed to refresh hotel.");
+        return;
+      }
+      const updated = data.hotel;
+      const refreshed: Hotel = {
+        ...hotelItem,
+        rating: updated.rating || hotelItem.rating,
+        reviewCount: updated.reviewCount || hotelItem.reviewCount,
+        phoneNumber: updated.phoneNumber || hotelItem.phoneNumber,
+        website: updated.website || hotelItem.website,
+        photoUrls: updated.photoUrls?.length ? updated.photoUrls : hotelItem.photoUrls,
+        image: updated.photoUrls?.[0] || hotelItem.image,
+        lastUpdated: new Date().toISOString(),
+        guestReviews: updated.guestReviews || hotelItem.guestReviews
+      };
+
+      if (onUpdateHotel) {
+        await onUpdateHotel(refreshed);
+      } else {
+        await saveDocInCollection("hotels", refreshed);
+      }
+      setLocalHotels(prev => prev.map(h => h.id === refreshed.id ? refreshed : h));
+      triggerToast(`Refreshed "${refreshed.name}" metrics from Google Places!`, "success");
+    } catch (err) {
+      console.error("Refresh error:", err);
+      alert("Failed to refresh hotel.");
+    } finally {
+      setRefreshingHotelId(null);
+    }
+  };
 
   // --- Mosque Form/Wizard States & Helpers ---
   const [localMosques, setLocalMosques] = useState<Mosque[]>(mosquesProp || []);
@@ -2116,13 +2269,7 @@ export default function AdminCMS({
     setNewInclusion("");
     setPackExclusions([]);
     setNewExclusion("");
-    setHotelSelectionMode("predefined");
-    setSelectedHotelIds([]);
-    setCustomHotelName("");
-    setCustomHotelLocation("");
-    setCustomHotelImage("");
-    setCustomHotelDescription("");
-    setCustomHotelHighlights(["", "", ""]);
+    setPackageHotelSlots([{ type: "predefined", hotelId: "" }]);
     setGalleryUrls(["", "", "", "", "", "", "", ""]);
     setFaqList([
       { q: "Are all meals included in the package verified Halal?", a: "Yes, absolutely. We strictly partner with certified Halal kitchens, or pre-vetted pork-free and alcohol-free dining establishments." },
@@ -4808,12 +4955,98 @@ export default function AdminCMS({
                     </button>
                   </div>
 
+                  {/* GOOGLE PLACES IMPORT SECTION */}
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
+                      <div>
+                        <h3 className="text-xs font-mono font-bold text-[#0F1626] uppercase tracking-wider flex items-center gap-2">
+                          <Globe className="w-4 h-4 text-brand-blue-accent" />
+                          <span>Import Hotel via Google Places API</span>
+                        </h3>
+                        <p className="text-[11px] text-slate-500 font-sans">
+                          Search for hotels inside Cambodia (e.g. Raffles Siem Reap, Rosewood Phnom Penh, Song Saa) to automatically fetch real photos, rating, and place details into Firebase with layoutVersion="v2".
+                        </p>
+                      </div>
+                      <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg shrink-0">
+                        Cambodia Verification Enabled
+                      </span>
+                    </div>
+
+                    <form onSubmit={handleSearchGooglePlaces} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={gpSearchQuery}
+                        onChange={(e) => setGpSearchQuery(e.target.value)}
+                        placeholder="Search Cambodia hotel name or city (e.g. Raffles Grand Hotel d'Angkor)..."
+                        className="flex-1 bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-[#0F1626]"
+                      />
+                      <button
+                        type="submit"
+                        disabled={isSearchingGp}
+                        className="bg-[#0F1626] hover:bg-brand-blue-accent hover:text-[#0F1626] text-white px-5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 shrink-0 flex items-center gap-1.5"
+                      >
+                        <Search className="w-3.5 h-3.5" />
+                        <span>{isSearchingGp ? "Searching..." : "Search Google Places"}</span>
+                      </button>
+                    </form>
+
+                    {/* Google Places Search Results Grid */}
+                    {gpSearchResults.length > 0 && (
+                      <div className="space-y-3 pt-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+                            Search Results ({gpSearchResults.length} properties)
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => setGpSearchResults([])}
+                            className="text-[10px] font-mono text-slate-400 hover:text-slate-600 underline cursor-pointer"
+                          >
+                            Clear Results
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
+                          {gpSearchResults.map((gp, gIdx) => (
+                            <div
+                              key={gp.placeId || gIdx}
+                              className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-center justify-between gap-3 shadow-xs"
+                            >
+                              <div className="space-y-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <h5 className="font-bold text-xs text-[#0F1626] truncate">{gp.name}</h5>
+                                  <span className="bg-amber-50 text-amber-700 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0">
+                                    {gp.rating || 4.8} ★
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-slate-500 truncate">{gp.address}</p>
+                                <div className="flex items-center gap-2 text-[9px] font-mono text-slate-400">
+                                  <span className="text-brand-blue-accent font-bold">{gp.destination || "Cambodia"}</span>
+                                  <span>•</span>
+                                  <span>Layout V2</span>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                disabled={isImportingGpId === gp.placeId}
+                                onClick={() => handleImportGooglePlacesHotel(gp.placeId)}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-mono font-bold uppercase px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                              >
+                                {isImportingGpId === gp.placeId ? "Importing..." : "Import Hotel"}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[700px]">
                       <thead>
                         <tr className="border-b border-slate-100 text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500">
                           <th className="py-3.5 px-4">Hotel Property Info</th>
                           <th className="py-3.5 px-4">Location</th>
+                          <th className="py-3.5 px-4 text-center">Version</th>
                           <th className="py-3.5 px-4 text-center">Stars</th>
                           <th className="py-3.5 px-4 text-center">Avg Rate</th>
                           <th className="py-3.5 px-4 text-right">Actions</th>
@@ -4823,16 +5056,32 @@ export default function AdminCMS({
                         {localHotels.map((hot, idx) => (
                           <tr key={hot.id || idx} className="hover:bg-slate-50/50 transition-colors text-xs font-sans">
                             <td className="py-4 px-4 flex items-center gap-4 max-w-sm">
-                              <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200/60 shadow-sm">
+                              <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200/60 shadow-sm relative">
                                 <img src={hot.image} alt={hot.name} className="w-full h-full object-cover" />
                               </div>
                               <div className="space-y-1">
-                                <h4 className="font-bold text-sm text-[#0F1626]">{hot.name}</h4>
+                                <div className="flex items-center gap-1.5">
+                                  <h4 className="font-bold text-sm text-[#0F1626]">{hot.name}</h4>
+                                  {hot.placeId && (
+                                    <span className="text-[9px] font-mono bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-semibold" title={`Google Place ID: ${hot.placeId}`}>
+                                      Google
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-[10px] text-slate-400 font-medium truncate">{hot.description}</p>
                               </div>
                             </td>
                             <td className="py-4 px-4 font-mono text-[10px] font-semibold text-slate-600">
-                              {hot.location}
+                              {hot.destination || hot.location}
+                            </td>
+                            <td className="py-4 px-4 text-center font-mono">
+                              <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] font-bold ${
+                                hot.layoutVersion === "v2" 
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : "bg-slate-100 text-slate-600 border border-slate-200"
+                              }`}>
+                                {hot.layoutVersion === "v2" ? "V2" : "V1"}
+                              </span>
                             </td>
                             <td className="py-4 px-4 text-center font-mono">
                               <span className="inline-flex items-center gap-0.5 bg-amber-50 text-amber-700 border border-amber-100 px-2.5 py-0.5 rounded text-[10px] font-bold">
@@ -4840,10 +5089,22 @@ export default function AdminCMS({
                               </span>
                             </td>
                             <td className="py-4 px-4 text-center font-mono text-[10px] font-bold text-slate-700">
-                              ${hot.price || "350"} / Night
+                              ${hot.lowestPrice || hot.price || "350"} / Night
                             </td>
                             <td className="py-4 px-4 text-right">
                               <div className="flex items-center justify-end gap-2">
+                                {hot.placeId && (
+                                  <button
+                                    type="button"
+                                    disabled={refreshingHotelId === hot.id}
+                                    onClick={() => handleRefreshHotelInCms(hot)}
+                                    className="text-[10px] font-mono font-bold bg-[#0F1626] hover:bg-brand-blue-accent text-white px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                                    title="Refresh metrics from Google Places"
+                                  >
+                                    <RefreshCw className={`w-3 h-3 ${refreshingHotelId === hot.id ? "animate-spin" : ""}`} />
+                                    <span>{refreshingHotelId === hot.id ? "Syncing" : "Refresh"}</span>
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => {
                                     populateHotelForm(hot);

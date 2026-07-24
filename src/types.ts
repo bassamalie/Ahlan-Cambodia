@@ -130,6 +130,29 @@ export interface Hotel {
   stay22Url?: string;
   stay22HotelId?: string;
   stay22Aid?: string;
+
+  // V2 Hotel Layout Fields
+  layoutVersion?: "v1" | "v2" | string;
+  placeId?: string;
+  latitude?: number;
+  longitude?: number;
+  reviewCount?: number;
+  website?: string;
+  phoneNumber?: string;
+  destination?: string;
+  photoUrls?: string[];
+  lastUpdated?: string;
+  muslimFriendlyBadge?: string;
+  muslimFriendly?: boolean;
+  lowestPrice?: number;
+  priceCategory?: string;
+  propertyType?: string;
+  languages?: string;
+  nearbyHalalFood?: string;
+  checkIn?: string;
+  checkOut?: string;
+  editorialDescription?: string;
+  guestReviews?: { author: string; rating: number; text: string; relativeTime?: string; profilePhoto?: string }[];
 }
 
 export interface Restaurant {
