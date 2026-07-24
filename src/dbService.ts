@@ -40,33 +40,69 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 
 /**
  * Fetches an entire collection from Firestore.
- * If the collection is empty, seeds it with the provided defaultData.
+ * Performs a one-time initial seed into Firestore if the collection is brand new and has never been seeded.
+ * If the collection has been seeded previously and is empty (e.g., user deleted all items), returns empty array [].
  */
 export async function fetchCollection<T extends { id: string }>(
   collectionName: string, 
-  defaultData: T[]
+  defaultData: T[] = []
 ): Promise<T[]> {
   try {
     const colRef = collection(db, collectionName);
     const snapshot = await getDocs(colRef);
     
-    if (snapshot.empty) {
-      console.log(`Collection "${collectionName}" is empty in Firestore. Seeding default data...`);
-      // Seed the collection
-      const batch = writeBatch(db);
-      for (const item of defaultData) {
-        const docRef = doc(db, collectionName, item.id);
-        batch.set(docRef, item);
-      }
-      await batch.commit();
-      return defaultData;
+    // Check seed status in settings/seed_status
+    const seedStatusRef = doc(db, "settings", "seed_status");
+    let seedStatusSnap;
+    try {
+      seedStatusSnap = await getDoc(seedStatusRef);
+    } catch (e) {
+      // ignore
     }
-    
-    const items: T[] = [];
-    snapshot.forEach((doc) => {
-      items.push(doc.data() as T);
-    });
-    return items;
+    const seedData = seedStatusSnap && seedStatusSnap.exists() ? seedStatusSnap.data() : {};
+    const isSeeded = !!seedData[collectionName];
+
+    if (snapshot.empty) {
+      if (isSeeded) {
+        // Collection was already seeded in the past and is now empty because user explicitly deleted items
+        console.log(`Collection "${collectionName}" is empty in Firestore (previously seeded). Returning [].`);
+        return [];
+      } else if (defaultData && defaultData.length > 0) {
+        // Brand new database initialization: seed sample items ONCE into Firestore
+        console.log(`Collection "${collectionName}" is empty in Firestore. Seeding initial default data...`);
+        try {
+          const batch = writeBatch(db);
+          for (const item of defaultData) {
+            const docRef = doc(db, collectionName, item.id);
+            batch.set(docRef, item);
+          }
+          await batch.commit();
+
+          // Record that initial seeding was completed for this collection
+          await setDoc(seedStatusRef, { [collectionName]: true }, { merge: true });
+        } catch (seedErr) {
+          console.error(`Error seeding collection "${collectionName}":`, seedErr);
+        }
+        return defaultData;
+      } else {
+        return [];
+      }
+    } else {
+      // Collection is not empty; ensure seed status is recorded as true so we know it has been initialized
+      if (!isSeeded) {
+        try {
+          await setDoc(seedStatusRef, { [collectionName]: true }, { merge: true });
+        } catch (e) {
+          // ignore
+        }
+      }
+      
+      const items: T[] = [];
+      snapshot.forEach((docSnap) => {
+        items.push(docSnap.data() as T);
+      });
+      return items;
+    }
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, collectionName);
     return defaultData;

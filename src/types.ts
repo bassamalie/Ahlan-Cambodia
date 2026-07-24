@@ -22,6 +22,20 @@ export interface Destination {
   }[];
 }
 
+export interface CustomHotelItem {
+  name: string;
+  location: string;
+  image: string;
+  description: string;
+  highlights: string[];
+}
+
+export interface PackageHotelItem {
+  type: "predefined" | "custom";
+  hotelId?: string;
+  customHotel?: CustomHotelItem;
+}
+
 export interface TourPackage {
   id: string;
   name: string;
@@ -39,13 +53,9 @@ export interface TourPackage {
   exclusions?: string[];
   hotelIds?: string[];
   keyHighlights?: string[];
-  customHotel?: {
-    name: string;
-    location: string;
-    image: string;
-    description: string;
-    highlights: string[];
-  };
+  customHotel?: CustomHotelItem;
+  customHotels?: CustomHotelItem[];
+  packageHotelsList?: PackageHotelItem[];
   gallery?: string[];
   faqs?: { q: string; a: string }[];
 }

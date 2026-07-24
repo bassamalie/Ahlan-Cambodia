@@ -18,6 +18,7 @@ interface HotelDetailPageProps {
   onSelectHotel?: (hotel: Hotel) => void;
   experiences?: Experience[];
   onSelectExperience?: (exp: Experience) => void;
+  onNavigateView?: (view: string) => void;
 }
 
 // Rich detailed metadata for each hotel
@@ -337,7 +338,8 @@ export default function HotelDetailPage({
   allHotels = [],
   onSelectHotel,
   experiences = [],
-  onSelectExperience
+  onSelectExperience,
+  onNavigateView
 }: HotelDetailPageProps) {
   const isSaved = wishlist.includes(hotel.id);
   const getHotelDestinationCity = (loc: string) => {
@@ -631,11 +633,21 @@ export default function HotelDetailPage({
 
             {/* Breadcrumb */}
             <div className="font-mono text-[10px] text-white/70 uppercase tracking-widest hidden sm:flex items-center gap-2">
-              <span>Home</span> 
+              <button 
+                onClick={() => onNavigateView ? onNavigateView("home") : onBack()} 
+                className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
+              >
+                HOME
+              </button> 
               <span className="text-white/40 font-bold">/</span> 
-              <span>Hotels</span> 
+              <button 
+                onClick={() => onNavigateView ? onNavigateView("hotels") : onBack()} 
+                className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
+              >
+                HOTELS
+              </button> 
               <span className="text-white/40 font-bold">/</span> 
-              <span className="text-white/90 font-bold">{hotel.name}</span>
+              <span className="text-white/95 font-bold tracking-widest truncate max-w-[200px] sm:max-w-[300px] inline-block uppercase">{hotel.name}</span>
             </div>
           </div>
         </div>

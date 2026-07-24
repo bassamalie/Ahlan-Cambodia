@@ -12,6 +12,7 @@ interface MosqueDetailPageProps {
   onToggleWishlist: (id: string) => void;
   allRestaurants: Restaurant[];
   onSelectRestaurant: (restaurant: Restaurant) => void;
+  onNavigateView?: (view: string) => void;
 }
 
 // Rich detailed metadata for each mosque
@@ -122,7 +123,8 @@ export default function MosqueDetailPage({
   wishlist, 
   onToggleWishlist,
   allRestaurants,
-  onSelectRestaurant
+  onSelectRestaurant,
+  onNavigateView
 }: MosqueDetailPageProps) {
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -201,17 +203,27 @@ export default function MosqueDetailPage({
               className="flex items-center gap-2 text-white/95 hover:text-white font-mono text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer bg-black/35 hover:bg-black/55 px-4 py-2 rounded-full border border-white/10 backdrop-blur-sm"
               id="btn-mosque-back"
             >
-              <ArrowLeft className="w-4 h-4 text-brand-blue-accent" />
+              <ArrowLeft className="w-4 h-4 text-white" />
               <span>Back</span>
             </button>
 
             {/* Breadcrumb */}
             <div className="font-mono text-[10px] text-white/75 uppercase tracking-widest hidden sm:flex items-center gap-2">
-              <span>Home</span> 
+              <button 
+                onClick={() => onNavigateView ? onNavigateView("home") : onBack()} 
+                className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
+              >
+                HOME
+              </button> 
               <span className="text-white/40 font-bold">/</span> 
-              <span>Mosques</span> 
+              <button 
+                onClick={() => onNavigateView ? onNavigateView("mosques") : onBack()} 
+                className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
+              >
+                MOSQUES
+              </button> 
               <span className="text-white/40 font-bold">/</span> 
-              <span className="text-brand-blue-accent font-bold">{mosque.name}</span>
+              <span className="text-white/95 font-bold tracking-widest truncate max-w-[200px] sm:max-w-[300px] inline-block uppercase">{mosque.name}</span>
             </div>
           </div>
         </div>

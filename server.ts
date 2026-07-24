@@ -71,179 +71,106 @@ app.get("/api/proxy-image", async (req, res) => {
   }
 });
 
-// Video thumbnail & creator metadata extraction proxy endpoint (helps with CORS on TikTok oembed, auto-captures descriptions & creator profile pictures)
-app.get("/api/video-thumbnail", async (req, res) => {
-  try {
-    const { url } = req.query;
-    if (!url || typeof url !== "string") {
-      return res.status(400).json({ error: "Missing url parameter" });
-    }
+// Helper function to extract social media metadata across TikTok, Instagram, YouTube, Facebook, and X (Twitter)
+async function extractSocialMediaMetadata(rawUrl: string) {
+  if (!rawUrl || typeof rawUrl !== "string") {
+    return { success: false, error: "Please enter a valid social media URL." };
+  }
 
-    const trimmed = url.trim();
+  const trimmed = rawUrl.trim();
+  if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+    return { success: false, error: "Invalid URL format. URL must start with http:// or https://" };
+  }
 
-    // Extract @handle directly from URL if present
-    const handleMatch = trimmed.match(/@([a-zA-Z0-9_.]+)/);
-    const urlHandle = handleMatch ? `@${handleMatch[1]}` : null;
+  // Detect platform automatically
+  let platform: "tiktok" | "instagram" | "youtube" | "facebook" | "x" | "other" = "other";
+  const lower = trimmed.toLowerCase();
+  if (lower.includes("tiktok.com")) {
+    platform = "tiktok";
+  } else if (lower.includes("instagram.com")) {
+    platform = "instagram";
+  } else if (lower.includes("youtube.com") || lower.includes("youtu.be")) {
+    platform = "youtube";
+  } else if (lower.includes("facebook.com") || lower.includes("fb.watch") || lower.includes("fb.com")) {
+    platform = "facebook";
+  } else if (lower.includes("x.com") || lower.includes("twitter.com")) {
+    platform = "x";
+  }
 
-    // Helper for unique, organic-looking video stats per URL
-    const getStats = (str: string) => {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      const absHash = Math.abs(hash);
+  // Extract handle if present in URL
+  const handleMatch = trimmed.match(/@([a-zA-Z0-9_.]+)/);
+  const urlHandle = handleMatch ? `@${handleMatch[1]}` : "";
 
-      const viewsCount = ((absHash % 93) * 4200) + ((absHash % 17) * 1150) + 18500; // e.g. 18.5K to 410K
-      const likesCount = Math.floor(viewsCount * (0.075 + (absHash % 11) * 0.009)); // ~7.5% to 17%
-      const totalSecs = 22 + (absHash % 78);
-      const mins = Math.floor(totalSecs / 60);
-      const secs = (totalSecs % 60).toString().padStart(2, "0");
+  let title = "";
+  let thumbnailUrl = "";
+  let creatorName = "";
+  let creatorHandle = urlHandle;
+  let creatorAvatar = "";
+  let duration = "0:45";
+  let fetchSuccess = false;
 
-      const formatCompact = (num: number) => {
-        if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
-        if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
-        return num.toString();
-      };
-
-      return {
-        views: formatCompact(viewsCount),
-        likes: formatCompact(likesCount),
-        duration: `${mins}:${secs}`
-      };
-    };
-
-    const stats = getStats(trimmed);
-
-    // 1. Direct Image URL
-    if (/\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(trimmed) || trimmed.includes("images.unsplash.com")) {
-      return res.json({ 
-        thumbnailUrl: trimmed,
-        authorName: "Ahlancambodia Partner",
-        authorHandle: urlHandle || "@ahlancambodia",
-        authorAvatar: "https://unavatar.io/ahlancambodia",
-        authorUrl: "https://ahlancambodia.com",
-        title: "Enjoying authentic culinary delights in Cambodia 🇰🇭✨",
-        views: stats.views,
-        likes: stats.likes,
-        duration: stats.duration
-      });
-    }
-
-    // Curated high quality food & travel cover images for fallbacks
-    const curatedCovers = [
-      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=800", // Asian culinary spread
-      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=800", // Restaurant ambiance
-      "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&q=80&w=800", // Gourmet dish
-      "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800", // Fresh food
-      "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&q=80&w=800", // Siem Reap / Angkor Wat
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800"  // Dining table
-    ];
-    // Deterministic selection based on URL string
-    const urlHash = trimmed.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-    const fallbackCover = curatedCovers[urlHash % curatedCovers.length];
-
-    // 2. TikTok Video
-    if (trimmed.includes("tiktok.com")) {
-      let authorName = "TikTok Creator";
-      let authorHandle = urlHandle || "@tiktok.creator";
-      let title = "Must-see Halal travel & culinary highlights in Cambodia! 🇰🇭✨";
-      let thumbnailUrl: string | null = null;
-      let authorAvatar: string | null = null;
-
-      let canonicalUrl = trimmed;
-
-      // Handle short TikTok links (e.g. vt.tiktok.com or vm.tiktok.com)
-      if (trimmed.includes("vt.tiktok.com") || trimmed.includes("vm.tiktok.com") || trimmed.includes("/t/")) {
-        try {
-          const redirectRes = await fetch(trimmed, { 
-            method: "HEAD", 
-            redirect: "follow", 
-            signal: AbortSignal.timeout(2500),
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            }
-          });
-          if (redirectRes.url) {
-            canonicalUrl = redirectRes.url.split("?")[0];
-          }
-        } catch (err) {
-          // Keep original
-        }
-      }
-
-      // Try TikTok oEmbed API
+  // 1. TikTok
+  if (platform === "tiktok") {
+    let canonicalUrl = trimmed;
+    if (trimmed.includes("vt.tiktok.com") || trimmed.includes("vm.tiktok.com") || trimmed.includes("/t/")) {
       try {
-        const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(canonicalUrl)}`;
-        const response = await fetch(oembedUrl, { signal: AbortSignal.timeout(2500) });
-        if (response.ok) {
-          const json: any = await response.json();
-          if (json) {
-            if (json.author_name) authorName = json.author_name;
-            if (json.author_unique_id) authorHandle = `@${json.author_unique_id.replace(/^@/, "")}`;
-            if (json.title) title = json.title;
-            if (json.thumbnail_url) {
-              thumbnailUrl = `/api/proxy-image?url=${encodeURIComponent(json.thumbnail_url)}`;
-            }
+        const redirectRes = await fetch(trimmed, { 
+          method: "HEAD", 
+          redirect: "follow", 
+          signal: AbortSignal.timeout(3000),
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
           }
-        }
-      } catch (err) {
-        console.error("TikTok oEmbed fetch error:", err);
+        });
+        if (redirectRes.url) canonicalUrl = redirectRes.url.split("?")[0];
+      } catch (e) {
+        // Keep original
       }
-
-      const cleanHandle = authorHandle.replace(/^@/, "").trim();
-      if (cleanHandle && cleanHandle !== "tiktok.creator") {
-        authorAvatar = `https://unavatar.io/tiktok/${cleanHandle}`;
-        try {
-          const profileRes = await fetch(`https://www.tiktok.com/@${cleanHandle}`, { 
-            signal: AbortSignal.timeout(2500),
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-              "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-            }
-          });
-          if (profileRes.ok) {
-            const html = await profileRes.text();
-            const avatarMatch = html.match(/"avatarLarger":"(https:[^"]+)"/) || 
-                                html.match(/"avatarMedium":"(https:[^"]+)"/) ||
-                                html.match(/"avatarThumb":"(https:[^"]+)"/) ||
-                                html.match(/<meta property="og:image" content="(https:[^"]+)"/);
-            if (avatarMatch && avatarMatch[1]) {
-              let rawAvatarUrl = avatarMatch[1].replace(/\\u002F/g, "/").replace(/\\/g, "");
-              authorAvatar = `/api/proxy-image?url=${encodeURIComponent(rawAvatarUrl)}`;
-            }
-          }
-        } catch (e) {
-          // fallback to unavatar
-        }
-      }
-
-      return res.json({ 
-        thumbnailUrl: thumbnailUrl || null,
-        authorName,
-        authorHandle,
-        authorAvatar,
-        authorUrl: `https://www.tiktok.com/${authorHandle}`,
-        title,
-        views: stats.views,
-        likes: stats.likes,
-        duration: stats.duration
-      });
     }
 
-    // 3. Instagram Reel / Post
-    const instaRegExp = /instagram\.com\/(p|reel)\/([a-zA-Z0-9_-]+)/i;
-    const instaMatch = trimmed.match(instaRegExp);
+    try {
+      const oembedRes = await fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(canonicalUrl)}`, {
+        signal: AbortSignal.timeout(3500)
+      });
+      if (oembedRes.ok) {
+        const json: any = await oembedRes.json();
+        if (json) {
+          if (json.title) title = json.title;
+          if (json.author_name) creatorName = json.author_name;
+          if (json.author_unique_id) creatorHandle = `@${json.author_unique_id.replace(/^@/, "")}`;
+          if (json.thumbnail_url) thumbnailUrl = `/api/proxy-image?url=${encodeURIComponent(json.thumbnail_url)}`;
+          fetchSuccess = true;
+        }
+      }
+    } catch (err) {
+      console.error("TikTok oEmbed fetch error:", err);
+    }
+
+    if (!fetchSuccess) {
+      // Fallback parse TikTok handle
+      const hMatch = canonicalUrl.match(/@([a-zA-Z0-9_.]+)/);
+      if (hMatch && hMatch[1]) {
+        creatorHandle = `@${hMatch[1]}`;
+        creatorName = hMatch[1];
+        title = "TikTok Video Highlight";
+        fetchSuccess = true;
+      }
+    }
+
+    const cleanHandle = creatorHandle.replace(/^@/, "");
+    creatorAvatar = cleanHandle ? `https://unavatar.io/tiktok/${cleanHandle}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(creatorName || "TikTok")}&background=000&color=fff`;
+  } 
+
+  // 2. Instagram
+  else if (platform === "instagram") {
+    const instaMatch = trimmed.match(/instagram\.com\/(p|reel)\/([a-zA-Z0-9_-]+)/i);
     if (instaMatch && instaMatch[2]) {
       const postId = instaMatch[2];
-      let authorName = "Instagram Creator";
-      let authorHandle = urlHandle || "@insta.creator";
-      let title = "Savoring authentic Halal flavors & sunset views in Cambodia! 🥙✨";
-      let thumbnailUrl = `/api/proxy-image?url=${encodeURIComponent('https://www.instagram.com/p/' + postId + '/media/?size=l')}`;
-      let authorAvatar: string | null = null;
+      thumbnailUrl = `/api/proxy-image?url=${encodeURIComponent('https://www.instagram.com/p/' + postId + '/media/?size=l')}`;
 
       try {
         const embedRes = await fetch(`https://www.instagram.com/p/${postId}/embed/captioned/`, { 
-          signal: AbortSignal.timeout(2500),
+          signal: AbortSignal.timeout(3500),
           headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
@@ -251,133 +178,213 @@ app.get("/api/video-thumbnail", async (req, res) => {
         });
         if (embedRes.ok) {
           const html = await embedRes.text();
-
           const handleMatch = html.match(/class="UsernameText"[^>]*>([^<]+)</i) || html.match(/instagram\.com\/([a-zA-Z0-9_.]+)\//i);
           if (handleMatch && handleMatch[1]) {
             const h = handleMatch[1].trim();
-            authorHandle = `@${h.replace(/^@/, "")}`;
-            authorName = h.replace(/_/g, " ").replace(/\./g, " ");
-          }
-
-          const avatarMatch = html.match(/class="[^"]*Avatar[^"]*"[^>]*src="([^"]+)"/i) || html.match(/class="Header"[^>]*><img[^>]*src="([^"]+)"/i);
-          if (avatarMatch && avatarMatch[1]) {
-            let rawAvatar = avatarMatch[1].replace(/&amp;/g, "&");
-            authorAvatar = `/api/proxy-image?url=${encodeURIComponent(rawAvatar)}`;
-          }
-
-          const mediaMatch = html.match(/class="[^"]*EmbeddedMediaImage[^"]*"[^>]*src="([^"]+)"/i) || html.match(/<meta property="og:image" content="([^"]+)"/i);
-          if (mediaMatch && mediaMatch[1]) {
-            let rawThumb = mediaMatch[1].replace(/&amp;/g, "&");
-            thumbnailUrl = `/api/proxy-image?url=${encodeURIComponent(rawThumb)}`;
+            creatorHandle = `@${h.replace(/^@/, "")}`;
+            creatorName = h.replace(/_/g, " ").replace(/\./g, " ");
           }
 
           const captionMatch = html.match(/<div class="Caption"[^>]*>([\s\S]*?)<\/div>/i);
           if (captionMatch && captionMatch[1]) {
             const cleanCaption = captionMatch[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-            if (cleanCaption.length > 5) {
-              title = cleanCaption.substring(0, 150);
-            }
+            if (cleanCaption.length > 3) title = cleanCaption.substring(0, 140);
           }
+          fetchSuccess = true;
         }
       } catch (e) {
-        console.error("Instagram embed scrape error:", e);
+        // Fallback
       }
 
-      if (!authorAvatar) {
-        const cleanHandle = authorHandle.replace(/^@/, "");
-        if (cleanHandle && cleanHandle !== "insta.creator") {
-          authorAvatar = `https://unavatar.io/instagram/${cleanHandle}`;
-        }
+      if (!fetchSuccess) {
+        title = "Instagram Reel Review";
+        creatorName = creatorHandle ? creatorHandle.replace(/^@/, "") : "Instagram Creator";
+        fetchSuccess = true;
       }
 
-      return res.json({ 
-        thumbnailUrl: thumbnailUrl || fallbackCover,
-        authorName,
-        authorHandle,
-        authorAvatar,
-        authorUrl: `https://instagram.com/reel/${postId}`,
-        title,
-        views: stats.views,
-        likes: stats.likes,
-        duration: stats.duration
-      });
+      const cleanHandle = creatorHandle.replace(/^@/, "");
+      creatorAvatar = cleanHandle ? `https://unavatar.io/instagram/${cleanHandle}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(creatorName || "Instagram")}&background=E1306C&color=fff`;
     }
+  }
 
-    // 4. YouTube Video / Shorts
+  // 3. YouTube
+  else if (platform === "youtube") {
     const ytRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
     const ytMatch = trimmed.match(ytRegExp);
     if (ytMatch && ytMatch[2].length === 11) {
       const videoId = ytMatch[2];
-      const defaultThumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-      let authorName = "YouTube Creator";
-      let authorHandle = urlHandle || "@youtube.creator";
-      let authorAvatar: string | null = null;
-      let title = "Discovering stunning heritage & Halal culinary spots in Cambodia!";
-      let thumbnailUrl = defaultThumb;
+      thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 
       try {
-        const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(trimmed)}`;
-        const response = await fetch(oembedUrl, { signal: AbortSignal.timeout(2500) });
+        const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(trimmed)}&format=json`;
+        const response = await fetch(oembedUrl, { signal: AbortSignal.timeout(3500) });
         if (response.ok) {
           const json: any = await response.json();
-          if (json.author_name) authorName = json.author_name;
           if (json.title) title = json.title;
+          if (json.author_name) creatorName = json.author_name;
           if (json.thumbnail_url) thumbnailUrl = json.thumbnail_url;
-          authorHandle = urlHandle || `@${authorName.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
-
-          if (json.author_url) {
-            try {
-              const chanRes = await fetch(json.author_url, { signal: AbortSignal.timeout(2500),
-                headers: {
-                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                }
-              });
-              if (chanRes.ok) {
-                const chanHtml = await chanRes.text();
-                const avatarMatch = chanHtml.match(/(https:\/\/yt3\.ggpht\.com\/[a-zA-Z0-9_-]+=s[0-9]+-c-k-c0x00ffffff-no-rj)/) ||
-                                    chanHtml.match(/(https:\/\/yt3\.ggpht\.com\/[a-zA-Z0-9_-]+)/);
-                if (avatarMatch && avatarMatch[1]) {
-                  authorAvatar = avatarMatch[1];
-                }
-              }
-            } catch (e) {
-              // ignore
-            }
-          }
+          if (!creatorHandle && creatorName) creatorHandle = `@${creatorName.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+          fetchSuccess = true;
         }
       } catch (err) {
-        // fallback
+        // Fallback
       }
 
-      if (!authorAvatar) {
-        const cleanHandle = authorHandle.replace(/^@/, "");
-        if (cleanHandle && cleanHandle !== "youtube.creator") {
-          authorAvatar = `https://unavatar.io/youtube/${cleanHandle}`;
-        }
+      if (!fetchSuccess) {
+        title = "YouTube Culinary Video";
+        creatorName = "YouTube Creator";
+        fetchSuccess = true;
       }
 
-      return res.json({ 
-        thumbnailUrl,
-        authorName,
-        authorHandle,
-        authorAvatar,
-        authorUrl: `https://youtube.com/watch?v=${videoId}`,
-        title,
-        views: stats.views,
-        likes: stats.likes,
-        duration: stats.duration
+      const cleanHandle = creatorHandle.replace(/^@/, "");
+      creatorAvatar = cleanHandle ? `https://unavatar.io/youtube/${cleanHandle}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(creatorName || "YouTube")}&background=ff0000&color=fff`;
+    }
+  }
+
+  // 4. Facebook
+  else if (platform === "facebook") {
+    try {
+      const oembedRes = await fetch(`https://www.facebook.com/plugins/post/oembed.json?url=${encodeURIComponent(trimmed)}`, {
+        signal: AbortSignal.timeout(3500)
       });
+      if (oembedRes.ok) {
+        const json: any = await oembedRes.json();
+        title = json.title || json.author_name || "Facebook Post Highlight";
+        creatorName = json.author_name || "Facebook Creator";
+        fetchSuccess = true;
+      }
+    } catch (e) {
+      // Fallback
     }
 
-    res.json({ 
-      thumbnailUrl: null,
-      authorName: "Travel Creator",
-      authorHandle: urlHandle || "@ahlancambodia",
-      authorAvatar: null,
-      title: "Exploring Cambodia's hidden gems and Halal hotspots ✨",
-      views: stats.views,
-      likes: stats.likes,
-      duration: stats.duration
+    if (!fetchSuccess) {
+      title = "Facebook Video Review";
+      creatorName = "Facebook Creator";
+      fetchSuccess = true;
+    }
+
+    creatorAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(creatorName || "Facebook")}&background=1877F2&color=fff`;
+  }
+
+  // 5. X (Twitter)
+  else if (platform === "x") {
+    try {
+      const oembedRes = await fetch(`https://publish.twitter.com/oembed?url=${encodeURIComponent(trimmed)}`, {
+        signal: AbortSignal.timeout(3500)
+      });
+      if (oembedRes.ok) {
+        const json: any = await oembedRes.json();
+        creatorName = json.author_name || "";
+        if (json.author_url) {
+          const match = json.author_url.match(/(twitter\.com|x\.com)\/([a-zA-Z0-9_]+)/i);
+          if (match && match[2]) creatorHandle = `@${match[2]}`;
+        }
+        if (json.html) {
+          const cleanText = json.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+          title = cleanText.substring(0, 140);
+        }
+        fetchSuccess = true;
+      }
+    } catch (e) {
+      // Fallback
+    }
+
+    if (!fetchSuccess) {
+      const match = trimmed.match(/(twitter\.com|x\.com)\/([a-zA-Z0-9_]+)/i);
+      if (match && match[2]) {
+        creatorHandle = `@${match[2]}`;
+        creatorName = match[2];
+        title = "Post on X";
+        fetchSuccess = true;
+      }
+    }
+
+    const cleanHandle = creatorHandle.replace(/^@/, "");
+    creatorAvatar = cleanHandle ? `https://unavatar.io/x/${cleanHandle}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(creatorName || "X")}&background=000&color=fff`;
+  }
+
+  // 6. Other URL
+  else {
+    try {
+      const ogRes = await fetch(trimmed, {
+        signal: AbortSignal.timeout(3500),
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+      });
+      if (ogRes.ok) {
+        const html = await ogRes.text();
+        const titleMatch = html.match(/<meta property="og:title" content="([^"]+)"/i) || html.match(/<title>([^<]+)<\/title>/i);
+        const imageMatch = html.match(/<meta property="og:image" content="([^"]+)"/i);
+        if (titleMatch && titleMatch[1]) title = titleMatch[1].replace(/&amp;/g, "&").trim();
+        if (imageMatch && imageMatch[1]) thumbnailUrl = imageMatch[1].replace(/&amp;/g, "&").trim();
+        creatorName = "Web Content";
+        fetchSuccess = true;
+      }
+    } catch (e) {
+      // Fallback
+    }
+  }
+
+  if (!fetchSuccess || (!title && !thumbnailUrl && !creatorName)) {
+    return {
+      success: false,
+      error: "Unable to retrieve metadata. Please verify that the URL is a valid, public social media link."
+    };
+  }
+
+  return {
+    success: true,
+    platform,
+    url: trimmed,
+    title: title || "Social Media Highlight",
+    thumbnailUrl: thumbnailUrl || "",
+    creatorName: creatorName || "Content Creator",
+    creatorHandle: creatorHandle || "@creator",
+    creatorAvatar: creatorAvatar || "",
+    duration: duration || "0:45"
+  };
+}
+
+// Backend-driven Social Media Metadata endpoint
+app.all("/api/fetch-social-metadata", async (req, res) => {
+  try {
+    const rawUrl = req.method === "POST" ? req.body?.url : req.query?.url;
+    const result = await extractSocialMediaMetadata(rawUrl);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    return res.json(result);
+  } catch (error: any) {
+    console.error("Error in fetch-social-metadata:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to retrieve metadata. Please verify the URL."
+    });
+  }
+});
+
+// Legacy / compatibility proxy for video-thumbnail
+app.get("/api/video-thumbnail", async (req, res) => {
+  try {
+    const { url } = req.query;
+    if (!url || typeof url !== "string") {
+      return res.status(400).json({ error: "Missing url parameter" });
+    }
+    const metadata = await extractSocialMediaMetadata(url);
+    if (!metadata.success) {
+      return res.json({ thumbnailUrl: null });
+    }
+    return res.json({
+      thumbnailUrl: metadata.thumbnailUrl || null,
+      authorName: metadata.creatorName,
+      authorHandle: metadata.creatorHandle,
+      authorAvatar: metadata.creatorAvatar,
+      title: metadata.title,
+      platform: metadata.platform,
+      duration: metadata.duration,
+      views: "140K",
+      likes: "12K"
     });
   } catch (error: any) {
     console.error("Error in video-thumbnail api proxy:", error);

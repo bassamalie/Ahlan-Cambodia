@@ -606,6 +606,44 @@ export default function App() {
     }
   }, [currentView, activeDestination, activeExperience, activePackage, activeHotel, activeRestaurant, activeMosque, activeGuide]);
 
+  // Dynamic Document Title Sync
+  useEffect(() => {
+    let pageTitle = "Muslim Friendly Travel";
+    if (currentView === "destinations") {
+      pageTitle = "Destinations";
+    } else if (currentView === "destination-detail" && activeDestination) {
+      pageTitle = activeDestination.name;
+    } else if (currentView === "experiences") {
+      pageTitle = "Curated Experiences";
+    } else if (currentView === "experience-detail" && activeExperience) {
+      pageTitle = activeExperience.title || activeExperience.name || "Experience";
+    } else if (currentView === "packages") {
+      pageTitle = "Tour Packages";
+    } else if (currentView === "package-detail" && activePackage) {
+      pageTitle = activePackage.title || activePackage.name || "Tour Package";
+    } else if (currentView === "hotels") {
+      pageTitle = "Halal-Friendly Luxury Hotels";
+    } else if (currentView === "hotel-detail" && activeHotel) {
+      pageTitle = activeHotel.name;
+    } else if (currentView === "restaurants") {
+      pageTitle = "Halal Dining & Restaurants";
+    } else if (currentView === "dining-detail" && activeRestaurant) {
+      pageTitle = activeRestaurant.name;
+    } else if (currentView === "mosques") {
+      pageTitle = "Mosques & Prayer Spaces";
+    } else if (currentView === "mosque-detail" && activeMosque) {
+      pageTitle = activeMosque.name;
+    } else if (currentView === "inspiration") {
+      pageTitle = "Inspiration & Travel Guides";
+    } else if (currentView === "blog-detail" && activeGuide) {
+      pageTitle = activeGuide.title;
+    } else if (currentView === "admin-cms") {
+      pageTitle = "CMS Admin Console";
+    }
+
+    document.title = `Ahlan Cambodia | ${pageTitle}`;
+  }, [currentView, activeDestination, activeExperience, activePackage, activeHotel, activeRestaurant, activeMosque, activeGuide]);
+
   const navigateToSection = (sectionId: string) => {
     setMobileMenuOpen(false);
     if (currentView !== "home") {
@@ -894,6 +932,18 @@ export default function App() {
 
   // Calculate total saved count
   const totalSavedCount: number = Object.keys(wishlist).reduce((acc: number, key: string) => acc + (wishlist[key]?.length || 0), 0);
+
+  if (isLoadingDB) {
+    return (
+      <div className="min-h-screen bg-[#0F1626] flex flex-col items-center justify-center p-6 text-center text-white font-sans">
+        <div className="relative mb-6">
+          <div className="w-16 h-16 border-4 border-brand-blue-accent/30 border-t-brand-blue-accent rounded-full animate-spin"></div>
+        </div>
+        <h2 className="font-serif text-2xl font-bold text-white tracking-wide">Ahlan Cambodia</h2>
+        <p className="text-xs text-white/60 mt-2 font-mono tracking-wider uppercase">Loading database content...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white text-brand-charcoal min-h-screen relative font-sans">
@@ -2373,6 +2423,10 @@ export default function App() {
             }
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
+          onNavigateView={(view) => {
+            setCurrentView(view);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
           wishlist={wishlist.experiences || []}
           onToggleWishlist={(id) => {
             const category = "experiences";
@@ -2435,6 +2489,10 @@ export default function App() {
             }
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
+          onNavigateView={(view) => {
+            setCurrentView(view);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
           wishlist={wishlist.packages || []}
           onToggleWishlist={(id) => {
             const category = "packages";
@@ -2472,6 +2530,10 @@ export default function App() {
             } else {
               setCurrentView("hotels");
             }
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          onNavigateView={(view) => {
+            setCurrentView(view);
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
           wishlist={wishlist.hotels || []}
@@ -2523,6 +2585,10 @@ export default function App() {
             } else {
               setCurrentView("restaurants");
             }
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          onNavigateView={(view) => {
+            setCurrentView(view);
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
           wishlist={wishlist.restaurants || []}
@@ -2665,6 +2731,10 @@ export default function App() {
             }
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
+          onNavigateView={(view) => {
+            setCurrentView(view);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
           wishlist={wishlist.mosques || []}
           onToggleWishlist={(id) => {
             const category = "mosques";
@@ -2757,6 +2827,10 @@ export default function App() {
             } else {
               setCurrentView("inspiration");
             }
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          onNavigateView={(view) => {
+            setCurrentView(view);
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
           allGuides={allGuides}
@@ -2966,14 +3040,22 @@ export default function App() {
                 <div className="space-y-4">
                   <h4 className="text-xs font-mono text-brand-blue-accent tracking-widest uppercase font-bold">Bespoke Timeline Overview</h4>
                   <div className="space-y-2.5">
-                    {selectedItem.data.itineraryOverview.map((item: string, idx: number) => (
-                      <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-brand-charcoal/90">
-                        <span className="font-mono text-brand-green font-bold bg-brand-green/10 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">
-                          Day {idx + 1}
-                        </span>
-                        <span className="leading-relaxed font-medium">{item.split(":")[1] || item}</span>
-                      </div>
-                    ))}
+                    {selectedItem.data.itineraryOverview.map((item: string, idx: number) => {
+                      const colonIdx = item.indexOf(":");
+                      const title = colonIdx !== -1 ? item.substring(0, colonIdx).trim() : `Day ${idx + 1}`;
+                      const desc = colonIdx !== -1 ? item.substring(colonIdx + 1).trim() : item;
+                      return (
+                        <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-brand-charcoal/90">
+                          <span className="font-mono text-brand-green font-bold bg-brand-green/10 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">
+                            Day {idx + 1}
+                          </span>
+                          <div className="leading-relaxed">
+                            <span className="font-bold text-brand-charcoal">{title}: </span>
+                            <span className="font-normal text-brand-charcoal/80">{desc}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <div className="bg-brand-green/5 rounded-xl p-4 border border-brand-green/10 space-y-2 text-xs text-brand-green">

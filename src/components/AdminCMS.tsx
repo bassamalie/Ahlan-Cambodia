@@ -13,6 +13,7 @@ import { DEFAULT_CUSTOM_HEAD_SCRIPT } from "../App";
 import logoImg from "../../Logo-Navbar.png";
 import TransparentLogo from "./TransparentLogo";
 import RichTextEditor from "./RichTextEditor";
+import { SocialVideoCard } from "./SocialVideoCard";
 import { uploadToFirebaseStorage, listAllUploadedFiles, deleteFromFirebaseStorage } from "../firebase";
 
 interface AdminCMSProps {
@@ -624,7 +625,7 @@ export default function AdminCMS({
   ]);
 
   // Stateful package price/availability for interactivity
-  const [localPackages, setLocalPackages] = useState<TourPackage[]>(packages || tourPackages);
+  const [localPackages, setLocalPackages] = useState<TourPackage[]>(packages || []);
 
   useEffect(() => {
     if (packages) {
@@ -633,7 +634,7 @@ export default function AdminCMS({
   }, [packages]);
 
   // Stateful hotels for editing/pricing
-  const [localHotels, setLocalHotels] = useState<Hotel[]>(hotelsProp || hotels);
+  const [localHotels, setLocalHotels] = useState<Hotel[]>(hotelsProp || []);
 
   useEffect(() => {
     if (hotelsProp) {
@@ -642,13 +643,11 @@ export default function AdminCMS({
   }, [hotelsProp]);
 
   // Stateful restaurants for editing/pricing
-  const [localRestaurants, setLocalRestaurants] = useState<Restaurant[]>(restaurantsProp || restaurants);
+  const [localRestaurants, setLocalRestaurants] = useState<Restaurant[]>(restaurantsProp || []);
 
   useEffect(() => {
     if (restaurantsProp) {
       setLocalRestaurants(restaurantsProp);
-    } else {
-      setLocalRestaurants(restaurants);
     }
   }, [restaurantsProp]);
 
@@ -714,15 +713,137 @@ export default function AdminCMS({
     { q: "Do you accommodate other allergen requests?", a: "Yes, our culinary team is fully trained to manage gluten-free, dairy-free, and nut-free requests alongside our Halal protocol." }
   ]);
 
-  // Step 7: Social Videos
-  const [diningSocialVideos, setDiningSocialVideos] = useState<{ platform: "tiktok" | "instagram" | "youtube" | "other"; url: string; title?: string; thumbnailUrl?: string; creatorName?: string; creatorHandle?: string; creatorAvatar?: string }[]>([]);
+  // Step 6: Social Media Links & Video Reels
+  const [diningSocialVideos, setDiningSocialVideos] = useState<{ 
+    platform: "tiktok" | "instagram" | "youtube" | "facebook" | "x" | "other" | string; 
+    url: string; 
+    title?: string; 
+    thumbnailUrl?: string; 
+    creatorName?: string; 
+    creatorHandle?: string; 
+    creatorAvatar?: string;
+    duration?: string;
+    views?: string;
+    likes?: string;
+    isFetching?: boolean;
+    isUploadingThumb?: boolean;
+    fetchError?: string | null;
+    fetchSuccess?: boolean;
+  }[]>([]);
 
   const addSocialVideo = () => {
-    setDiningSocialVideos(prev => [...prev, { platform: "tiktok", url: "", title: "", thumbnailUrl: "", creatorName: "", creatorHandle: "", creatorAvatar: "" }]);
+    setDiningSocialVideos(prev => [...prev, { platform: "tiktok", url: "", title: "", thumbnailUrl: "", creatorName: "", creatorHandle: "", creatorAvatar: "", duration: "0:45" }]);
   };
 
   const removeSocialVideo = (index: number) => {
     setDiningSocialVideos(prev => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleUploadThumbnail = async (index: number, file: File) => {
+    if (!file) return;
+    setDiningSocialVideos(prev => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], isUploadingThumb: true };
+      return copy;
+    });
+
+    try {
+      const uploadedUrl = await uploadToFirebaseStorage(file);
+      setDiningSocialVideos(prev => {
+        const copy = [...prev];
+        copy[index] = {
+          ...copy[index],
+          thumbnailUrl: uploadedUrl,
+          isUploadingThumb: false,
+          fetchError: null
+        };
+        return copy;
+      });
+      triggerToast("Cover photo uploaded successfully!", "success");
+    } catch (err) {
+      console.error("Error uploading custom cover image:", err);
+      setDiningSocialVideos(prev => {
+        const copy = [...prev];
+        copy[index] = {
+          ...copy[index],
+          isUploadingThumb: false,
+          fetchError: "Failed to upload cover image. Please try again or paste a direct image URL."
+        };
+        return copy;
+      });
+      triggerToast("Failed to upload cover image.", "error");
+    }
+  };
+
+  const fetchSocialMediaMetadata = async (index: number) => {
+    const item = diningSocialVideos[index];
+    if (!item || !item.url || !item.url.trim()) {
+      setDiningSocialVideos(prev => {
+        const copy = [...prev];
+        copy[index] = { ...copy[index], fetchError: "Please enter a valid social media URL first." };
+        return copy;
+      });
+      return;
+    }
+
+    // Set loading state
+    setDiningSocialVideos(prev => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], isFetching: true, fetchError: null, fetchSuccess: false };
+      return copy;
+    });
+
+    try {
+      const res = await fetch("/api/fetch-social-metadata", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: item.url.trim() })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setDiningSocialVideos(prev => {
+          const copy = [...prev];
+          copy[index] = {
+            ...copy[index],
+            platform: data.platform || "tiktok",
+            url: data.url || item.url.trim(),
+            title: data.title || "",
+            thumbnailUrl: data.thumbnailUrl || "",
+            creatorName: data.creatorName || "",
+            creatorHandle: data.creatorHandle || "",
+            creatorAvatar: data.creatorAvatar || "",
+            duration: data.duration || "0:45",
+            isFetching: false,
+            fetchError: null,
+            fetchSuccess: true
+          };
+          return copy;
+        });
+      } else {
+        setDiningSocialVideos(prev => {
+          const copy = [...prev];
+          copy[index] = {
+            ...copy[index],
+            isFetching: false,
+            fetchSuccess: false,
+            fetchError: data.error || "Unable to retrieve metadata. Please verify that the URL is a valid, public social media link."
+          };
+          return copy;
+        });
+      }
+    } catch (err: any) {
+      setDiningSocialVideos(prev => {
+        const copy = [...prev];
+        copy[index] = {
+          ...copy[index],
+          isFetching: false,
+          fetchSuccess: false,
+          fetchError: "Network or server error while fetching metadata. Please verify the URL and try again."
+        };
+        return copy;
+      });
+    }
   };
 
   const resetDiningForm = () => {
@@ -859,7 +980,10 @@ export default function AdminCMS({
       prayerSpaceDesc: diningPrayerSpaceDesc,
       prayerSpaceNote: diningPrayerSpaceNote,
       faqs: diningFaqs,
-      socialVideos: diningSocialVideos
+      socialVideos: diningSocialVideos.map(v => {
+        const { isFetching, isUploadingThumb, fetchError, fetchSuccess, ...clean } = v;
+        return clean;
+      })
     };
 
     if (editingDiningId) {
@@ -956,13 +1080,11 @@ export default function AdminCMS({
   ]);
 
   // --- Mosque Form/Wizard States & Helpers ---
-  const [localMosques, setLocalMosques] = useState<Mosque[]>(mosquesProp || mosques);
+  const [localMosques, setLocalMosques] = useState<Mosque[]>(mosquesProp || []);
 
   useEffect(() => {
     if (mosquesProp) {
       setLocalMosques(mosquesProp);
-    } else {
-      setLocalMosques(mosques);
     }
   }, [mosquesProp]);
 
@@ -1070,13 +1192,11 @@ export default function AdminCMS({
   };
 
   // --- Blog Form/Wizard States & Helpers ---
-  const [localGuides, setLocalGuides] = useState<TravelGuide[]>(travelGuidesProp || travelGuides);
+  const [localGuides, setLocalGuides] = useState<TravelGuide[]>(travelGuidesProp || []);
 
   useEffect(() => {
     if (travelGuidesProp) {
       setLocalGuides(travelGuidesProp);
-    } else {
-      setLocalGuides(travelGuides);
     }
   }, [travelGuidesProp]);
 
@@ -1648,28 +1768,16 @@ export default function AdminCMS({
   const [packExclusions, setPackExclusions] = useState<string[]>([]);
   const [newExclusion, setNewExclusion] = useState("");
 
-  // Step 4: Hotel Association
-  const [hotelSelectionMode, setHotelSelectionMode] = useState<"predefined" | "custom">("predefined");
-  const [selectedHotelIds, setSelectedHotelIds] = useState<string[]>([]);
-  const [customHotelName, setCustomHotelName] = useState("");
-  const [customHotelLocation, setCustomHotelLocation] = useState("");
-  const [customHotelImage, setCustomHotelImage] = useState("");
-  const [customHotelDescription, setCustomHotelDescription] = useState("");
-  const [customHotelHighlights, setCustomHotelHighlights] = useState<string[]>(["", "", ""]);
-
-  // Step 5: Gallery Images
-  const [galleryUrls, setGalleryUrls] = useState<string[]>([
-    "", "", "", "", "", "", "", ""
+  // Step 4: Multi-Hotel Association (Up to 4 Hotels - Mix and Match)
+  const [packageHotelSlots, setPackageHotelSlots] = useState<PackageHotelItem[]>([
+    { type: "predefined", hotelId: "" }
   ]);
 
-  // Step 6: FAQs
-  const [faqList, setFaqList] = useState<{ q: string; a: string }[]>([
-    { q: "Are all meals included in the package verified Halal?", a: "Yes, absolutely. We strictly partner with certified Halal kitchens, or pre-vetted pork-free and alcohol-free dining establishments." },
-    { q: "How does prayer-time coordination work during our tours?", a: "Our private guides and chauffeurs are fully aware of daily prayer schedules. Vehicles are stocked with clean prayer mats, Qibla compasses, and water spray bottles." },
-    { q: "Can this itinerary be fully customized to our group's preferences?", a: "Absolutely! This package serves as a master layout. You can adjust the duration, swap out hotels, or add specific experiences." },
-    { q: "What is the visa policy for traveling to Cambodia?", a: "Most international travelers can obtain a Tourist Visa (Type T) either online as an e-Visa before departure, or on arrival." },
-    { q: "What is your support and health safety protocol during the trip?", a: "We offer 24/7 dedicated local concierge support. All guests travel in top-tier private air-conditioned vehicles." }
-  ]);
+  // Step 5: Gallery Images (Optional)
+  const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
+
+  // Step 6: FAQs (Optional)
+  const [faqList, setFaqList] = useState<{ q: string; a: string }[]>([]);
 
   const imagePresets = [
     { name: "Pristine Beach", url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200" },
@@ -2046,13 +2154,23 @@ export default function AdminCMS({
     setPackOverview(pkg.description);
     
     if (pkg.itineraryOverview && pkg.itineraryOverview.length > 0) {
-      setPackItinerary(pkg.itineraryOverview.map((desc, idx) => ({
-        day: idx + 1,
-        title: `Day ${idx + 1}`,
-        description: desc
-      })));
+      setPackItinerary(pkg.itineraryOverview.map((desc, idx) => {
+        const colonIdx = desc.indexOf(":");
+        if (colonIdx !== -1) {
+          return {
+            day: idx + 1,
+            title: desc.substring(0, colonIdx).trim(),
+            description: desc.substring(colonIdx + 1).trim()
+          };
+        }
+        return {
+          day: idx + 1,
+          title: `Day ${idx + 1}`,
+          description: desc
+        };
+      }));
     } else {
-      setPackItinerary([{ day: 1, title: "Arrival", description: "Welcome greeting and airport transfer." }]);
+      setPackItinerary([{ day: 1, title: "Day 1 - Arrival", description: "Welcome greeting and airport transfer." }]);
     }
     
     setPackInclusions(pkg.features || []);
@@ -2060,53 +2178,54 @@ export default function AdminCMS({
     setPackExclusions(pkg.exclusions || []);
     setNewExclusion("");
     
-    if (pkg.customHotel) {
-      setHotelSelectionMode("custom");
-      setCustomHotelName(pkg.customHotel.name);
-      setCustomHotelLocation(pkg.customHotel.location);
-      setCustomHotelImage(pkg.customHotel.image || "");
-      setCustomHotelDescription(pkg.customHotel.description || "");
-      const chHighlights = pkg.customHotel.highlights || [];
-      setCustomHotelHighlights([
-        chHighlights[0] || "",
-        chHighlights[1] || "",
-        chHighlights[2] || ""
-      ]);
-      setSelectedHotelIds([]);
+    if (pkg.packageHotelsList && pkg.packageHotelsList.length > 0) {
+      setPackageHotelSlots(pkg.packageHotelsList.map(item => ({
+        type: item.type,
+        hotelId: item.hotelId || "",
+        customHotel: item.customHotel ? {
+          name: item.customHotel.name || "",
+          location: item.customHotel.location || "",
+          image: item.customHotel.image || "",
+          description: item.customHotel.description || "",
+          highlights: item.customHotel.highlights || ["", "", ""]
+        } : { name: "", location: "", image: "", description: "", highlights: ["", "", ""] }
+      })));
     } else {
-      setHotelSelectionMode("predefined");
-      setSelectedHotelIds(pkg.hotelIds || []);
-      setCustomHotelName("");
-      setCustomHotelLocation("");
-      setCustomHotelImage("");
-      setCustomHotelDescription("");
-      setCustomHotelHighlights(["", "", ""]);
+      const initialSlots: PackageHotelItem[] = [];
+      if (pkg.hotelIds && pkg.hotelIds.length > 0) {
+        pkg.hotelIds.forEach(hid => {
+          initialSlots.push({ type: "predefined", hotelId: hid });
+        });
+      }
+      if (pkg.customHotels && pkg.customHotels.length > 0) {
+        pkg.customHotels.forEach(ch => {
+          initialSlots.push({
+            type: "custom",
+            customHotel: { ...ch }
+          });
+        });
+      } else if (pkg.customHotel) {
+        initialSlots.push({
+          type: "custom",
+          customHotel: { ...pkg.customHotel }
+        });
+      }
+      if (initialSlots.length === 0) {
+        initialSlots.push({ type: "predefined", hotelId: localHotels[0]?.id || "" });
+      }
+      setPackageHotelSlots(initialSlots.slice(0, 4));
     }
     
     if (pkg.gallery && pkg.gallery.length > 0) {
-      const gUrls = [...pkg.gallery];
-      while (gUrls.length < 8) {
-        gUrls.push("");
-      }
-      setGalleryUrls(gUrls.slice(0, 8));
+      setGalleryUrls([...pkg.gallery]);
     } else {
-      setGalleryUrls(["", "", "", "", "", "", "", ""]);
+      setGalleryUrls([]);
     }
     
     if (pkg.faqs && pkg.faqs.length > 0) {
-      const fList = pkg.faqs.map(f => ({ q: f.q, a: f.a }));
-      while (fList.length < 5) {
-        fList.push({ q: "", a: "" });
-      }
-      setFaqList(fList.slice(0, 5));
+      setFaqList(pkg.faqs.map(f => ({ q: f.q, a: f.a })));
     } else {
-      setFaqList([
-        { q: "Are all meals included in the package verified Halal?", a: "Yes, absolutely. We strictly partner with certified Halal kitchens, or pre-vetted pork-free and alcohol-free dining establishments." },
-        { q: "How does prayer-time coordination work during our tours?", a: "Our private guides and chauffeurs are fully aware of daily prayer schedules. Vehicles are stocked with clean prayer mats, Qibla compasses, and water spray bottles." },
-        { q: "Can this itinerary be fully customized to our group's preferences?", a: "Absolutely! This package serves as a master layout. You can adjust the duration, swap out hotels, or add specific experiences." },
-        { q: "What is the visa policy for traveling to Cambodia?", a: "Most international travelers can obtain a Tourist Visa (Type T) either online as an e-Visa before departure, or on arrival." },
-        { q: "What is your support and health safety protocol during the trip?", a: "We offer 24/7 dedicated local concierge support. All guests travel in top-tier private air-conditioned vehicles." }
-      ]);
+      setFaqList([]);
     }
     
     setPackView("wizard");
@@ -2124,18 +2243,25 @@ export default function AdminCMS({
       return;
     }
     
-    const itineraryOverview = packItinerary.map(item => item.description || `Day ${item.day} activity.`).filter(x => x !== "");
+    const itineraryOverview = packItinerary.map((item, idx) => {
+      const title = item.title ? item.title.trim() : `Day ${item.day || idx + 1}`;
+      const desc = item.description ? item.description.trim() : '';
+      if (title && desc) {
+        return `${title}: ${desc}`;
+      }
+      return title || desc || `Day ${idx + 1} activity.`;
+    }).filter(x => x !== "");
     
-    let customHotelObj = undefined;
-    if (hotelSelectionMode === "custom") {
-      customHotelObj = {
-        name: customHotelName || "Bespoke Resort Sanctuary",
-        location: customHotelLocation || "Cambodia",
-        image: customHotelImage || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
-        description: customHotelDescription || "A luxury pre-vetted Muslim-friendly retreat.",
-        highlights: customHotelHighlights.filter(h => h.trim() !== "")
-      };
-    }
+    const cleanSlots = packageHotelSlots.filter(s => {
+      if (s.type === "predefined") {
+        return !!s.hotelId;
+      } else {
+        return !!(s.customHotel && s.customHotel.name && s.customHotel.name.trim() !== "");
+      }
+    });
+
+    const predefinedIds = cleanSlots.filter(s => s.type === "predefined" && s.hotelId).map(s => s.hotelId!);
+    const customHotelsArr = cleanSlots.filter(s => s.type === "custom" && s.customHotel).map(s => s.customHotel!);
     
     const cleanGallery = galleryUrls.filter(url => url.trim() !== "");
     const cleanFaqs = faqList.filter(f => f.q.trim() !== "" && f.a.trim() !== "");
@@ -2156,8 +2282,10 @@ export default function AdminCMS({
       brief: packBrief,
       destinations: packDestinations,
       exclusions: packExclusions,
-      hotelIds: hotelSelectionMode === "predefined" ? selectedHotelIds : [],
-      customHotel: customHotelObj,
+      packageHotelsList: cleanSlots.length > 0 ? cleanSlots : [{ type: "predefined", hotelId: localHotels[0]?.id || "" }],
+      hotelIds: predefinedIds,
+      customHotels: customHotelsArr,
+      customHotel: customHotelsArr[0] || undefined,
       gallery: cleanGallery,
       faqs: cleanFaqs,
       keyHighlights: packKeyHighlights.filter(h => h.trim() !== "")
@@ -4235,235 +4363,372 @@ export default function AdminCMS({
                       </div>
                     )}
 
-                    {/* STEP 4: HOTEL ASSOCIATION */}
+                    {/* STEP 4: HOTEL ASSOCIATION (Up to 4 Hotels Max) */}
                     {wizardStep === 4 && (
                       <div className="space-y-6 animate-fade-in">
-                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-3.5">
-                          <Building className="w-5 h-5 text-brand-blue-accent" />
-                          <div className="space-y-0.5">
-                            <h4 className="text-xs font-bold font-sans text-slate-700 uppercase tracking-wide">Stay Accommodation Association Rules</h4>
-                            <p className="text-[11px] text-slate-500 leading-relaxed font-sans">
-                              Provide either dynamic associations with existing partner resorts filtered by selected destinations, or provide a bespoke custom hotel.
-                            </p>
+                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-3.5">
+                            <Building className="w-5 h-5 text-brand-blue-accent shrink-0" />
+                            <div className="space-y-0.5">
+                              <h4 className="text-xs font-bold font-sans text-slate-700 uppercase tracking-wide">
+                                Stay Accommodations (1 to 4 Hotels Max)
+                              </h4>
+                              <p className="text-[11px] text-slate-500 leading-relaxed font-sans">
+                                Select or custom-define up to 4 hotels for this package. You can mix and match predefined database stay partners and bespoke custom hotels.
+                              </p>
+                            </div>
                           </div>
+                          {packageHotelSlots.length < 4 && (
+                            <button
+                              type="button"
+                              onClick={() => setPackageHotelSlots(prev => [...prev, { type: "predefined", hotelId: localHotels[0]?.id || "" }])}
+                              className="bg-[#0F1626] hover:bg-brand-blue-accent hover:text-[#0F1626] text-white px-3.5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors shrink-0 cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Add Hotel Slot</span>
+                            </button>
+                          )}
                         </div>
 
-                        {/* Selection mode toggler */}
-                        <div className="flex gap-4">
-                          <button
-                            type="button"
-                            onClick={() => setHotelSelectionMode("predefined")}
-                            className={`flex-1 p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                              hotelSelectionMode === "predefined"
-                                ? "bg-[#0F1626] border-brand-blue-accent text-white"
-                                : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600"
-                            }`}
-                          >
-                            <span className="text-xs font-mono font-bold uppercase tracking-wider block mb-0.5">Option A</span>
-                            <span className="text-sm font-sans font-bold block">Predefined Stay Partners</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setHotelSelectionMode("custom")}
-                            className={`flex-1 p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                              hotelSelectionMode === "custom"
-                                ? "bg-[#0F1626] border-brand-blue-accent text-white"
-                                : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600"
-                            }`}
-                          >
-                            <span className="text-xs font-mono font-bold uppercase tracking-wider block mb-0.5">Option B</span>
-                            <span className="text-sm font-sans font-bold block">Bespoke Hotel Details</span>
-                          </button>
-                        </div>
+                        {/* Slots List */}
+                        <div className="space-y-5">
+                          {packageHotelSlots.map((slot, sIdx) => (
+                            <div key={sIdx} className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200 space-y-4 shadow-sm relative">
+                              {/* Slot Header */}
+                              <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-6 h-6 rounded-full bg-[#0F1626] text-white text-[10px] font-mono font-bold flex items-center justify-center">
+                                    {sIdx + 1}
+                                  </span>
+                                  <h5 className="text-xs font-serif font-bold text-[#0F1626] uppercase tracking-wider">
+                                    Hotel Slot #{sIdx + 1}
+                                  </h5>
+                                </div>
+                                {packageHotelSlots.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setPackageHotelSlots(prev => prev.filter((_, idx) => idx !== sIdx))}
+                                    className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1.5 rounded-lg text-xs font-mono font-bold uppercase flex items-center gap-1 transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>Remove Slot</span>
+                                  </button>
+                                )}
+                              </div>
 
-                        {/* Option A fields */}
-                        {hotelSelectionMode === "predefined" ? (
-                          <div className="space-y-4">
-                            <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">Select Stay Partners (Filtered by Step 1 Destinations: {packDestinations.join(", ") || "None"})</label>
-                            
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              {localHotels
-                                .filter(h => {
-                                  if (packDestinations.length === 0) return true;
-                                  return packDestinations.some(dName => h.location.toLowerCase().includes(dName.toLowerCase()));
-                                })
-                                .map((h) => {
-                                  const isSelected = selectedHotelIds.includes(h.id);
-                                  return (
-                                    <div
-                                      key={h.id}
-                                      onClick={() => {
-                                        if (isSelected) {
-                                          setSelectedHotelIds(selectedHotelIds.filter(x => x !== h.id));
-                                        } else {
-                                          setSelectedHotelIds([...selectedHotelIds, h.id]);
-                                        }
-                                      }}
-                                      className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${
-                                        isSelected
-                                          ? "bg-slate-50 border-brand-blue-accent/80 ring-2 ring-brand-blue-accent/10"
-                                          : "bg-white hover:bg-slate-50 border-slate-200"
-                                      }`}
-                                    >
-                                      <img src={h.image} alt={h.name} className="w-12 h-12 rounded-xl object-cover" />
-                                      <div className="flex-1 min-w-0">
-                                        <h5 className="text-xs font-bold text-slate-800 truncate">{h.name}</h5>
-                                        <p className="text-[10px] text-slate-400 font-light truncate">{h.location}</p>
+                              {/* Slot Type Toggle */}
+                              <div className="flex gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = [...packageHotelSlots];
+                                    updated[sIdx].type = "predefined";
+                                    if (!updated[sIdx].hotelId) {
+                                      updated[sIdx].hotelId = localHotels[0]?.id || "";
+                                    }
+                                    setPackageHotelSlots(updated);
+                                  }}
+                                  className={`flex-1 py-2.5 px-3 rounded-xl border text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
+                                    slot.type === "predefined"
+                                      ? "bg-[#0F1626] border-brand-blue-accent text-white shadow-sm"
+                                      : "bg-white hover:bg-slate-100 border-slate-200 text-slate-600"
+                                  }`}
+                                >
+                                  Predefined Partner Stay
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = [...packageHotelSlots];
+                                    updated[sIdx].type = "custom";
+                                    if (!updated[sIdx].customHotel) {
+                                      updated[sIdx].customHotel = {
+                                        name: "",
+                                        location: "Cambodia",
+                                        image: "",
+                                        description: "",
+                                        highlights: ["", "", ""]
+                                      };
+                                    }
+                                    setPackageHotelSlots(updated);
+                                  }}
+                                  className={`flex-1 py-2.5 px-3 rounded-xl border text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
+                                    slot.type === "custom"
+                                      ? "bg-[#0F1626] border-brand-blue-accent text-white shadow-sm"
+                                      : "bg-white hover:bg-slate-100 border-slate-200 text-slate-600"
+                                  }`}
+                                >
+                                  Bespoke Custom Hotel
+                                </button>
+                              </div>
+
+                              {/* Predefined Selection */}
+                              {slot.type === "predefined" && (
+                                <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200/80">
+                                  <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
+                                    Select Registered Stay Partner
+                                  </label>
+                                  <select
+                                    value={slot.hotelId || ""}
+                                    onChange={(e) => {
+                                      const updated = [...packageHotelSlots];
+                                      updated[sIdx].hotelId = e.target.value;
+                                      setPackageHotelSlots(updated);
+                                    }}
+                                    className="w-full bg-slate-50 border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none"
+                                  >
+                                    <option value="">-- Choose Hotel from Register --</option>
+                                    {localHotels.map(h => (
+                                      <option key={h.id} value={h.id}>
+                                        {h.name} ({h.location})
+                                      </option>
+                                    ))}
+                                  </select>
+
+                                  {/* Preview Selected Hotel */}
+                                  {slot.hotelId && (() => {
+                                    const h = localHotels.find(x => x.id === slot.hotelId);
+                                    if (!h) return null;
+                                    return (
+                                      <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200/60 mt-2">
+                                        <img src={h.image} alt={h.name} className="w-12 h-12 rounded-lg object-cover" />
+                                        <div className="space-y-0.5 min-w-0">
+                                          <h6 className="text-xs font-bold text-slate-800 truncate">{h.name}</h6>
+                                          <p className="text-[10px] text-slate-400 font-light truncate">{h.location}</p>
+                                        </div>
                                       </div>
-                                      <input 
-                                        type="checkbox" 
-                                        checked={isSelected}
-                                        readOnly
-                                        className="rounded border-slate-300 text-brand-blue-accent focus:ring-brand-blue-accent"
+                                    );
+                                  })()}
+                                </div>
+                              )}
+
+                              {/* Custom Hotel Fields */}
+                              {slot.type === "custom" && (
+                                <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-200/80">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">Hotel Name *</label>
+                                      <input
+                                        type="text"
+                                        value={slot.customHotel?.name || ""}
+                                        onChange={(e) => {
+                                          const updated = [...packageHotelSlots];
+                                          const ch = updated[sIdx].customHotel || { name: "", location: "", image: "", description: "", highlights: ["", "", ""] };
+                                          ch.name = e.target.value;
+                                          updated[sIdx].customHotel = ch;
+                                          setPackageHotelSlots(updated);
+                                        }}
+                                        placeholder="e.g., Song Saa Private Island Overwater Retreat"
+                                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-slate-700"
                                       />
                                     </div>
-                                  );
-                                })}
-                            </div>
 
-                            {localHotels.filter(h => {
-                              if (packDestinations.length === 0) return true;
-                              return packDestinations.some(dName => h.location.toLowerCase().includes(dName.toLowerCase()));
-                            }).length === 0 && (
-                              <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center text-xs text-slate-400">
-                                No partner hotels located in the selected destinations. Please configure standard hotels first, or choose Option B for custom stay assets.
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          /* Option B fields */
-                          <div className="space-y-4 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
-                            <h4 className="text-xs font-bold font-sans text-brand-charcoal uppercase tracking-wider mb-2">Bespoke Accommodation Ledger</h4>
-                            
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div className="space-y-1.5">
-                                <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">Hotel Name *</label>
-                                <input
-                                  type="text"
-                                  value={customHotelName}
-                                  onChange={(e) => setCustomHotelName(e.target.value)}
-                                  placeholder="e.g., Song Saa Private Island Overwater Retreat"
-                                  className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-slate-700"
-                                />
-                              </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">Location *</label>
+                                      <input
+                                        type="text"
+                                        value={slot.customHotel?.location || ""}
+                                        onChange={(e) => {
+                                          const updated = [...packageHotelSlots];
+                                          const ch = updated[sIdx].customHotel || { name: "", location: "", image: "", description: "", highlights: ["", "", ""] };
+                                          ch.location = e.target.value;
+                                          updated[sIdx].customHotel = ch;
+                                          setPackageHotelSlots(updated);
+                                        }}
+                                        placeholder="e.g., Koh Rong Archipelago, Cambodia"
+                                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-slate-700"
+                                      />
+                                    </div>
 
-                              <div className="space-y-1.5">
-                                <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">Location *</label>
-                                <input
-                                  type="text"
-                                  value={customHotelLocation}
-                                  onChange={(e) => setCustomHotelLocation(e.target.value)}
-                                  placeholder="e.g., Koh Rong Archipelago, Cambodia"
-                                  className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-slate-700"
-                                />
-                              </div>
+                                    <div className="space-y-1 sm:col-span-2">
+                                      <ImageUploadZone
+                                        imageSrc={slot.customHotel?.image || ""}
+                                        onChange={(val) => {
+                                          const updated = [...packageHotelSlots];
+                                          const ch = updated[sIdx].customHotel || { name: "", location: "", image: "", description: "", highlights: ["", "", ""] };
+                                          ch.image = val;
+                                          updated[sIdx].customHotel = ch;
+                                          setPackageHotelSlots(updated);
+                                        }}
+                                        label="Hotel Image *"
+                                        description="Upload cover image for this hotel."
+                                      />
+                                    </div>
 
-                              <div className="space-y-1.5 md:col-span-2">
-                                <ImageUploadZone
-                                  imageSrc={customHotelImage}
-                                  onChange={(val) => setCustomHotelImage(val)}
-                                  label="Hotel Image *"
-                                  description="Upload a high-res cover photo for the hotel card."
-                                />
-                              </div>
-
-                              <div className="space-y-1.5">
-                                <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">Hotel Description Overview *</label>
-                                <input
-                                  type="text"
-                                  value={customHotelDescription}
-                                  onChange={(e) => setCustomHotelDescription(e.target.value)}
-                                  placeholder="Provide short accommodation value propositions..."
-                                  className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-slate-700"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Hotel Highlights (3 items) */}
-                            <div className="space-y-3 pt-3 border-t border-slate-100">
-                              <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">3 Highlights of the Hotel (Displayed on Hotel Card) *</label>
-                              
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                {customHotelHighlights.map((hl, hlIdx) => (
-                                  <div key={hlIdx} className="space-y-1">
-                                    <label className="text-[8px] font-mono font-bold uppercase text-slate-400 block">Highlight {hlIdx + 1}</label>
-                                    <input
-                                      type="text"
-                                      value={hl}
-                                      onChange={(e) => {
-                                        const updated = [...customHotelHighlights];
-                                        updated[hlIdx] = e.target.value;
-                                        setCustomHotelHighlights(updated);
-                                      }}
-                                      placeholder={hlIdx === 0 ? "e.g., 100% Halal room service menu" : hlIdx === 1 ? "e.g., Private pool with total privacy" : "e.g., Clean prayer mats & Qibla signs"}
-                                      className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-2 text-xs outline-none text-slate-700"
-                                    />
+                                    <div className="space-y-1 sm:col-span-2">
+                                      <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">Hotel Overview Description *</label>
+                                      <input
+                                        type="text"
+                                        value={slot.customHotel?.description || ""}
+                                        onChange={(e) => {
+                                          const updated = [...packageHotelSlots];
+                                          const ch = updated[sIdx].customHotel || { name: "", location: "", image: "", description: "", highlights: ["", "", ""] };
+                                          ch.description = e.target.value;
+                                          updated[sIdx].customHotel = ch;
+                                          setPackageHotelSlots(updated);
+                                        }}
+                                        placeholder="Short accommodation overview..."
+                                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-slate-700"
+                                      />
+                                    </div>
                                   </div>
-                                ))}
-                              </div>
+
+                                  {/* Highlights */}
+                                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                                    <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">3 Highlights of the Hotel</label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                      {[0, 1, 2].map(hlIdx => (
+                                        <input
+                                          key={hlIdx}
+                                          type="text"
+                                          value={slot.customHotel?.highlights?.[hlIdx] || ""}
+                                          onChange={(e) => {
+                                            const updated = [...packageHotelSlots];
+                                            const ch = updated[sIdx].customHotel || { name: "", location: "", image: "", description: "", highlights: ["", "", ""] };
+                                            const hls = [...(ch.highlights || ["", "", ""])];
+                                            hls[hlIdx] = e.target.value;
+                                            ch.highlights = hls;
+                                            updated[sIdx].customHotel = ch;
+                                            setPackageHotelSlots(updated);
+                                          }}
+                                          placeholder={`Highlight ${hlIdx + 1}...`}
+                                          className="bg-slate-50 border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-slate-700"
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-
-                          </div>
-                        )}
-
+                          ))}
+                        </div>
                       </div>
                     )}
 
-                    {/* STEP 5: GALLERY IMAGES */}
+                    {/* STEP 5: GALLERY IMAGES (OPTIONAL) */}
                     {wizardStep === 5 && (
                       <div className="space-y-5 animate-fade-in">
+                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-4">
+                          <div>
+                            <h4 className="text-xs font-bold font-mono text-brand-blue-accent uppercase tracking-wider mb-1">
+                              Step 5: Media Photo Gallery (Optional)
+                            </h4>
+                            <p className="text-[11px] text-slate-600 leading-relaxed font-sans">
+                              Upload high-resolution scenery or accommodation photos for this package. You can leave this blank or clear all photos if you do not wish to display a photo gallery.
+                            </p>
+                          </div>
+                          {galleryUrls.some(u => u.trim() !== "") && (
+                            <button
+                              type="button"
+                              onClick={() => setGalleryUrls([])}
+                              className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors shrink-0 cursor-pointer"
+                            >
+                              Clear Gallery Photos
+                            </button>
+                          )}
+                        </div>
+
                         <MultiImageUploadZone
-                          images={galleryUrls}
+                          images={galleryUrls.length > 0 ? galleryUrls : ["", "", "", "", "", "", "", ""]}
                           onChange={(updated) => setGalleryUrls(updated)}
                           label="Media Gallery Images"
-                          description="Upload up to 8 high-resolution scenery or accommodation photos to showcase the package itinerary. You can drag & drop multiple photos at once together."
+                          description="Upload up to 8 high-resolution photos. Drag & drop or paste image URLs."
                           maxCount={8}
                         />
                       </div>
                     )}
 
-                    {/* STEP 6: FAQS */}
+                    {/* STEP 6: FAQS (OPTIONAL) */}
                     {wizardStep === 6 && (
                       <div className="space-y-5 animate-fade-in">
-                        <div className="p-4 bg-brand-lightbg border border-brand-blue-accent/15 rounded-2xl">
-                          <h4 className="text-xs font-bold font-mono text-brand-blue-accent uppercase tracking-wider mb-1">Step 6 Guidelines:</h4>
-                          <p className="text-[11px] text-brand-charcoal/70 leading-relaxed font-sans">
-                            Provide exactly 5 essential Questions and Answers regarding local Halal logistics, transport, visa protocols, and prayer facility coordination. Edit the defaults below to fit custom package needs.
-                          </p>
+                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div>
+                            <h4 className="text-xs font-bold font-mono text-brand-blue-accent uppercase tracking-wider mb-1">
+                              Step 6: Frequently Asked Questions (Optional)
+                            </h4>
+                            <p className="text-[11px] text-slate-600 leading-relaxed font-sans">
+                              Provide Questions and Answers regarding local Halal logistics, transport, visa protocols, etc. Leave empty if you do not wish to display an FAQ section.
+                            </p>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setFaqList(prev => [...prev, { q: "", a: "" }])}
+                              className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold text-brand-blue-accent hover:bg-slate-100 border border-brand-blue-accent/30 transition-colors cursor-pointer flex items-center gap-1"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Add FAQ</span>
+                            </button>
+                            {faqList.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setFaqList([])}
+                                className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer"
+                              >
+                                Clear All FAQs
+                              </button>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                          {faqList.map((faq, fIdx) => (
-                            <div key={fIdx} className="bg-slate-50 p-4 rounded-2xl border border-slate-200/50 space-y-3">
-                              <span className="text-[9px] font-mono font-bold uppercase text-brand-blue-accent block">Curriculum FAQ {fIdx + 1}</span>
-                              <div className="grid grid-cols-1 gap-3">
-                                <input
-                                  type="text"
-                                  value={faq.q}
-                                  onChange={(e) => {
-                                    const updated = [...faqList];
-                                    updated[fIdx].q = e.target.value;
-                                    setFaqList(updated);
-                                  }}
-                                  placeholder="Enter Question..."
-                                  className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-2 text-xs outline-none font-bold text-slate-800"
-                                />
-                                <textarea
-                                  rows={2}
-                                  value={faq.a}
-                                  onChange={(e) => {
-                                    const updated = [...faqList];
-                                    updated[fIdx].a = e.target.value;
-                                    setFaqList(updated);
-                                  }}
-                                  placeholder="Enter Answer..."
-                                  className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-2 text-xs outline-none resize-none text-slate-600"
-                                />
+                        {faqList.length === 0 ? (
+                          <div className="p-8 bg-slate-50/60 rounded-2xl border border-slate-200 text-center space-y-2">
+                            <p className="text-xs text-slate-500 font-sans">No FAQs configured for this package (Optional).</p>
+                            <button
+                              type="button"
+                              onClick={() => setFaqList([
+                                { q: "Are all meals included in the package verified Halal?", a: "Yes, absolutely. We strictly partner with certified Halal kitchens, or pre-vetted pork-free and alcohol-free dining establishments." },
+                                { q: "How does prayer-time coordination work during our tours?", a: "Our private guides and chauffeurs are fully aware of daily prayer schedules." }
+                              ])}
+                              className="text-xs font-mono font-bold text-brand-blue-accent underline cursor-pointer"
+                            >
+                              Load Sample Halal FAQ Items
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                            {faqList.map((faq, fIdx) => (
+                              <div key={fIdx} className="bg-slate-50 p-4 rounded-2xl border border-slate-200/50 space-y-3 relative">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[9px] font-mono font-bold uppercase text-brand-blue-accent">
+                                    FAQ Item {fIdx + 1}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setFaqList(prev => prev.filter((_, idx) => idx !== fIdx))}
+                                    className="text-rose-500 hover:text-rose-700 text-xs font-mono font-bold uppercase cursor-pointer"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-1 gap-3">
+                                  <input
+                                    type="text"
+                                    value={faq.q}
+                                    onChange={(e) => {
+                                      const updated = [...faqList];
+                                      updated[fIdx].q = e.target.value;
+                                      setFaqList(updated);
+                                    }}
+                                    placeholder="Enter Question..."
+                                    className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-2 text-xs outline-none font-bold text-slate-800"
+                                  />
+                                  <textarea
+                                    rows={2}
+                                    value={faq.a}
+                                    onChange={(e) => {
+                                      const updated = [...faqList];
+                                      updated[fIdx].a = e.target.value;
+                                      setFaqList(updated);
+                                    }}
+                                    placeholder="Enter Answer..."
+                                    className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-2 text-xs outline-none resize-none text-slate-600"
+                                  />
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -6456,59 +6721,65 @@ export default function AdminCMS({
 
                     {/* STEP 6: SOCIAL MEDIA VIDEO REELS */}
                     {diningFormStep === 6 && (
-                      <div className="space-y-4 animate-fade-in">
-                        <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                          <h4 className="text-xs font-bold font-mono text-[#0F1626] uppercase">Social Media Video Reels (Optional)</h4>
+                      <div className="space-y-6 animate-fade-in">
+                        <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                          <div>
+                            <h4 className="text-xs font-bold font-mono text-[#0F1626] uppercase tracking-wider flex items-center gap-2">
+                              <Globe className="w-4 h-4 text-brand-blue-accent" /> Social Media Video Reels (Optional)
+                            </h4>
+                            <p className="text-[11px] text-slate-500 font-sans mt-0.5">
+                              Paste links from TikTok, Instagram Reels, YouTube, Facebook, or X. Click <strong>Fetch Media</strong> to auto-populate metadata without Gemini.
+                            </p>
+                          </div>
                           <button
                             type="button"
                             onClick={addSocialVideo}
-                            className="bg-[#0F1626] hover:bg-brand-blue-accent hover:text-[#0F1626] text-white px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-colors"
+                            className="bg-[#0F1626] hover:bg-brand-blue-accent hover:text-[#0F1626] text-white px-3.5 py-2 rounded-xl text-[11px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-all shadow-sm"
                           >
-                            <Plus className="w-3.5 h-3.5" /> Add Video Link
+                            <Plus className="w-3.5 h-3.5" /> Add Social Link
                           </button>
                         </div>
 
                         {diningSocialVideos.length === 0 ? (
-                          <div className="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                            <p className="text-xs text-slate-400 font-medium font-sans">No video reels added yet. Click 'Add Video Link' above to embed reviews, kitchen tours, or social highlights.</p>
+                          <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-2">
+                            <Utensils className="w-8 h-8 text-slate-300 mx-auto" />
+                            <p className="text-xs text-slate-500 font-medium font-sans">No social media links added yet.</p>
+                            <p className="text-[11px] text-slate-400 font-sans">Click 'Add Social Link' above to embed food reviews, chef interviews, or kitchen tours.</p>
                           </div>
                         ) : (
-                          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                          <div className="space-y-6 max-h-[650px] overflow-y-auto pr-1">
                             {diningSocialVideos.map((video, idx) => (
-                              <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200/50 space-y-3 relative">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-[9px] font-mono font-bold uppercase text-brand-blue-accent block">Video Reel #{idx + 1}</span>
+                              <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 relative">
+                                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="w-6 h-6 rounded-lg bg-brand-blue-accent/10 text-brand-blue-accent flex items-center justify-center font-mono text-xs font-bold">
+                                      #{idx + 1}
+                                    </span>
+                                    <span className="text-xs font-mono font-bold uppercase text-[#0F1626]">
+                                      Social Media Reel
+                                    </span>
+                                    {video.fetchSuccess && (
+                                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-mono font-bold flex items-center gap-1">
+                                        <CheckCircle className="w-3 h-3" /> Auto-Fetched
+                                      </span>
+                                    )}
+                                  </div>
                                   <button
                                     type="button"
                                     onClick={() => removeSocialVideo(idx)}
-                                    className="text-red-500 hover:bg-red-50 p-1 rounded-lg transition-colors cursor-pointer"
-                                    title="Delete Video"
+                                    className="text-red-500 hover:bg-red-50 p-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-mono"
+                                    title="Remove Link"
                                   >
-                                    <Trash2 className="w-4 h-4" />
+                                    <Trash2 className="w-4 h-4" /> Remove
                                   </button>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                  <div className="space-y-1">
-                                    <label className="text-[9px] font-mono font-bold uppercase text-slate-500 block">Platform *</label>
-                                    <select
-                                      value={video.platform}
-                                      onChange={(e) => {
-                                        const updated = [...diningSocialVideos];
-                                        updated[idx].platform = e.target.value as any;
-                                        setDiningSocialVideos(updated);
-                                      }}
-                                      className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-medium"
-                                    >
-                                      <option value="tiktok">TikTok</option>
-                                      <option value="instagram">Instagram Reel</option>
-                                      <option value="youtube">YouTube Video/Short</option>
-                                      <option value="other">Other Video Link</option>
-                                    </select>
-                                  </div>
-
-                                  <div className="space-y-1 md:col-span-2">
-                                    <label className="text-[9px] font-mono font-bold uppercase text-slate-500 block">Video URL *</label>
+                                {/* 1. URL Field & Fetch Media Button */}
+                                <div className="space-y-1.5">
+                                  <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600 block">
+                                    Social Media URL (TikTok, Instagram, YouTube, Facebook, X) *
+                                  </label>
+                                  <div className="flex gap-2">
                                     <input
                                       type="text"
                                       value={video.url}
@@ -6517,125 +6788,253 @@ export default function AdminCMS({
                                         const updated = [...diningSocialVideos];
                                         updated[idx].url = val;
                                         
-                                        // Auto detect platform based on URL
+                                        // Auto-detect platform when typing/pasting
                                         const lower = val.toLowerCase();
-                                        if (lower.includes("tiktok.com")) {
-                                          updated[idx].platform = "tiktok";
-                                        } else if (lower.includes("instagram.com")) {
-                                          updated[idx].platform = "instagram";
-                                        } else if (lower.includes("youtube.com") || lower.includes("youtu.be")) {
-                                          updated[idx].platform = "youtube";
-                                        }
+                                        if (lower.includes("tiktok.com")) updated[idx].platform = "tiktok";
+                                        else if (lower.includes("instagram.com")) updated[idx].platform = "instagram";
+                                        else if (lower.includes("youtube.com") || lower.includes("youtu.be")) updated[idx].platform = "youtube";
+                                        else if (lower.includes("facebook.com") || lower.includes("fb.watch")) updated[idx].platform = "facebook";
+                                        else if (lower.includes("x.com") || lower.includes("twitter.com")) updated[idx].platform = "x";
                                         
-                                        // Auto pull the cover image/thumbnail from the link provided
-                                        const autoThumb = getAutoThumbnail(val);
-                                        if (autoThumb) {
-                                          updated[idx].thumbnailUrl = autoThumb;
-                                        } else if (val.trim()) {
-                                          // Asynchronously fetch from server-side proxy to handle CORS (e.g. TikTok oEmbed)
-                                          fetch(`/api/video-thumbnail?url=${encodeURIComponent(val.trim())}`)
-                                            .then(res => res.json())
-                                            .then(data => {
-                                              if (data) {
-                                                setDiningSocialVideos(prev => {
-                                                  const latest = [...prev];
-                                                  if (latest[idx] && latest[idx].url === val) {
-                                                    if (data.thumbnailUrl) latest[idx].thumbnailUrl = data.thumbnailUrl;
-                                                    if (data.authorName) latest[idx].creatorName = data.authorName;
-                                                    if (data.authorHandle) latest[idx].creatorHandle = data.authorHandle;
-                                                    if (data.authorAvatar) latest[idx].creatorAvatar = data.authorAvatar;
-                                                    if (data.title) latest[idx].title = data.title;
-                                                  }
-                                                  return latest;
-                                                });
-                                              }
-                                            })
-                                            .catch(() => {/* Silent fallback */});
-                                        }
-                                        
+                                        // Reset fetch feedback on manual editing
+                                        updated[idx].fetchError = null;
+                                        updated[idx].fetchSuccess = false;
                                         setDiningSocialVideos(updated);
                                       }}
-                                      placeholder="e.g., https://www.instagram.com/reel/C3_abc123/"
-                                      className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-bold"
+                                      placeholder="e.g. https://www.tiktok.com/@user/video/1234567890 or https://www.instagram.com/reel/C3_abc/"
+                                      className="flex-1 bg-slate-50 border border-slate-200 focus:border-brand-blue-accent focus:bg-white rounded-xl px-3.5 py-2.5 text-xs outline-none text-[#0F1626] font-bold transition-all"
                                     />
+                                    <button
+                                      type="button"
+                                      disabled={video.isFetching || !video.url?.trim()}
+                                      onClick={() => fetchSocialMediaMetadata(idx)}
+                                      className="bg-brand-blue-accent hover:bg-brand-blue-accent/90 disabled:opacity-50 text-[#0F1626] px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-all shadow-sm shrink-0"
+                                    >
+                                      {video.isFetching ? (
+                                        <>
+                                          <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Fetching...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <RefreshCw className="w-3.5 h-3.5" /> Fetch Media
+                                        </>
+                                      )}
+                                    </button>
                                   </div>
 
-                                  <div className="space-y-1 md:col-span-3">
-                                    <label className="text-[9px] font-mono font-bold uppercase text-slate-500 block">Video Title / Label (Optional)</label>
-                                    <input
-                                      type="text"
-                                      value={video.title || ""}
-                                      onChange={(e) => {
-                                        const updated = [...diningSocialVideos];
-                                        updated[idx].title = e.target.value;
-                                        setDiningSocialVideos(updated);
-                                      }}
-                                      placeholder="e.g., Gourmet Kebab Review by Foodie"
-                                      className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-medium"
-                                    />
-                                  </div>
+                                  {/* Error Message if metadata retrieval failed */}
+                                  {video.fetchError && (
+                                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-red-700 animate-fade-in">
+                                      <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                                      <div className="text-xs font-sans font-medium">
+                                        <p className="font-bold">Metadata Fetch Error</p>
+                                        <p>{video.fetchError}</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
 
-                                  <div className="space-y-1 md:col-span-3">
-                                    <label className="text-[9px] font-mono font-bold uppercase text-slate-500 block">Creator Name & Handle (Optional)</label>
-                                    <div className="grid grid-cols-2 gap-2">
+                                {/* 2. Populated Editable Fields & Live Preview Card Grid */}
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-2">
+                                  {/* Form Fields Column */}
+                                  <div className="lg:col-span-7 space-y-3 bg-slate-50/70 p-4 rounded-xl border border-slate-100">
+                                    <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200/60 pb-1.5">
+                                      Populated CMS Metadata Fields
+                                    </p>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div className="space-y-1">
+                                        <label className="text-[9px] font-mono font-bold uppercase text-slate-500 block">Platform</label>
+                                        <select
+                                          value={video.platform || "tiktok"}
+                                          onChange={(e) => {
+                                            const updated = [...diningSocialVideos];
+                                            updated[idx].platform = e.target.value as any;
+                                            setDiningSocialVideos(updated);
+                                          }}
+                                          className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-2.5 py-1.5 text-xs outline-none text-[#0F1626] font-medium"
+                                        >
+                                          <option value="tiktok">TikTok</option>
+                                          <option value="instagram">Instagram Reel</option>
+                                          <option value="youtube">YouTube</option>
+                                          <option value="facebook">Facebook</option>
+                                          <option value="x">X / Twitter</option>
+                                          <option value="other">Other Link</option>
+                                        </select>
+                                      </div>
+
+                                      <div className="space-y-1">
+                                        <label className="text-[9px] font-mono font-bold uppercase text-slate-500 block">Duration</label>
+                                        <input
+                                          type="text"
+                                          value={video.duration || "0:45"}
+                                          onChange={(e) => {
+                                            const updated = [...diningSocialVideos];
+                                            updated[idx].duration = e.target.value;
+                                            setDiningSocialVideos(updated);
+                                          }}
+                                          placeholder="e.g. 0:45"
+                                          className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-2.5 py-1.5 text-xs outline-none text-[#0F1626] font-medium"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-mono font-bold uppercase text-slate-500 block">Video / Post Title</label>
                                       <input
                                         type="text"
-                                        value={video.creatorName || ""}
+                                        value={video.title || ""}
                                         onChange={(e) => {
                                           const updated = [...diningSocialVideos];
-                                          updated[idx].creatorName = e.target.value;
+                                          updated[idx].title = e.target.value;
                                           setDiningSocialVideos(updated);
                                         }}
-                                        placeholder="Name (e.g. Claypot SG)"
-                                        className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-medium"
-                                      />
-                                      <input
-                                        type="text"
-                                        value={video.creatorHandle || ""}
-                                        onChange={(e) => {
-                                          const updated = [...diningSocialVideos];
-                                          updated[idx].creatorHandle = e.target.value;
-                                          setDiningSocialVideos(updated);
-                                        }}
-                                        placeholder="Handle (e.g. @claypotsg69)"
+                                        placeholder="e.g. Gourmet Kebab Review by Foodie"
                                         className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-medium"
                                       />
                                     </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div className="space-y-1">
+                                        <label className="text-[9px] font-mono font-bold uppercase text-slate-500 block">Creator Name</label>
+                                        <input
+                                          type="text"
+                                          value={video.creatorName || ""}
+                                          onChange={(e) => {
+                                            const updated = [...diningSocialVideos];
+                                            updated[idx].creatorName = e.target.value;
+                                            setDiningSocialVideos(updated);
+                                          }}
+                                          placeholder="e.g. Claypot SG"
+                                          className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-medium"
+                                        />
+                                      </div>
+
+                                      <div className="space-y-1">
+                                        <label className="text-[9px] font-mono font-bold uppercase text-slate-500 block">Creator Handle</label>
+                                        <input
+                                          type="text"
+                                          value={video.creatorHandle || ""}
+                                          onChange={(e) => {
+                                            const updated = [...diningSocialVideos];
+                                            updated[idx].creatorHandle = e.target.value;
+                                            setDiningSocialVideos(updated);
+                                          }}
+                                          placeholder="e.g. @claypotsg"
+                                          className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-medium"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-mono font-bold uppercase text-slate-500 block">Creator Avatar / Profile Logo URL</label>
+                                      <input
+                                        type="text"
+                                        value={video.creatorAvatar || ""}
+                                        onChange={(e) => {
+                                          const updated = [...diningSocialVideos];
+                                          updated[idx].creatorAvatar = e.target.value;
+                                          setDiningSocialVideos(updated);
+                                        }}
+                                        placeholder="https://..."
+                                        className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-medium"
+                                      />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between items-center">
+                                        <label className="text-[9px] font-mono font-bold uppercase text-slate-500 block">
+                                          Thumbnail / Cover Image (Auto-Retrieved or Upload)
+                                        </label>
+                                        {video.thumbnailUrl && (
+                                          <span className="text-[9px] font-mono text-emerald-600 font-bold flex items-center gap-1">
+                                            <CheckCircle className="w-3 h-3" /> Image Set
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      <div className="flex gap-2">
+                                        <input
+                                          type="text"
+                                          value={video.thumbnailUrl || ""}
+                                          onChange={(e) => {
+                                            const updated = [...diningSocialVideos];
+                                            updated[idx].thumbnailUrl = e.target.value;
+                                            setDiningSocialVideos(updated);
+                                          }}
+                                          placeholder="Auto-filled image URL or paste https://..."
+                                          className="flex-1 bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-medium"
+                                        />
+                                        <label className="cursor-pointer bg-[#0F1626] hover:bg-brand-blue-accent hover:text-[#0F1626] text-white px-3 py-1.5 rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors shadow-sm">
+                                          <Upload className="w-3.5 h-3.5 text-brand-blue-accent" />
+                                          {video.isUploadingThumb ? "Uploading..." : "Upload Cover"}
+                                          <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            disabled={video.isUploadingThumb}
+                                            onChange={(e) => {
+                                              if (e.target.files && e.target.files[0]) {
+                                                handleUploadThumbnail(idx, e.target.files[0]);
+                                              }
+                                            }}
+                                          />
+                                        </label>
+                                      </div>
+
+                                      {/* Fallback Notice if no cover image was retrieved */}
+                                      {!video.thumbnailUrl && (
+                                        <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 flex items-center justify-between gap-2 animate-fade-in">
+                                          <div className="flex items-center gap-1.5">
+                                            <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                            <span>Cover image not retrieved yet. Upload a custom cover image or paste a link.</span>
+                                          </div>
+                                          <label className="cursor-pointer text-amber-900 underline font-bold font-mono text-[10px] uppercase hover:text-black shrink-0">
+                                            Upload File
+                                            <input
+                                              type="file"
+                                              accept="image/*"
+                                              className="hidden"
+                                              disabled={video.isUploadingThumb}
+                                              onChange={(e) => {
+                                                if (e.target.files && e.target.files[0]) {
+                                                  handleUploadThumbnail(idx, e.target.files[0]);
+                                                }
+                                              }}
+                                            />
+                                          </label>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
 
-                                  <div className="space-y-1 md:col-span-3">
-                                    <label className="text-[9px] font-mono font-bold uppercase text-slate-500 block">Creator Profile Logo / Avatar URL (Optional)</label>
-                                    <input
-                                      type="text"
-                                      value={video.creatorAvatar || ""}
-                                      onChange={(e) => {
-                                        const updated = [...diningSocialVideos];
-                                        updated[idx].creatorAvatar = e.target.value;
-                                        setDiningSocialVideos(updated);
-                                      }}
-                                      placeholder="e.g. https://images.unsplash.com/... or profile logo URL"
-                                      className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-medium"
-                                    />
-                                  </div>
-
-                                  <div className="space-y-1 md:col-span-3">
-                                    <label className="text-[9px] font-mono font-bold uppercase text-slate-500 block">Thumbnail Cover Image URL (Optional)</label>
-                                    <input
-                                      type="text"
-                                      value={video.thumbnailUrl || ""}
-                                      onChange={(e) => {
-                                        const updated = [...diningSocialVideos];
-                                        updated[idx].thumbnailUrl = e.target.value;
-                                        setDiningSocialVideos(updated);
-                                      }}
-                                      placeholder="e.g., https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600"
-                                      className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-medium"
-                                    />
-                                    <span className="text-[9px] text-slate-400 block mt-0.5 leading-normal">
-                                      {video.platform === "youtube" 
-                                        ? "💡 YouTube URLs will automatically fetch video thumbnails! But you can override with a custom URL here."
-                                        : "💡 Recommended for Instagram Reels or TikTok to display a visual cover screenshot."}
-                                    </span>
+                                  {/* Live Card Preview Column */}
+                                  <div className="lg:col-span-5 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                                        <Eye className="w-3.5 h-3.5 text-brand-blue-accent" /> Live Website Card Preview
+                                      </span>
+                                      <span className="text-[9px] font-mono text-slate-400">Exact layout on site</span>
+                                    </div>
+                                    
+                                    <div className="border border-slate-200 rounded-3xl p-2 bg-[#080b14] shadow-inner max-w-sm mx-auto">
+                                      <SocialVideoCard
+                                        video={{
+                                          platform: video.platform || "tiktok",
+                                          url: video.url || "https://tiktok.com",
+                                          title: video.title || "Delicious food review in Cambodia!",
+                                          thumbnailUrl: video.thumbnailUrl,
+                                          creatorName: video.creatorName || "Foodie Explorer",
+                                          creatorHandle: video.creatorHandle || "@foodie",
+                                          creatorAvatar: video.creatorAvatar,
+                                          duration: video.duration || "0:45",
+                                          views: "140K",
+                                          likes: "12K"
+                                        }}
+                                        fallbackName={diningName || "Restaurant"}
+                                        restaurantName={diningName || "Restaurant"}
+                                      />
+                                    </div>
                                   </div>
                                 </div>
                               </div>

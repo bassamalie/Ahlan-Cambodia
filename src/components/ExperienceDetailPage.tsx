@@ -14,6 +14,7 @@ interface ExperienceDetailPageProps {
   onInquire: () => void;
   onSelectExperience?: (exp: Experience) => void;
   allExperiences?: Experience[];
+  onNavigateView?: (view: string) => void;
 }
 
 // Custom data extension for each experience
@@ -215,7 +216,8 @@ export default function ExperienceDetailPage({
   onToggleWishlist,
   onInquire,
   onSelectExperience,
-  allExperiences
+  allExperiences,
+  onNavigateView
 }: ExperienceDetailPageProps) {
   const activeGallery = useMemo(() => {
     if (experience.gallery && experience.gallery.length > 0) {
@@ -366,19 +368,29 @@ export default function ExperienceDetailPage({
             {/* Back Arrow */}
             <button 
               onClick={onBack}
-              className="flex items-center gap-2 text-white/90 hover:text-brand-blue-accent font-mono text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer bg-black/20 hover:bg-black/40 px-4 py-2 rounded-full border border-white/10 backdrop-blur-sm"
+              className="flex items-center gap-2 text-white/95 hover:text-white font-mono text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer bg-black/20 hover:bg-black/45 px-4 py-2 rounded-full border border-white/10 backdrop-blur-sm"
             >
-              <ArrowLeft className="w-4 h-4 text-brand-blue-accent" />
+              <ArrowLeft className="w-4 h-4 text-white" />
               <span>Back</span>
             </button>
 
             {/* Breadcrumb */}
             <div className="font-mono text-[10px] text-white/70 uppercase tracking-widest hidden sm:flex items-center gap-2">
-              <span>Home</span> 
-              <span className="text-brand-blue-accent font-bold">/</span> 
-              <span>Experiences</span> 
-              <span className="text-brand-blue-accent font-bold">/</span> 
-              <span className="text-brand-blue-accent font-bold">{experience.name}</span>
+              <button 
+                onClick={() => onNavigateView ? onNavigateView("home") : onBack()} 
+                className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
+              >
+                HOME
+              </button> 
+              <span className="text-white/40 font-bold">/</span> 
+              <button 
+                onClick={() => onNavigateView ? onNavigateView("experiences") : onBack()} 
+                className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
+              >
+                EXPERIENCES
+              </button> 
+              <span className="text-white/40 font-bold">/</span> 
+              <span className="text-white/95 font-bold tracking-widest truncate max-w-[200px] sm:max-w-[300px] inline-block uppercase">{experience.name}</span>
             </div>
           </div>
         </div>

@@ -463,14 +463,31 @@ export default function DestinationDetailPage({
         
         {/* --- Overlay Breadcrumb Navigation & Back Header --- */}
         <div className="absolute top-0 left-0 right-0 z-20 py-5 bg-gradient-to-b from-black/60 to-transparent">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-end">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            <button 
+              onClick={() => onNavigateView("destinations")}
+              className="flex items-center gap-2 text-white/95 hover:text-white font-mono text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer bg-black/20 hover:bg-black/45 px-4 py-2 rounded-full border border-white/10 backdrop-blur-sm"
+            >
+              <ArrowLeft className="w-4 h-4 text-white" />
+              <span>Back</span>
+            </button>
             
             <div className="font-mono text-[10px] text-white/70 uppercase tracking-widest hidden sm:flex items-center gap-2">
-              <span>Home</span> 
-              <span className="text-brand-blue-accent font-bold">/</span> 
-              <span>Destinations</span> 
-              <span className="text-brand-blue-accent font-bold">/</span> 
-              <span className="text-brand-blue-accent font-bold">{destination.name}</span>
+              <button 
+                onClick={() => onNavigateView("home")} 
+                className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
+              >
+                HOME
+              </button> 
+              <span className="text-white/40 font-bold">/</span> 
+              <button 
+                onClick={() => onNavigateView("destinations")} 
+                className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
+              >
+                DESTINATIONS
+              </button> 
+              <span className="text-white/40 font-bold">/</span> 
+              <span className="text-white/95 font-bold tracking-widest truncate max-w-[200px] sm:max-w-[300px] inline-block uppercase">{destination.name}</span>
             </div>
           </div>
         </div>

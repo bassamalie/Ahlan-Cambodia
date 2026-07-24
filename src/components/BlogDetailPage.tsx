@@ -10,6 +10,7 @@ interface BlogDetailPageProps {
   onBack: () => void;
   allGuides: TravelGuide[];
   onSelectGuide: (guide: TravelGuide) => void;
+  onNavigateView?: (view: string) => void;
 }
 
 // Rich detailed content for each blog post to replace the short text and make it look professional
@@ -143,7 +144,8 @@ export default function BlogDetailPage({
   guide, 
   onBack, 
   allGuides, 
-  onSelectGuide 
+  onSelectGuide,
+  onNavigateView
 }: BlogDetailPageProps) {
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -199,17 +201,27 @@ export default function BlogDetailPage({
               className="flex items-center gap-2 text-white/95 hover:text-white font-mono text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer bg-black/35 hover:bg-black/55 px-4 py-2 rounded-full border border-white/10 backdrop-blur-sm"
               id="btn-blog-back"
             >
-              <ArrowLeft className="w-4 h-4 text-brand-blue-accent" />
+              <ArrowLeft className="w-4 h-4 text-white" />
               <span>Back</span>
             </button>
 
             {/* Breadcrumb */}
             <div className="font-mono text-[10px] text-white/75 uppercase tracking-widest hidden sm:flex items-center gap-2">
-              <span>Home</span> 
+              <button 
+                onClick={() => onNavigateView ? onNavigateView("home") : onBack()} 
+                className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
+              >
+                HOME
+              </button> 
               <span className="text-white/40 font-bold">/</span> 
-              <span>Inspiration</span> 
+              <button 
+                onClick={() => onNavigateView ? onNavigateView("inspiration") : onBack()} 
+                className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
+              >
+                INSPIRATION
+              </button> 
               <span className="text-white/40 font-bold">/</span> 
-              <span className="text-brand-blue-accent font-bold">{guide.title}</span>
+              <span className="text-white/95 font-bold tracking-widest truncate max-w-[200px] sm:max-w-[300px] inline-block uppercase">{guide.title}</span>
             </div>
           </div>
         </div>

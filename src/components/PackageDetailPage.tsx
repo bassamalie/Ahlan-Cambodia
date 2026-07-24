@@ -16,6 +16,7 @@ interface PackageDetailPageProps {
   onInquire: (customDetails?: any) => void;
   allPackages?: TourPackage[];
   onSelectPackage?: (pkg: TourPackage) => void;
+  onNavigateView?: (view: string) => void;
 }
 
 export default function PackageDetailPage({
@@ -25,7 +26,8 @@ export default function PackageDetailPage({
   onToggleWishlist,
   onInquire,
   allPackages = [],
-  onSelectPackage
+  onSelectPackage,
+  onNavigateView
 }: PackageDetailPageProps) {
   const galleryImages = tourPackage.gallery && tourPackage.gallery.length > 0
     ? tourPackage.gallery.map(url => ({ url, title: "" }))
@@ -163,13 +165,52 @@ export default function PackageDetailPage({
   };
 
   const packageHotels = (() => {
-    if (tourPackage.customHotel) {
-      const customH: Hotel = {
-        id: "custom-hotel-id-" + tourPackage.id,
-        name: tourPackage.customHotel.name,
-        location: tourPackage.customHotel.location,
-        image: tourPackage.customHotel.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
-        description: tourPackage.customHotel.description,
+    // Priority 1: packageHotelsList (supports mix & match of up to 4 predefined / custom hotels)
+    if (tourPackage.packageHotelsList && tourPackage.packageHotelsList.length > 0) {
+      const list: Hotel[] = [];
+      tourPackage.packageHotelsList.forEach((slot, idx) => {
+        if (slot.type === "predefined" && slot.hotelId) {
+          const found = hotels.find(h => h.id === slot.hotelId);
+          if (found) list.push(found);
+        } else if (slot.type === "custom" && slot.customHotel) {
+          list.push({
+            id: `custom-hotel-${idx}-${tourPackage.id}`,
+            name: slot.customHotel.name,
+            location: slot.customHotel.location,
+            image: slot.customHotel.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+            description: slot.customHotel.description,
+            rating: 5.0,
+            stars: 5,
+            priceRange: "$$$$",
+            price: 150,
+            prayerFacilities: "Prayer mats & Qibla signs provided in-room or on demand",
+            halalBreakfast: "Certified Muslim-friendly or fully Halal kitchen on-site",
+            nearbyMosque: "Local mosque access coordinates provided",
+            highlights: slot.customHotel.highlights || [],
+            amenities: ["Free Wifi", "Halal Dining", "Pool"]
+          });
+        }
+      });
+      if (list.length > 0) return list;
+    }
+
+    // Priority 2: Combine hotelIds and customHotels / customHotel
+    const list: Hotel[] = [];
+    if (tourPackage.hotelIds && tourPackage.hotelIds.length > 0) {
+      tourPackage.hotelIds.forEach(hid => {
+        const found = hotels.find(h => h.id === hid);
+        if (found) list.push(found);
+      });
+    }
+
+    const cHotels = tourPackage.customHotels || (tourPackage.customHotel ? [tourPackage.customHotel] : []);
+    cHotels.forEach((ch, idx) => {
+      list.push({
+        id: `custom-hotel-${idx}-${tourPackage.id}`,
+        name: ch.name,
+        location: ch.location,
+        image: ch.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+        description: ch.description,
         rating: 5.0,
         stars: 5,
         priceRange: "$$$$",
@@ -177,14 +218,14 @@ export default function PackageDetailPage({
         prayerFacilities: "Prayer mats & Qibla signs provided in-room or on demand",
         halalBreakfast: "Certified Muslim-friendly or fully Halal kitchen on-site",
         nearbyMosque: "Local mosque access coordinates provided",
-        highlights: tourPackage.customHotel.highlights || [],
+        highlights: ch.highlights || [],
         amenities: ["Free Wifi", "Halal Dining", "Pool"]
-      };
-      return [customH];
-    }
-    if (tourPackage.hotelIds && tourPackage.hotelIds.length > 0) {
-      return tourPackage.hotelIds.map(hid => hotels.find(h => h.id === hid)).filter((h): h is Hotel => !!h);
-    }
+      });
+    });
+
+    if (list.length > 0) return list;
+
+    // Fallback static defaults for pre-seeded packages
     if (tourPackage.id === "luxury-cambodia") {
       return [
         hotels.find(h => h.id === "rosewood-phnom-penh"),
@@ -198,6 +239,7 @@ export default function PackageDetailPage({
     } else if (tourPackage.id === "family-escape") {
       return [
         hotels.find(h => h.id === "shinta-mani-reap"),
+        hotels.find(h => h.id === "sofitel-phnom-penh")
       ].filter((h): h is Hotel => !!h);
     } else if (tourPackage.id === "muslim-heritage-tour") {
       return [
@@ -257,11 +299,21 @@ export default function PackageDetailPage({
 
             {/* Breadcrumb */}
             <div className="font-mono text-[10px] text-white/70 uppercase tracking-widest hidden sm:flex items-center gap-2">
-              <span>Home</span> 
+              <button 
+                onClick={() => onNavigateView ? onNavigateView("home") : onBack()} 
+                className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
+              >
+                HOME
+              </button> 
               <span className="text-white/40 font-bold">/</span> 
-              <span>Packages</span> 
+              <button 
+                onClick={() => onNavigateView ? onNavigateView("packages") : onBack()} 
+                className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
+              >
+                PACKAGES
+              </button> 
               <span className="text-white/40 font-bold">/</span> 
-              <span className="text-white/90 font-bold">{tourPackage.name}</span>
+              <span className="text-white/95 font-bold tracking-widest truncate max-w-[200px] sm:max-w-[300px] inline-block uppercase">{tourPackage.name}</span>
             </div>
           </div>
         </div>
@@ -384,9 +436,6 @@ export default function PackageDetailPage({
                   <p key={idx}>{para}</p>
                 ))}
               </div>
-              <p className="text-brand-charcoal/70 text-xs sm:text-sm leading-relaxed">
-                Designed to the highest luxury standards of the Pacific Asia Travel Association (PATA) and meticulously audited by our Islamic Scholars Council team, this package offers seamless spiritual compliance. Every driver, hotel, tour itinerary, and menu is pre-verified so you can direct your full awareness toward the beauty, heritage, and peace of Cambodia.
-              </p>
             </div>
 
             {/* TAB SELECTION */}
@@ -447,12 +496,33 @@ export default function PackageDetailPage({
                     <div className="relative border-l-2 border-slate-200 pl-6 ml-4 space-y-6 py-2">
                       {tourPackage.itineraryOverview.map((dayText, idx) => {
                         const isExpanded = expandedDay === idx || expandedDay === null;
-                        const [dayTitle, dayDesc] = dayText.split(":");
+                        
+                        let dayTitle = "";
+                        let dayDesc = "";
+                        const colonIdx = dayText.indexOf(":");
+                        if (colonIdx !== -1) {
+                          dayTitle = dayText.substring(0, colonIdx).trim();
+                          dayDesc = dayText.substring(colonIdx + 1).trim();
+                        } else {
+                          dayTitle = `Day ${idx + 1}`;
+                          dayDesc = dayText;
+                        }
+
+                        // Clean title prefix if it duplicates "Day 1 - " or "Day 1: " next to the badge
+                        let cleanTitle = dayTitle;
+                        const dayPrefixRegex = new RegExp(`^Day\\s*0?${idx + 1}\\s*[:\\-]?\\s*`, "i");
+                        if (dayPrefixRegex.test(cleanTitle)) {
+                          cleanTitle = cleanTitle.replace(dayPrefixRegex, "").trim();
+                        }
+                        if (!cleanTitle) {
+                          cleanTitle = dayTitle || `Day ${idx + 1} Activity`;
+                        }
+
                         return (
                           <div key={idx} className="relative group">
                             
                             {/* Marker Node */}
-                            <div className={`absolute -left-[31px] top-1 top-1.5 w-4 h-4 rounded-full border-2 bg-white transition-all ${
+                            <div className={`absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-2 bg-white transition-all ${
                               isExpanded ? "border-brand-blue scale-110 bg-brand-blue" : "border-slate-300 group-hover:border-slate-400"
                             }`} />
 
@@ -462,13 +532,13 @@ export default function PackageDetailPage({
                                 className="w-full text-left flex items-center justify-between hover:text-brand-blue-accent transition-colors focus:outline-none"
                               >
                                 <span className="font-serif font-bold text-base sm:text-lg text-brand-charcoal flex items-center gap-2">
-                                  <span className="font-mono text-xs text-brand-blue bg-brand-blue/10 px-2 py-0.5 rounded uppercase font-bold">
+                                  <span className="font-mono text-xs text-brand-blue bg-brand-blue/10 px-2 py-0.5 rounded uppercase font-bold shrink-0">
                                     Day {idx + 1}
                                   </span>
-                                  {dayTitle.replace(/Day \d+/i, "").trim() || dayTitle}
+                                  <span className="leading-snug">{cleanTitle}</span>
                                 </span>
                                 {expandedDay !== null && (
-                                  isExpanded ? <ChevronUp className="w-4 h-4 text-brand-charcoal/40" /> : <ChevronDown className="w-4 h-4 text-brand-charcoal/40" />
+                                  isExpanded ? <ChevronUp className="w-4 h-4 text-brand-charcoal/40 shrink-0" /> : <ChevronDown className="w-4 h-4 text-brand-charcoal/40 shrink-0" />
                                 )}
                               </button>
 
@@ -805,8 +875,11 @@ export default function PackageDetailPage({
 
                     {/* Bottom Info Overlay */}
                     <div className="absolute bottom-4 left-5 right-5 text-white">
-                      <h4 className="font-serif font-bold text-base sm:text-lg tracking-wide leading-snug drop-shadow-sm truncate">
-                        {hotel.name}
+                      <h4 className="font-serif font-bold text-base sm:text-lg tracking-wide leading-snug drop-shadow-sm flex items-center flex-wrap gap-1.5">
+                        <span>{hotel.name}</span>
+                        <span className="text-amber-300 text-[11px] font-sans font-normal italic tracking-normal bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-md border border-amber-300/30 shrink-0">
+                          or similar stays
+                        </span>
                       </h4>
                       <p className="text-white/80 text-xs flex items-center gap-1 mt-1 font-light font-sans truncate">
                         <MapPin className="w-3.5 h-3.5 text-brand-blue-accent shrink-0" />
@@ -883,125 +956,129 @@ export default function PackageDetailPage({
         )}
 
         {/* --- PACKAGE GALLERY SECTION --- */}
-        <div className="border-t border-slate-200/80 pt-12 mt-12 space-y-8">
-          <div className="text-center sm:text-left flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-            <div>
-              <span className="text-[10px] font-mono text-brand-blue font-bold uppercase tracking-[0.2em] block mb-1">IMAGINE THE EXPERIENCE</span>
-              <h3 className="font-serif text-2xl font-bold text-brand-charcoal uppercase tracking-wide flex items-center gap-2.5">
-                <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
-                Package Photo Gallery
-              </h3>
+        {((tourPackage.gallery && tourPackage.gallery.length > 0) || (tourPackage.gallery === undefined && galleryImages.length > 0)) && (
+          <div className="border-t border-slate-200/80 pt-12 mt-12 space-y-8">
+            <div className="text-center sm:text-left flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+              <div>
+                <span className="text-[10px] font-mono text-brand-blue font-bold uppercase tracking-[0.2em] block mb-1">IMAGINE THE EXPERIENCE</span>
+                <h3 className="font-serif text-2xl font-bold text-brand-charcoal uppercase tracking-wide flex items-center gap-2.5">
+                  <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+                  Package Photo Gallery
+                </h3>
+              </div>
+              <span className="text-xs font-mono text-slate-400 bg-slate-100 border border-slate-200/50 px-3 py-1.5 rounded-lg shrink-0 self-start sm:self-auto">
+                {galleryImages.length} Curation Slides
+              </span>
             </div>
-            <span className="text-xs font-mono text-slate-400 bg-slate-100 border border-slate-200/50 px-3 py-1.5 rounded-lg shrink-0 self-start sm:self-auto">
-              8 Curation Slides
-            </span>
-          </div>
 
-          {/* Customized asymmetrical grid to match the attached visual layout exactly */}
-          <div className="grid grid-cols-12 gap-4">
-            {galleryImages.map((img, idx) => {
-              let gridClasses = "";
-              if (idx === 0 || idx === 1) {
-                gridClasses = "col-span-12 md:col-span-6 aspect-[1.6]";
-              } else if (idx >= 2 && idx <= 5) {
-                gridClasses = "col-span-6 md:col-span-3 aspect-[4/3]";
-              } else if (idx === 6) {
-                gridClasses = "col-span-12 md:col-span-8 aspect-[2.1]";
-              } else {
-                gridClasses = "col-span-12 md:col-span-4 aspect-[4/3]";
-              }
+            {/* Customized asymmetrical grid to match the attached visual layout exactly */}
+            <div className="grid grid-cols-12 gap-4">
+              {galleryImages.map((img, idx) => {
+                let gridClasses = "";
+                if (idx === 0 || idx === 1) {
+                  gridClasses = "col-span-12 md:col-span-6 aspect-[1.6]";
+                } else if (idx >= 2 && idx <= 5) {
+                  gridClasses = "col-span-6 md:col-span-3 aspect-[4/3]";
+                } else if (idx === 6) {
+                  gridClasses = "col-span-12 md:col-span-8 aspect-[2.1]";
+                } else {
+                  gridClasses = "col-span-12 md:col-span-4 aspect-[4/3]";
+                }
 
-              return (
-                <div 
-                  key={idx}
-                  onClick={() => setSelectedGalleryIndex(idx)}
-                  className={`relative ${gridClasses} rounded-[1.75rem] overflow-hidden cursor-pointer group bg-slate-100 border border-slate-200/40 shadow-sm`}
-                >
-                  <img 
-                    src={img.url} 
-                    alt={img.title} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    referrerPolicy="no-referrer"
-                  />
-                  
-                  {/* Overlay on Hover */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-3.5" />
-                  
-                  {/* Lightbox zoom button absolute centered */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                    <div className="bg-white/95 backdrop-blur-md text-slate-800 p-2.5 rounded-full shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                      <Maximize2 className="w-4 h-4" />
+                return (
+                  <div 
+                    key={idx}
+                    onClick={() => setSelectedGalleryIndex(idx)}
+                    className={`relative ${gridClasses} rounded-[1.75rem] overflow-hidden cursor-pointer group bg-slate-100 border border-slate-200/40 shadow-sm`}
+                  >
+                    <img 
+                      src={img.url} 
+                      alt={img.title} 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      referrerPolicy="no-referrer"
+                    />
+                    
+                    {/* Overlay on Hover */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-3.5" />
+                    
+                    {/* Lightbox zoom button absolute centered */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                      <div className="bg-white/95 backdrop-blur-md text-slate-800 p-2.5 rounded-full shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                        <Maximize2 className="w-4 h-4" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* --- PACKAGE FAQ SECTION --- */}
-        <div className="border-t border-slate-200/80 pt-12 mt-12 space-y-8">
-          <div className="text-center sm:text-left">
-            <span className="text-[10px] font-mono text-brand-blue font-bold uppercase tracking-[0.2em] block mb-1">
-              HAVE QUESTIONS?
-            </span>
-            <h3 className="font-serif text-2xl font-bold text-brand-charcoal uppercase tracking-wide flex items-center gap-2.5">
-              <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
-              Package FAQs & Essential Info
-            </h3>
-          </div>
+        {((tourPackage.faqs && tourPackage.faqs.length > 0) || (tourPackage.faqs === undefined)) && (
+          <div className="border-t border-slate-200/80 pt-12 mt-12 space-y-8">
+            <div className="text-center sm:text-left">
+              <span className="text-[10px] font-mono text-brand-blue font-bold uppercase tracking-[0.2em] block mb-1">
+                HAVE QUESTIONS?
+              </span>
+              <h3 className="font-serif text-2xl font-bold text-brand-charcoal uppercase tracking-wide flex items-center gap-2.5">
+                <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+                Package FAQs & Essential Info
+              </h3>
+            </div>
 
-          <div className="max-w-4xl mr-auto ml-0 space-y-4">
-            {(tourPackage.faqs || [
-              {
-                q: "Are all meals included in the package verified Halal?",
-                a: "Yes, absolutely. We strictly partner with certified Halal kitchens, or pre-vetted pork-free and alcohol-free dining establishments. Your private guide also coordinates meal timings with prayer hours."
-              },
-              {
-                q: "How does prayer-time coordination work during our tours?",
-                a: "Our private guides and chauffeurs are fully aware of daily prayer schedules. Vehicles are stocked with clean prayer mats, Qibla compasses, and water spray bottles for wudu. Stops are planned near local Mosques or quiet serene spots during prayer times."
-              },
-              {
-                q: "Can this itinerary be fully customized to our group's preferences?",
-                a: "Absolutely! This package serves as a master layout. You can adjust the duration, swap out hotels, add specific experiences, or adjust the pace of travel via the Inquiry form or by speaking with your dedicated concierge."
-              },
-              {
-                q: "What is the visa policy for traveling to Cambodia?",
-                a: "Most international travelers can obtain a Tourist Visa (Type T) either online as an e-Visa before departure, or on arrival at Phnom Penh and Siem Reap airports. It is valid for a stay of up to 30 days."
-              },
-              {
-                q: "What is your support and health safety protocol during the trip?",
-                a: "We offer 24/7 dedicated local concierge support. All guests travel in top-tier private air-conditioned vehicles, and we maintain direct ties with international clinics in Phnom Penh and Siem Reap for ultimate peace of mind."
-              }
-            ]).map((faq, idx) => {
-              const isOpen = openPackageFaq === idx;
-              return (
-                <div 
-                  key={idx}
-                  className="bg-white border border-brand-blue-accent/15 rounded-2xl overflow-hidden shadow-sm transition-all duration-300"
-                >
-                  <button
-                    onClick={() => setOpenPackageFaq(isOpen ? null : idx)}
-                    className="w-full text-left p-5 flex justify-between items-center gap-4 bg-brand-lightbg hover:bg-white transition-colors cursor-pointer"
+            <div className="max-w-4xl mr-auto ml-0 space-y-4">
+              {(tourPackage.faqs || [
+                {
+                  q: "Are all meals included in the package verified Halal?",
+                  a: "Yes, absolutely. We strictly partner with certified Halal kitchens, or pre-vetted pork-free and alcohol-free dining establishments. Your private guide also coordinates meal timings with prayer hours."
+                },
+                {
+                  q: "How does prayer-time coordination work during our tours?",
+                  a: "Our private guides and chauffeurs are fully aware of daily prayer schedules. Vehicles are stocked with clean prayer mats, Qibla compasses, and water spray bottles for wudu. Stops are planned near local Mosques or quiet serene spots during prayer times."
+                },
+                {
+                  q: "Can this itinerary be fully customized to our group's preferences?",
+                  a: "Absolutely! This package serves as a master layout. You can adjust the duration, swap out hotels, add specific experiences, or adjust the pace of travel via the Inquiry form or by speaking with your dedicated concierge."
+                },
+                {
+                  q: "What is the visa policy for traveling to Cambodia?",
+                  a: "Most international travelers can obtain a Tourist Visa (Type T) either online as an e-Visa before departure, or on arrival at Phnom Penh and Siem Reap airports. It is valid for a stay of up to 30 days."
+                },
+                {
+                  q: "What is your support and health safety protocol during the trip?",
+                  a: "We offer 24/7 dedicated local concierge support. All guests travel in top-tier private air-conditioned vehicles, and we maintain direct ties with international clinics in Phnom Penh and Siem Reap for ultimate peace of mind."
+                }
+              ]).map((faq, idx) => {
+                const isOpen = openPackageFaq === idx;
+                return (
+                  <div 
+                    key={idx}
+                    className="bg-white border border-brand-blue-accent/15 rounded-2xl overflow-hidden shadow-sm transition-all duration-300"
                   >
-                    <h4 className="font-serif font-bold text-xs sm:text-sm text-brand-charcoal uppercase tracking-wider leading-relaxed">
-                      {faq.q}
-                    </h4>
-                    <span className="text-brand-blue-accent font-serif text-lg font-bold w-5 h-5 flex items-center justify-center shrink-0">
-                      {isOpen ? "−" : "+"}
-                    </span>
-                  </button>
+                    <button
+                      onClick={() => setOpenPackageFaq(isOpen ? null : idx)}
+                      className="w-full text-left p-5 flex justify-between items-center gap-4 bg-brand-lightbg hover:bg-white transition-colors cursor-pointer"
+                    >
+                      <h4 className="font-serif font-bold text-xs sm:text-sm text-brand-charcoal uppercase tracking-wider leading-relaxed">
+                        {faq.q}
+                      </h4>
+                      <span className="text-brand-blue-accent font-serif text-lg font-bold w-5 h-5 flex items-center justify-center shrink-0">
+                        {isOpen ? "−" : "+"}
+                      </span>
+                    </button>
 
-                  {isOpen && (
-                    <div className="p-5 sm:p-6 bg-white border-t border-brand-blue-accent/10 font-sans text-xs sm:text-sm text-brand-charcoal/80 leading-relaxed">
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    {isOpen && (
+                      <div className="p-5 sm:p-6 bg-white border-t border-brand-blue-accent/10 font-sans text-xs sm:text-sm text-brand-charcoal/80 leading-relaxed">
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 5. OTHER SIMILAR PACKAGES */}
         {otherRecommended.length > 0 && (

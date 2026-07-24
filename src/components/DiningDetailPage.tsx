@@ -50,6 +50,7 @@ interface DiningDetailPageProps {
   wishlist: string[];
   onToggleWishlist: (id: string) => void;
   onInquire: (details: any) => void;
+  onNavigateView?: (view: string) => void;
 }
 
 // Rich detailed metadata for each restaurant
@@ -221,7 +222,8 @@ export default function DiningDetailPage({
   onBack, 
   wishlist, 
   onToggleWishlist,
-  onInquire 
+  onInquire,
+  onNavigateView 
 }: DiningDetailPageProps) {
   const [copiedLink, setCopiedLink] = useState(false);
   const [activeFAQ, setActiveFAQ] = useState<number | null>(null);
@@ -403,11 +405,21 @@ export default function DiningDetailPage({
 
             {/* Breadcrumb */}
             <div className="font-mono text-[10px] text-white/70 uppercase tracking-widest hidden sm:flex items-center gap-2">
-              <span>Home</span> 
+              <button 
+                onClick={() => onNavigateView ? onNavigateView("home") : onBack()} 
+                className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
+              >
+                HOME
+              </button> 
               <span className="text-white/40 font-bold">/</span> 
-              <span>Dining</span> 
+              <button 
+                onClick={() => onNavigateView ? onNavigateView("restaurants") : onBack()} 
+                className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
+              >
+                DINING
+              </button> 
               <span className="text-white/40 font-bold">/</span> 
-              <span className="text-white/95 font-bold">{restaurant.name}</span>
+              <span className="text-white/95 font-bold tracking-widest truncate max-w-[200px] sm:max-w-[300px] inline-block uppercase">{restaurant.name}</span>
             </div>
           </div>
         </div>
