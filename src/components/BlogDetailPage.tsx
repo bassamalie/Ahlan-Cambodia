@@ -5,6 +5,7 @@ import {
   CreditCard, ExternalLink
 } from "lucide-react";
 import { TravelGuide } from "../types";
+import WiseTravelCard from "./WiseTravelCard";
 
 function formatBlogHtml(rawContent: string): string {
   if (!rawContent) return "";
@@ -402,31 +403,7 @@ export default function BlogDetailPage({
             </div>
 
             {/* Wise Travel Card Sidebar Banner */}
-            <div className="bg-gradient-to-br from-[#002B28] to-[#004D47] border border-[#00B9A5]/40 rounded-3xl p-6 text-white space-y-4 shadow-md relative overflow-hidden group">
-              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-[#00B9A5]/15 rounded-full blur-xl group-hover:bg-[#00B9A5]/25 transition-all pointer-events-none" />
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#00B9A5] flex items-center justify-center text-white shadow-sm shrink-0">
-                  <CreditCard className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#00E6C3] block">TRAVEL ESSENTIAL</span>
-                  <h4 className="font-serif font-bold text-base text-white leading-tight">Wise Travel Card</h4>
-                </div>
-              </div>
-              <p className="text-xs text-white/80 leading-relaxed font-light">
-                Pay effortlessly in Cambodian Riel and USD with low transparent fees and real exchange rates.
-              </p>
-              <a
-                href="https://wise.prf.hn/click/camref:1011l4i5gZ"
-                target="_blank"
-                rel="nofollow sponsored noopener"
-                className="w-full inline-flex items-center justify-center gap-2 bg-[#00B9A5] hover:bg-[#00a392] text-white font-sans font-bold text-sm py-3 px-5 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-[0.98] text-center"
-                id="btn-wise-sidebar"
-              >
-                <span>Get Your Wise Travel Card</span>
-                <ExternalLink className="w-4 h-4 text-white/90" />
-              </a>
-            </div>
+            <WiseTravelCard id="btn-wise-sidebar" />
 
             {/* Quick editorial stamp */}
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-3">

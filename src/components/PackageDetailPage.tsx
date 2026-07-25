@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { TourPackage, Hotel } from "../types";
 import { hotels } from "../data";
+import WiseTravelCard from "./WiseTravelCard";
 
 interface PackageDetailPageProps {
   tourPackage: TourPackage;
@@ -428,7 +429,7 @@ export default function PackageDetailPage({
           {/* LEFT CONTENT COLUMN */}
           <div className="lg:col-span-8 space-y-8">
             
-            {/* PACKAGE AT A GLANCE / HIGHLIGHTS SECTION (UNBOXED) */}
+            {/* PACKAGE AT A GLANCE / HIGHLIGHTS SECTION */}
             <div className="space-y-5">
               <div className="space-y-1">
                 <span className="text-[10px] font-mono text-brand-blue tracking-widest uppercase font-bold block">
@@ -440,61 +441,75 @@ export default function PackageDetailPage({
                 </h2>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
                 {/* Duration */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-brand-blue-accent">
-                    <Clock className="w-4 h-4 text-brand-blue-accent shrink-0" />
-                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">Duration</span>
+                <div className="bg-[#F8FAFC] hover:bg-white border border-[#E2E8F0] hover:border-brand-blue-accent/40 rounded-2xl p-4 transition-all duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-md flex items-start gap-3.5 group">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-[#DBE2EA] group-hover:border-brand-blue-accent/30 group-hover:bg-[#F0F7FF] flex items-center justify-center shrink-0 transition-colors shadow-sm">
+                    <Clock className="w-5 h-5 text-brand-blue-accent" />
                   </div>
-                  <p className="font-serif font-normal text-sm text-brand-charcoal">{tourPackage.duration}</p>
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Duration</span>
+                    <p className="font-serif font-semibold text-xs sm:text-sm text-brand-charcoal leading-snug">{tourPackage.duration}</p>
+                  </div>
                 </div>
 
                 {/* Destinations */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-brand-blue-accent">
-                    <MapPin className="w-4 h-4 text-brand-blue-accent shrink-0" />
-                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">Destinations</span>
+                <div className="bg-[#F8FAFC] hover:bg-white border border-[#E2E8F0] hover:border-brand-blue-accent/40 rounded-2xl p-4 transition-all duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-md flex items-start gap-3.5 group">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-[#DBE2EA] group-hover:border-brand-blue-accent/30 group-hover:bg-[#F0F7FF] flex items-center justify-center shrink-0 transition-colors shadow-sm">
+                    <MapPin className="w-5 h-5 text-brand-blue-accent" />
                   </div>
-                  <p className="font-serif font-normal text-sm text-brand-charcoal">{getPackageDestinations(tourPackage.id)}</p>
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Destinations</span>
+                    <p className="font-serif font-semibold text-xs sm:text-sm text-brand-charcoal leading-snug">{getPackageDestinations(tourPackage.id)}</p>
+                  </div>
                 </div>
 
-                {/* Hotels */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-brand-blue-accent">
-                    <Building className="w-4 h-4 text-brand-blue-accent shrink-0" />
-                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">Accommodations</span>
+                {/* Accommodations */}
+                <div className="bg-[#F8FAFC] hover:bg-white border border-[#E2E8F0] hover:border-brand-blue-accent/40 rounded-2xl p-4 transition-all duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-md flex items-start gap-3.5 group">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-[#DBE2EA] group-hover:border-brand-blue-accent/30 group-hover:bg-[#F0F7FF] flex items-center justify-center shrink-0 transition-colors shadow-sm">
+                    <Building className="w-5 h-5 text-brand-blue-accent" />
                   </div>
-                  <p className="font-serif font-normal text-sm text-brand-charcoal">
-                    {packageHotels.length > 0 ? packageHotels.map(h => h.name).join(", ") : "5-Star Luxury Stays"}
-                  </p>
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Accommodations</span>
+                    <p className="font-serif font-semibold text-xs sm:text-sm text-brand-charcoal leading-snug">
+                      {packageHotels.length > 0 ? packageHotels.map(h => h.name).join(", ") : "5-Star Luxury Stays"}
+                    </p>
+                  </div>
                 </div>
 
-                {/* Meals */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-brand-blue-accent">
-                    <Utensils className="w-4 h-4 text-brand-blue-accent shrink-0" />
-                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">Halal Dining</span>
+                {/* Halal Dining */}
+                {tourPackage.isHalalMeals !== false && (
+                  <div className="bg-[#F8FAFC] hover:bg-white border border-[#E2E8F0] hover:border-brand-blue-accent/40 rounded-2xl p-4 transition-all duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-md flex items-start gap-3.5 group">
+                    <div className="w-10 h-10 rounded-xl bg-white border border-[#DBE2EA] group-hover:border-brand-blue-accent/30 group-hover:bg-[#F0F7FF] flex items-center justify-center shrink-0 transition-colors shadow-sm">
+                      <Utensils className="w-5 h-5 text-brand-blue-accent" />
+                    </div>
+                    <div className="space-y-0.5 min-w-0">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Halal Dining</span>
+                      <p className="font-serif font-semibold text-xs sm:text-sm text-brand-charcoal leading-snug">Muslim Meals</p>
+                    </div>
                   </div>
-                  <p className="font-serif font-normal text-sm text-brand-charcoal">Verified Halal Meals</p>
-                </div>
+                )}
 
                 {/* Transport & Guide */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-brand-blue-accent">
-                    <ShieldCheck className="w-4 h-4 text-brand-blue-accent shrink-0" />
-                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">Transport & Guide</span>
+                <div className="bg-[#F8FAFC] hover:bg-white border border-[#E2E8F0] hover:border-brand-blue-accent/40 rounded-2xl p-4 transition-all duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-md flex items-start gap-3.5 group">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-[#DBE2EA] group-hover:border-brand-blue-accent/30 group-hover:bg-[#F0F7FF] flex items-center justify-center shrink-0 transition-colors shadow-sm">
+                    <ShieldCheck className="w-5 h-5 text-brand-blue-accent" />
                   </div>
-                  <p className="font-serif font-normal text-sm text-brand-charcoal">Private Chauffeur & Guide</p>
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Transport & Guide</span>
+                    <p className="font-serif font-semibold text-xs sm:text-sm text-brand-charcoal leading-snug">{tourPackage.transportType || "Private Transfer & Guide"}</p>
+                  </div>
                 </div>
 
-                {/* Style */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-brand-blue-accent">
-                    <Sparkles className="w-4 h-4 text-brand-blue-accent shrink-0" />
-                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">Pace & Style</span>
+                {/* Pace & Style */}
+                <div className="bg-[#F8FAFC] hover:bg-white border border-[#E2E8F0] hover:border-brand-blue-accent/40 rounded-2xl p-4 transition-all duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-md flex items-start gap-3.5 group">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-[#DBE2EA] group-hover:border-brand-blue-accent/30 group-hover:bg-[#F0F7FF] flex items-center justify-center shrink-0 transition-colors shadow-sm">
+                    <Sparkles className="w-5 h-5 text-brand-blue-accent" />
                   </div>
-                  <p className="font-serif font-normal text-sm text-brand-charcoal">Custom Spiritual & Leisure</p>
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Pace & Style</span>
+                    <p className="font-serif font-semibold text-xs sm:text-sm text-brand-charcoal leading-snug">{tourPackage.paceStyle || "Leisure"}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -517,8 +532,7 @@ export default function PackageDetailPage({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Inclusions */}
                 <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs space-y-4">
-                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                    <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div className="border-b border-slate-100 pb-3">
                     <h3 className="font-serif text-lg font-bold text-brand-charcoal">Package Inclusions</h3>
                   </div>
                   <div className="space-y-2.5">
@@ -533,8 +547,7 @@ export default function PackageDetailPage({
 
                 {/* Exclusions */}
                 <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs space-y-4">
-                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                    <X className="w-5 h-5 text-rose-500 shrink-0" />
+                  <div className="border-b border-slate-100 pb-3">
                     <h3 className="font-serif text-lg font-bold text-brand-charcoal">Package Exclusions</h3>
                   </div>
                   <div className="space-y-2.5">
@@ -571,7 +584,7 @@ export default function PackageDetailPage({
                   </h2>
                 </div>
                 <span className="text-xs font-mono font-bold text-slate-500 bg-white border border-slate-200/80 px-3 py-1.5 rounded-xl shadow-2xs">
-                  {tourPackage.itineraryOverview.length} Days Fully Outlined
+                  {tourPackage.itineraryDetails?.length || tourPackage.itineraryOverview.length} Days Fully Outlined
                 </span>
               </div>
 
@@ -580,25 +593,33 @@ export default function PackageDetailPage({
                 {/* Continuous Vertical Timeline Line in lighter soft blue tint */}
                 <div className="absolute left-[11px] sm:left-[15px] top-2 bottom-2 w-[2px] bg-[#0056b3]/20" />
 
-                {tourPackage.itineraryOverview.map((dayText, idx) => {
-                  let dayTitle = "";
-                  let dayDesc = "";
-                  const colonIdx = dayText.indexOf(":");
-                  if (colonIdx !== -1) {
-                    dayTitle = dayText.substring(0, colonIdx).trim();
-                    dayDesc = dayText.substring(colonIdx + 1).trim();
-                  } else {
-                    dayTitle = `Day ${idx + 1}`;
-                    dayDesc = dayText;
-                  }
+                {(tourPackage.itineraryDetails && tourPackage.itineraryDetails.length > 0
+                  ? tourPackage.itineraryDetails
+                  : tourPackage.itineraryOverview.map((dayText, idx) => {
+                      let dayTitle = "";
+                      let dayDesc = "";
+                      const colonIdx = dayText.indexOf(":");
+                      if (colonIdx !== -1) {
+                        dayTitle = dayText.substring(0, colonIdx).trim();
+                        dayDesc = dayText.substring(colonIdx + 1).trim();
+                      } else {
+                        dayTitle = `Day ${idx + 1}`;
+                        dayDesc = dayText;
+                      }
+                      return { day: idx + 1, title: dayTitle, description: dayDesc, meals: "", highlights: "" };
+                    })
+                ).map((dayItem, idx) => {
+                  const dayNum = dayItem.day || idx + 1;
+                  let dayTitle = dayItem.title || `Day ${dayNum}`;
+                  let dayDesc = dayItem.description || "";
 
                   let cleanTitle = dayTitle;
-                  const dayPrefixRegex = new RegExp(`^Day\\s*0?${idx + 1}\\s*[:\\-]?\\s*`, "i");
+                  const dayPrefixRegex = new RegExp(`^Day\\s*0?${dayNum}\\s*[:\\-]?\\s*`, "i");
                   if (dayPrefixRegex.test(cleanTitle)) {
                     cleanTitle = cleanTitle.replace(dayPrefixRegex, "").trim();
                   }
                   if (!cleanTitle) {
-                    cleanTitle = dayTitle || `Day ${idx + 1} Activity`;
+                    cleanTitle = dayTitle || `Day ${dayNum} Activity`;
                   }
 
                   // Multi-paragraph writing support
@@ -607,8 +628,8 @@ export default function PackageDetailPage({
                     .map(p => p.trim())
                     .filter(p => p.length > 0);
 
-                  const mealTag = getDayMeals(idx, dayDesc);
-                  const highlightTag = getDayHighlights(idx, cleanTitle, dayDesc);
+                  const mealTag = dayItem.meals ? (dayItem.meals.toLowerCase().startsWith("meals:") ? dayItem.meals : `Meals: ${dayItem.meals}`) : getDayMeals(idx, dayDesc);
+                  const highlightTag = dayItem.highlights ? dayItem.highlights : getDayHighlights(idx, cleanTitle, dayDesc);
 
                   return (
                     <div key={idx} className="relative group">
@@ -622,7 +643,7 @@ export default function PackageDetailPage({
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3.5">
                           <div className="flex items-center gap-3">
                             <span className="bg-[#0056b3] text-white font-mono text-xs font-bold px-3 py-1 rounded-xl uppercase tracking-wider shrink-0 shadow-xs">
-                              Day {idx + 1}
+                              Day {dayNum}
                             </span>
                             <h3 className="font-serif font-bold text-lg text-brand-charcoal leading-snug">
                               {cleanTitle}
@@ -744,38 +765,6 @@ export default function PackageDetailPage({
                     </div>
                   </div>
 
-                  {/* Luxury Level Toggle */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono text-brand-charcoal/60 uppercase font-bold flex items-center gap-1.5">
-                      <Award className="w-3.5 h-3.5 text-brand-blue" />
-                      Accommodation Luxury Level
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setLuxuryTier("ultra")}
-                        className={`py-2 rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider border transition-all ${
-                          luxuryTier === "ultra"
-                            ? "bg-brand-blue/10 border-brand-blue text-brand-blue"
-                            : "bg-brand-lightbg border-slate-200 text-brand-charcoal/60 hover:text-brand-charcoal"
-                        }`}
-                      >
-                        Ultra-Luxury
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setLuxuryTier("premium")}
-                        className={`py-2 rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider border transition-all ${
-                          luxuryTier === "premium"
-                            ? "bg-brand-blue/10 border-brand-blue text-brand-blue"
-                            : "bg-brand-lightbg border-slate-200 text-brand-charcoal/60 hover:text-brand-charcoal"
-                        }`}
-                      >
-                        Bespoke Premium
-                      </button>
-                    </div>
-                  </div>
-
                   {/* Name */}
                   <div className="space-y-1">
                     <input
@@ -849,34 +838,7 @@ export default function PackageDetailPage({
             </div>
 
             {/* WISE CARD / PAYMENT PARTNER SIDEBAR CARD */}
-            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white rounded-3xl p-5 shadow-xs space-y-3.5 border border-slate-800 relative overflow-hidden">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold font-mono text-xs">
-                    W
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider block">RECOMMENDED PAYMENT</span>
-                    <h4 className="font-serif text-sm font-bold text-white">Pay Securely via Wise</h4>
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-xs text-slate-300 leading-relaxed font-light">
-                Save on foreign exchange fees when settling deposit or balance payments. Wise offers mid-market exchange rates with zero hidden markups.
-              </p>
-
-              <a
-                href="https://wise.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono text-xs font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-2xs group cursor-pointer"
-              >
-                <CreditCard className="w-4 h-4 text-slate-950" />
-                <span>Open Wise Card Account</span>
-                <ExternalLink className="w-3.5 h-3.5 text-slate-950/70 group-hover:translate-x-0.5 transition-transform" />
-              </a>
-            </div>
+            <WiseTravelCard id="btn-wise-sidebar-package" />
 
           </div>
 

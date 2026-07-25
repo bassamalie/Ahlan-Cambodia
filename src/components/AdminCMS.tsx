@@ -2136,13 +2136,16 @@ export default function AdminCMS({
   const [packBrief, setPackBrief] = useState("");
   const [packFeaturedImage, setPackFeaturedImage] = useState("");
   const [packKeyHighlights, setPackKeyHighlights] = useState<string[]>(["", "", ""]);
+  const [packIsHalalMeals, setPackIsHalalMeals] = useState<boolean>(true);
+  const [packTransportType, setPackTransportType] = useState<"Private Transfer & Guide" | "Group Transfer & Guide" | string>("Private Transfer & Guide");
+  const [packPaceStyle, setPackPaceStyle] = useState<"Leisure" | "Group" | string>("Leisure");
 
   // Step 2: Overview
   const [packOverview, setPackOverview] = useState("");
 
   // Step 3: Itinerary, Inclusions, and Exclusions
-  const [packItinerary, setPackItinerary] = useState<{ day: number; title: string; description: string }[]>([
-    { day: 1, title: "", description: "" }
+  const [packItinerary, setPackItinerary] = useState<{ day: number; title: string; description: string; meals?: string; highlights?: string }[]>([
+    { day: 1, title: "", description: "", meals: "", highlights: "" }
   ]);
   const [packInclusions, setPackInclusions] = useState<string[]>([]);
   const [newInclusion, setNewInclusion] = useState("");
@@ -2491,8 +2494,11 @@ export default function AdminCMS({
     setPackBrief("");
     setPackFeaturedImage("");
     setPackKeyHighlights(["", "", ""]);
+    setPackIsHalalMeals(true);
+    setPackTransportType("Private Transfer & Guide");
+    setPackPaceStyle("Leisure");
     setPackOverview("");
-    setPackItinerary([{ day: 1, title: "", description: "" }]);
+    setPackItinerary([{ day: 1, title: "", description: "", meals: "", highlights: "" }]);
     setPackInclusions([]);
     setNewInclusion("");
     setPackExclusions([]);
@@ -2518,6 +2524,9 @@ export default function AdminCMS({
     setPackPrice(typeof pkg.price === "number" ? pkg.price.toString() : pkg.price);
     setPackBrief(pkg.brief || "");
     setPackFeaturedImage(pkg.image);
+    setPackIsHalalMeals(pkg.isHalalMeals !== false);
+    setPackTransportType(pkg.transportType || "Private Transfer & Guide");
+    setPackPaceStyle(pkg.paceStyle || "Leisure");
     
     const pHighlights = pkg.keyHighlights || [];
     setPackKeyHighlights([
@@ -2528,24 +2537,36 @@ export default function AdminCMS({
     
     setPackOverview(pkg.description);
     
-    if (pkg.itineraryOverview && pkg.itineraryOverview.length > 0) {
+    if (pkg.itineraryDetails && pkg.itineraryDetails.length > 0) {
+      setPackItinerary(pkg.itineraryDetails.map((item, idx) => ({
+        day: item.day || idx + 1,
+        title: item.title || "",
+        description: item.description || "",
+        meals: item.meals || "",
+        highlights: item.highlights || ""
+      })));
+    } else if (pkg.itineraryOverview && pkg.itineraryOverview.length > 0) {
       setPackItinerary(pkg.itineraryOverview.map((desc, idx) => {
         const colonIdx = desc.indexOf(":");
         if (colonIdx !== -1) {
           return {
             day: idx + 1,
             title: desc.substring(0, colonIdx).trim(),
-            description: desc.substring(colonIdx + 1).trim()
+            description: desc.substring(colonIdx + 1).trim(),
+            meals: "",
+            highlights: ""
           };
         }
         return {
           day: idx + 1,
           title: `Day ${idx + 1}`,
-          description: desc
+          description: desc,
+          meals: "",
+          highlights: ""
         };
       }));
     } else {
-      setPackItinerary([{ day: 1, title: "Day 1 - Arrival", description: "Welcome greeting and airport transfer." }]);
+      setPackItinerary([{ day: 1, title: "Day 1 - Arrival", description: "Welcome greeting and airport transfer.", meals: "", highlights: "" }]);
     }
     
     setPackInclusions(pkg.features || []);
@@ -2617,14 +2638,20 @@ export default function AdminCMS({
       triggerToast("Please fill in all 3 Key Highlights in Step 1.", "error");
       return;
     }
+
+    const compiledItineraryDetails = packItinerary.map((item, idx) => ({
+      day: idx + 1,
+      title: item.title ? item.title.trim() : `Day ${idx + 1}`,
+      description: item.description ? item.description.trim() : "",
+      meals: item.meals ? item.meals.trim() : "",
+      highlights: item.highlights ? item.highlights.trim() : ""
+    }));
     
-    const itineraryOverview = packItinerary.map((item, idx) => {
-      const title = item.title ? item.title.trim() : `Day ${item.day || idx + 1}`;
-      const desc = item.description ? item.description.trim() : '';
-      if (title && desc) {
-        return `${title}: ${desc}`;
+    const itineraryOverview = compiledItineraryDetails.map((item, idx) => {
+      if (item.title && item.description) {
+        return `${item.title}: ${item.description}`;
       }
-      return title || desc || `Day ${idx + 1} activity.`;
+      return item.title || item.description || `Day ${idx + 1} activity.`;
     }).filter(x => x !== "");
     
     const cleanSlots = packageHotelSlots.filter(s => {
@@ -2654,6 +2681,7 @@ export default function AdminCMS({
       rating: 4.9,
       features: packInclusions.length > 0 ? packInclusions : ["Elite Halal Gastronomy", "Private Chauffeur Service", "Wudu-enabled Vehicles"],
       itineraryOverview: itineraryOverview,
+      itineraryDetails: compiledItineraryDetails,
       brief: packBrief,
       destinations: packDestinations,
       exclusions: packExclusions,
@@ -2663,7 +2691,10 @@ export default function AdminCMS({
       customHotel: customHotelsArr[0] || undefined,
       gallery: cleanGallery,
       faqs: cleanFaqs,
-      keyHighlights: packKeyHighlights.filter(h => h.trim() !== "")
+      keyHighlights: packKeyHighlights.filter(h => h.trim() !== ""),
+      isHalalMeals: packIsHalalMeals,
+      transportType: packTransportType,
+      paceStyle: packPaceStyle
     };
     
     if (editingPackageId) {
@@ -4617,6 +4648,56 @@ export default function AdminCMS({
                           </div>
                         </div>
 
+                        {/* Package Service Options: Halal Meals, Transport & Guide, Pace & Style */}
+                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
+                          <h4 className="text-xs font-bold font-mono text-[#0F1626] uppercase tracking-wider">Service Specifications & Highlights Settings</h4>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {/* Halal Meals Toggle */}
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Halal Meals Included? *</label>
+                              <button
+                                type="button"
+                                onClick={() => setPackIsHalalMeals(!packIsHalalMeals)}
+                                className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold font-sans transition-all flex items-center justify-between ${
+                                  packIsHalalMeals
+                                    ? "bg-emerald-50 border-emerald-300 text-emerald-900"
+                                    : "bg-slate-100 border-slate-300 text-slate-500"
+                                }`}
+                              >
+                                <span>{packIsHalalMeals ? "Halal Meals Included (Muslim Meals)" : "No Halal Dining Card"}</span>
+                                <CheckCircle className={`w-4 h-4 ${packIsHalalMeals ? "text-emerald-600" : "text-slate-300"}`} />
+                              </button>
+                            </div>
+
+                            {/* Transportation & Guide Type */}
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Transportation & Guide Type *</label>
+                              <select
+                                value={packTransportType}
+                                onChange={(e) => setPackTransportType(e.target.value)}
+                                className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-2.5 text-xs outline-none font-sans font-bold text-slate-800"
+                              >
+                                <option value="Private Transfer & Guide">Private Transfer & Guide</option>
+                                <option value="Group Transfer & Guide">Group Transfer & Guide</option>
+                              </select>
+                            </div>
+
+                            {/* Pace & Style */}
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Pace & Style *</label>
+                              <select
+                                value={packPaceStyle}
+                                onChange={(e) => setPackPaceStyle(e.target.value)}
+                                className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-2.5 text-xs outline-none font-sans font-bold text-slate-800"
+                              >
+                                <option value="Leisure">Leisure</option>
+                                <option value="Group">Group</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+
                         <div className="space-y-1.5">
                           <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">Short Brief Description * (Max 180 chars)</label>
                           <textarea
@@ -4708,14 +4789,14 @@ export default function AdminCMS({
                             </button>
                           </div>
 
-                          <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                          <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2">
                             {packItinerary.map((item, index) => (
                               <div key={index} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex items-start gap-4">
                                 <div className="bg-[#0F1626] text-white w-9 h-9 rounded-xl flex items-center justify-center font-mono text-xs font-bold shrink-0">
                                   D0{item.day}
                                 </div>
                                 <div className="flex-1 space-y-3">
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  <div className="flex items-center justify-between gap-3">
                                     <input
                                       type="text"
                                       placeholder={`e.g., Day ${item.day}: Arrival & Sunset Cruise`}
@@ -4725,35 +4806,71 @@ export default function AdminCMS({
                                         updated[index].title = e.target.value;
                                         setPackItinerary(updated);
                                       }}
-                                      className="bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-2 text-xs outline-none font-sans font-bold text-slate-800"
+                                      className="flex-1 bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-2 text-xs outline-none font-sans font-bold text-slate-800"
                                     />
                                     {packItinerary.length > 1 && (
-                                      <div className="text-right sm:col-span-1">
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const filtered = packItinerary.filter((_, i) => i !== index);
-                                            const reindexed = filtered.map((item, idx) => ({ ...item, day: idx + 1 }));
-                                            setPackItinerary(reindexed);
-                                          }}
-                                          className="text-[10px] font-mono text-red-500 hover:text-red-700 font-bold uppercase tracking-wider bg-red-50 hover:bg-red-100/50 px-2.5 py-1 rounded-lg border border-red-100"
-                                        >
-                                          Remove Day
-                                        </button>
-                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const filtered = packItinerary.filter((_, i) => i !== index);
+                                          const reindexed = filtered.map((item, idx) => ({ ...item, day: idx + 1 }));
+                                          setPackItinerary(reindexed);
+                                        }}
+                                        className="text-[10px] font-mono text-red-500 hover:text-red-700 font-bold uppercase tracking-wider bg-red-50 hover:bg-red-100/50 px-2.5 py-1 rounded-lg border border-red-100 shrink-0"
+                                      >
+                                        Remove Day
+                                      </button>
                                     )}
                                   </div>
-                                  <textarea
-                                    rows={2}
-                                    placeholder="Provide detailed description of tours, locations visited, certified dining stops, and prayer timing pauses..."
-                                    value={item.description}
-                                    onChange={(e) => {
-                                      const updated = [...packItinerary];
-                                      updated[index].description = e.target.value;
-                                      setPackItinerary(updated);
-                                    }}
-                                    className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-2 text-xs outline-none font-sans text-slate-600"
-                                  />
+
+                                  {/* Meals & Highlights for Day */}
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400">Meals Available On Day</label>
+                                      <input
+                                        type="text"
+                                        placeholder="e.g., Breakfast, Halal Lunch, Welcome Dinner"
+                                        value={item.meals || ""}
+                                        onChange={(e) => {
+                                          const updated = [...packItinerary];
+                                          updated[index].meals = e.target.value;
+                                          setPackItinerary(updated);
+                                        }}
+                                        className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none font-sans text-slate-700 font-medium"
+                                      />
+                                    </div>
+
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400">Day Highlights</label>
+                                      <input
+                                        type="text"
+                                        placeholder="e.g., Royal Palace, Silver Pagoda, Sunset Cruise"
+                                        value={item.highlights || ""}
+                                        onChange={(e) => {
+                                          const updated = [...packItinerary];
+                                          updated[index].highlights = e.target.value;
+                                          setPackItinerary(updated);
+                                        }}
+                                        className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none font-sans text-slate-700 font-medium"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  {/* Day Content Paragraphs */}
+                                  <div className="space-y-1">
+                                    <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400">Day Content / Narrative (Allows Multiple Paragraphs)</label>
+                                    <textarea
+                                      rows={4}
+                                      placeholder="Provide detailed description of tours, locations visited, certified dining stops, and prayer timing pauses. Press Enter for multiple paragraphs..."
+                                      value={item.description}
+                                      onChange={(e) => {
+                                        const updated = [...packItinerary];
+                                        updated[index].description = e.target.value;
+                                        setPackItinerary(updated);
+                                      }}
+                                      className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-2 text-xs outline-none font-sans text-slate-600 leading-relaxed"
+                                    />
+                                  </div>
                                 </div>
                               </div>
                             ))}

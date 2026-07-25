@@ -36,6 +36,14 @@ export interface PackageHotelItem {
   customHotel?: CustomHotelItem;
 }
 
+export interface ItineraryDayItem {
+  day: number;
+  title: string;
+  description: string;
+  meals?: string;
+  highlights?: string;
+}
+
 export interface TourPackage {
   id: string;
   name: string;
@@ -46,6 +54,7 @@ export interface TourPackage {
   rating: number;
   features: string[];
   itineraryOverview: string[];
+  itineraryDetails?: ItineraryDayItem[];
   
   // Custom optional fields for dynamic package wizard
   brief?: string;
@@ -58,6 +67,9 @@ export interface TourPackage {
   packageHotelsList?: PackageHotelItem[];
   gallery?: string[];
   faqs?: { q: string; a: string }[];
+  isHalalMeals?: boolean;
+  transportType?: "Private Transfer & Guide" | "Group Transfer & Guide" | string;
+  paceStyle?: "Leisure" | "Group" | string;
 }
 
 export interface Experience {
