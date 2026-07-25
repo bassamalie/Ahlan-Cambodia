@@ -399,7 +399,7 @@ export default function ExperienceDetailPage({
         <div className="relative z-10 h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end pb-8 space-y-4">
           <div className="space-y-3 max-w-4xl">
             {/* Main elegant serif title */}
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-bold text-white tracking-wide leading-tight drop-shadow-md">
+            <h1 className="text-3xl sm:text-5xl font-serif font-bold text-white tracking-wide leading-tight drop-shadow-md">
               {experience.name}
             </h1>
             {/* Long clean description */}

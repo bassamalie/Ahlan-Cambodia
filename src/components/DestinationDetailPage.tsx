@@ -498,7 +498,7 @@ export default function DestinationDetailPage({
           
           {/* Title & Description */}
           <div className="space-y-3 max-w-4xl">
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-bold text-white tracking-wide leading-tight drop-shadow-md">
+            <h1 className="text-3xl sm:text-5xl font-serif font-bold text-white tracking-wide leading-tight drop-shadow-md">
               {destination.name}
             </h1>
             <p className="hidden sm:block text-white/95 text-sm sm:text-base md:text-lg leading-relaxed font-sans max-w-3xl drop-shadow-sm">

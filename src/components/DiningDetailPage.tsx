@@ -442,7 +442,7 @@ export default function DiningDetailPage({
                 )}
               </div>
               
-              <h1 className="text-3xl sm:text-5xl md:text-6xl font-serif font-bold text-white tracking-wide leading-tight drop-shadow-md">
+              <h1 className="text-3xl sm:text-5xl font-serif font-bold text-white tracking-wide leading-tight drop-shadow-md">
                 {restaurant.name}
               </h1>
               <div className="hidden sm:block text-white/90 text-sm sm:text-base leading-relaxed font-sans max-w-3xl drop-shadow-sm font-light space-y-3">

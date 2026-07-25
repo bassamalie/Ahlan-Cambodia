@@ -3,7 +3,8 @@ import {
   ArrowLeft, Heart, Clock, MapPin, CheckCircle, 
   X, Calendar, Users, Award, ShieldCheck, 
   Utensils, Share2, DollarSign, ChevronDown, ChevronUp, MessageSquare,
-  Check, ArrowRight, Star, Building, Maximize2, ChevronLeft, ChevronRight
+  Check, ArrowRight, Star, Building, Maximize2, ChevronLeft, ChevronRight,
+  CreditCard, ExternalLink, Sparkles
 } from "lucide-react";
 import { TourPackage, Hotel } from "../types";
 import { hotels } from "../data";
@@ -252,6 +253,33 @@ export default function PackageDetailPage({
     .filter((pkg) => pkg.id !== tourPackage.id)
     .slice(0, 3);
 
+  // Day-to-day smart tag helpers
+  const getDayMeals = (idx: number, dayDesc: string) => {
+    const lower = dayDesc.toLowerCase();
+    const meals: string[] = [];
+    if (lower.includes("breakfast")) meals.push("Breakfast");
+    if (lower.includes("lunch")) meals.push("Lunch");
+    if (lower.includes("dinner") || lower.includes("banquet") || lower.includes("welcome")) meals.push("Dinner");
+    
+    if (meals.length > 0) {
+      return `Meals: ${meals.join(", ")}`;
+    }
+    if (idx === 0) return "Meals: Welcome Dinner";
+    return "Meals: Breakfast & Dinner";
+  };
+
+  const getDayHighlights = (idx: number, dayTitle: string, dayDesc: string) => {
+    let text = dayTitle.replace(/^Day\s*\d+\s*[:\-]?\s*/i, "").trim();
+    if (text && text.length > 3 && !text.toLowerCase().startsWith("activity")) {
+      return text;
+    }
+    const firstSentence = dayDesc.split(".")[0];
+    if (firstSentence && firstSentence.length > 10 && firstSentence.length < 65) {
+      return firstSentence.trim();
+    }
+    return "Cultural Exploration & Iconic Landmarks";
+  };
+
   return (
     <div id="package-detail-root" className="w-full bg-white min-h-screen pb-24 animate-fade-in">
       
@@ -301,7 +329,7 @@ export default function PackageDetailPage({
         {/* Hero Content Overlaid */}
         <div className="relative z-10 h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end pb-8 space-y-4">
           <div className="space-y-3 max-w-4xl">
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-bold text-white tracking-wide leading-tight drop-shadow-md">
+            <h1 className="text-3xl sm:text-5xl font-serif font-bold text-white tracking-wide leading-tight drop-shadow-md">
               {tourPackage.name}
             </h1>
             <p className="hidden sm:block text-white/95 text-sm sm:text-base leading-relaxed font-sans max-w-3xl drop-shadow-sm font-light">
@@ -400,222 +428,231 @@ export default function PackageDetailPage({
           {/* LEFT CONTENT COLUMN */}
           <div className="lg:col-span-8 space-y-8">
             
-            {/* Vibe / Narrative */}
-            <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm space-y-4">
+            {/* PACKAGE AT A GLANCE / HIGHLIGHTS SECTION (UNBOXED) */}
+            <div className="space-y-5">
               <div className="space-y-1">
-                <span className="text-xs font-mono text-brand-blue-accent tracking-widest uppercase font-bold block">
-                  Curated Narrative & Purpose
+                <span className="text-[10px] font-mono text-brand-blue tracking-widest uppercase font-bold block">
+                  AT A GLANCE
                 </span>
                 <h2 className="font-serif text-2xl font-bold text-brand-charcoal flex items-center gap-2.5">
                   <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
-                  About This Sanctuary Journey
+                  Package Highlights
                 </h2>
               </div>
-              <div className="text-brand-charcoal/80 text-sm sm:text-base leading-relaxed pt-2 space-y-4">
-                {tourPackage.description.split("\n").map((p) => p.trim()).filter((p) => p.length > 0).map((para, idx) => (
-                  <p key={idx}>{para}</p>
-                ))}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-1">
+                {/* Duration */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-brand-blue-accent">
+                    <Clock className="w-4 h-4 text-brand-blue-accent shrink-0" />
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">Duration</span>
+                  </div>
+                  <p className="font-serif font-normal text-sm text-brand-charcoal">{tourPackage.duration}</p>
+                </div>
+
+                {/* Destinations */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-brand-blue-accent">
+                    <MapPin className="w-4 h-4 text-brand-blue-accent shrink-0" />
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">Destinations</span>
+                  </div>
+                  <p className="font-serif font-normal text-sm text-brand-charcoal">{getPackageDestinations(tourPackage.id)}</p>
+                </div>
+
+                {/* Hotels */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-brand-blue-accent">
+                    <Building className="w-4 h-4 text-brand-blue-accent shrink-0" />
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">Accommodations</span>
+                  </div>
+                  <p className="font-serif font-normal text-sm text-brand-charcoal">
+                    {packageHotels.length > 0 ? packageHotels.map(h => h.name).join(", ") : "5-Star Luxury Stays"}
+                  </p>
+                </div>
+
+                {/* Meals */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-brand-blue-accent">
+                    <Utensils className="w-4 h-4 text-brand-blue-accent shrink-0" />
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">Halal Dining</span>
+                  </div>
+                  <p className="font-serif font-normal text-sm text-brand-charcoal">Verified Halal Meals</p>
+                </div>
+
+                {/* Transport & Guide */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-brand-blue-accent">
+                    <ShieldCheck className="w-4 h-4 text-brand-blue-accent shrink-0" />
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">Transport & Guide</span>
+                  </div>
+                  <p className="font-serif font-normal text-sm text-brand-charcoal">Private Chauffeur & Guide</p>
+                </div>
+
+                {/* Style */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-brand-blue-accent">
+                    <Sparkles className="w-4 h-4 text-brand-blue-accent shrink-0" />
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">Pace & Style</span>
+                  </div>
+                  <p className="font-serif font-normal text-sm text-brand-charcoal">Custom Spiritual & Leisure</p>
+                </div>
               </div>
             </div>
 
-            {/* TAB SELECTION */}
-            <div className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm">
-              <div className="flex border-b border-slate-200/60 font-mono text-xs uppercase font-bold tracking-wider bg-brand-lightbg">
-                <button
-                  onClick={() => setActiveTab("itinerary")}
-                  className={`flex-1 py-4 text-center cursor-pointer border-b-2 transition-all ${
-                    activeTab === "itinerary" 
-                      ? "border-brand-blue text-brand-blue bg-white" 
-                      : "border-transparent text-brand-charcoal/60 hover:text-brand-charcoal"
-                  }`}
-                >
-                  Itinerary
-                </button>
-                <button
-                  onClick={() => setActiveTab("inclusions")}
-                  className={`flex-1 py-4 text-center cursor-pointer border-b-2 transition-all ${
-                    activeTab === "inclusions" 
-                      ? "border-brand-blue text-brand-blue bg-white" 
-                      : "border-transparent text-brand-charcoal/60 hover:text-brand-charcoal"
-                  }`}
-                >
-                  Inclusions
-                </button>
-                <button
-                  onClick={() => setActiveTab("exclusions")}
-                  className={`flex-1 py-4 text-center cursor-pointer border-b-2 transition-all ${
-                    activeTab === "exclusions" 
-                      ? "border-brand-blue text-brand-blue bg-white" 
-                      : "border-transparent text-brand-charcoal/60 hover:text-brand-charcoal"
-                  }`}
-                >
-                  Exclusions
-                </button>
+            {/* SECTION DIVIDER LINE ABOVE INCLUSIONS & EXCLUSIONS */}
+            <div className="w-full border-t border-slate-200/80 my-8" />
+
+            {/* SEPARATE INCLUSIONS & EXCLUSIONS SECTION WITH WEBSITE TITLE DESIGN */}
+            <div className="space-y-6">
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono text-brand-blue tracking-widest uppercase font-bold block">
+                  WHAT IS INCLUDED & EXCLUDED
+                </span>
+                <h2 className="font-serif text-2xl font-bold text-brand-charcoal flex items-center gap-2.5">
+                  <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+                  Inclusions & Exclusions
+                </h2>
               </div>
 
-              <div className="p-6 sm:p-8">
-                
-                {/* TAB 1: DAILY JOURNEY TIMELINE */}
-                {activeTab === "itinerary" && (
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-serif text-xl font-bold text-brand-charcoal flex items-center gap-2.5">
-                          <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
-                          Daily Sanctuary Timeline
-                        </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Inclusions */}
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs space-y-4">
+                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <h3 className="font-serif text-lg font-bold text-brand-charcoal">Package Inclusions</h3>
+                  </div>
+                  <div className="space-y-2.5">
+                    {tourPackage.features.map((feat, idx) => (
+                      <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
+                        <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                        <span>{feat}</span>
                       </div>
-                      <button 
-                        onClick={() => setExpandedDay(expandedDay === null ? 0 : null)}
-                        className="text-xs font-mono text-brand-blue hover:text-brand-blue-accent font-bold hover:underline"
-                      >
-                        {expandedDay === null ? "Expand All" : "Collapse All"}
-                      </button>
-                    </div>
+                    ))}
+                  </div>
+                </div>
 
-                    <div className="relative border-l-2 border-slate-200 pl-6 ml-4 space-y-6 py-2">
-                      {tourPackage.itineraryOverview.map((dayText, idx) => {
-                        const isExpanded = expandedDay === idx || expandedDay === null;
-                        
-                        let dayTitle = "";
-                        let dayDesc = "";
-                        const colonIdx = dayText.indexOf(":");
-                        if (colonIdx !== -1) {
-                          dayTitle = dayText.substring(0, colonIdx).trim();
-                          dayDesc = dayText.substring(colonIdx + 1).trim();
-                        } else {
-                          dayTitle = `Day ${idx + 1}`;
-                          dayDesc = dayText;
-                        }
+                {/* Exclusions */}
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs space-y-4">
+                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <X className="w-5 h-5 text-rose-500 shrink-0" />
+                    <h3 className="font-serif text-lg font-bold text-brand-charcoal">Package Exclusions</h3>
+                  </div>
+                  <div className="space-y-2.5">
+                    {(tourPackage.exclusions || [
+                      "International flights & airport terminal taxes.",
+                      "Cambodia tourist entry visa fees.",
+                      "Personal expenses (laundry, room service, souvenirs).",
+                      "Optional travel insurance.",
+                      "Discretionary gratuities for local drivers and guides."
+                    ]).map((excl, idx) => (
+                      <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-600">
+                        <X className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                        <span>{excl}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                        // Clean title prefix if it duplicates "Day 1 - " or "Day 1: " next to the badge
-                        let cleanTitle = dayTitle;
-                        const dayPrefixRegex = new RegExp(`^Day\\s*0?${idx + 1}\\s*[:\\-]?\\s*`, "i");
-                        if (dayPrefixRegex.test(cleanTitle)) {
-                          cleanTitle = cleanTitle.replace(dayPrefixRegex, "").trim();
-                        }
-                        if (!cleanTitle) {
-                          cleanTitle = dayTitle || `Day ${idx + 1} Activity`;
-                        }
+            {/* SECTION DIVIDER LINE ABOVE DETAILED ITINERARY */}
+            <div className="w-full border-t border-slate-200/80 my-8" />
 
-                        return (
-                          <div key={idx} className="relative group">
-                            
-                            {/* Marker Node */}
-                            <div className={`absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-2 bg-white transition-all ${
-                              isExpanded ? "border-brand-blue scale-110 bg-brand-blue" : "border-slate-300 group-hover:border-slate-400"
-                            }`} />
+            {/* UNBOXED & SEPARATED DAY-BY-DAY ITINERARY WITH TIMELINE LINE */}
+            <div className="space-y-6 pt-2">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-mono text-brand-blue tracking-widest uppercase font-bold block">
+                    DAY-BY-DAY JOURNEY
+                  </span>
+                  <h2 className="font-serif text-2xl font-bold text-brand-charcoal flex items-center gap-2.5">
+                    <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+                    Detailed Itinerary
+                  </h2>
+                </div>
+                <span className="text-xs font-mono font-bold text-slate-500 bg-white border border-slate-200/80 px-3 py-1.5 rounded-xl shadow-2xs">
+                  {tourPackage.itineraryOverview.length} Days Fully Outlined
+                </span>
+              </div>
 
-                            <div className="space-y-2">
-                              <button
-                                onClick={() => setExpandedDay(expandedDay === idx ? -1 : idx)}
-                                className="w-full text-left flex items-center justify-between hover:text-brand-blue-accent transition-colors focus:outline-none"
-                              >
-                                <span className="font-serif font-bold text-base sm:text-lg text-brand-charcoal flex items-center gap-2">
-                                  <span className="font-mono text-xs text-brand-blue bg-brand-blue/10 px-2 py-0.5 rounded uppercase font-bold shrink-0">
-                                    Day {idx + 1}
-                                  </span>
-                                  <span className="leading-snug">{cleanTitle}</span>
-                                </span>
-                                {expandedDay !== null && (
-                                  isExpanded ? <ChevronUp className="w-4 h-4 text-brand-charcoal/40 shrink-0" /> : <ChevronDown className="w-4 h-4 text-brand-charcoal/40 shrink-0" />
-                                )}
-                              </button>
+              {/* Timeline Container with Lighter Soft Blue Vertical Line */}
+              <div className="relative pl-8 sm:pl-10 space-y-6">
+                {/* Continuous Vertical Timeline Line in lighter soft blue tint */}
+                <div className="absolute left-[11px] sm:left-[15px] top-2 bottom-2 w-[2px] bg-[#0056b3]/20" />
 
-                              {isExpanded && (
-                                <div className="bg-slate-50/50 border border-slate-200/85 rounded-2xl p-4 sm:p-5 text-sm text-brand-charcoal/80 space-y-3 leading-relaxed animate-slide-down">
-                                  <p>{dayDesc || dayTitle}</p>
-                                  <div className="flex flex-wrap gap-2 pt-1 font-mono text-[10px] font-bold">
-                                    <span className="bg-brand-green/5 border border-brand-green/15 text-brand-green px-2.5 py-1 rounded-lg">
-                                      ✓ PRIVATE CHAUFFEUR
-                                    </span>
-                                    <span className="bg-brand-blue/5 border border-brand-blue/15 text-brand-blue px-2.5 py-1 rounded-lg">
-                                      ✓ HALAL DINING OPTIONS
-                                    </span>
-                                    {idx === 0 && (
-                                      <span className="bg-brand-blue/5 border border-brand-blue/15 text-brand-blue px-2.5 py-1 rounded-lg">
-                                        ✓ VIP ARRIVAL LOUNGE
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
+                {tourPackage.itineraryOverview.map((dayText, idx) => {
+                  let dayTitle = "";
+                  let dayDesc = "";
+                  const colonIdx = dayText.indexOf(":");
+                  if (colonIdx !== -1) {
+                    dayTitle = dayText.substring(0, colonIdx).trim();
+                    dayDesc = dayText.substring(colonIdx + 1).trim();
+                  } else {
+                    dayTitle = `Day ${idx + 1}`;
+                    dayDesc = dayText;
+                  }
 
+                  let cleanTitle = dayTitle;
+                  const dayPrefixRegex = new RegExp(`^Day\\s*0?${idx + 1}\\s*[:\\-]?\\s*`, "i");
+                  if (dayPrefixRegex.test(cleanTitle)) {
+                    cleanTitle = cleanTitle.replace(dayPrefixRegex, "").trim();
+                  }
+                  if (!cleanTitle) {
+                    cleanTitle = dayTitle || `Day ${idx + 1} Activity`;
+                  }
+
+                  // Multi-paragraph writing support
+                  const paragraphs = (dayDesc || dayTitle)
+                    .split(/\n+/)
+                    .map(p => p.trim())
+                    .filter(p => p.length > 0);
+
+                  const mealTag = getDayMeals(idx, dayDesc);
+                  const highlightTag = getDayHighlights(idx, cleanTitle, dayDesc);
+
+                  return (
+                    <div key={idx} className="relative group">
+                      {/* Concentric Circle Node Bullet with Line Cutting Through (Lighter #0056b3/35) */}
+                      <div className="absolute left-[-21px] sm:left-[-25px] top-[28px] -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 border-[#0056b3]/35 bg-white flex items-center justify-center z-10 transition-transform group-hover:scale-110">
+                        <div className="w-2 h-2 rounded-full bg-[#0056b3]/40 pointer-events-none" />
+                      </div>
+
+                      {/* Day Box */}
+                      <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs space-y-4 relative overflow-hidden transition-all hover:border-slate-300">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3.5">
+                          <div className="flex items-center gap-3">
+                            <span className="bg-[#0056b3] text-white font-mono text-xs font-bold px-3 py-1 rounded-xl uppercase tracking-wider shrink-0 shadow-xs">
+                              Day {idx + 1}
+                            </span>
+                            <h3 className="font-serif font-bold text-lg text-brand-charcoal leading-snug">
+                              {cleanTitle}
+                            </h3>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 2: INCLUSIONS */}
-                {activeTab === "inclusions" && (
-                  <div className="space-y-6 animate-fade-in">
-                    <div>
-                      <h3 className="font-serif text-xl font-bold text-brand-charcoal flex items-center gap-2.5">
-                        <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
-                        All-Inclusive Luxury Amenities
-                      </h3>
-                      <p className="text-xs text-brand-charcoal/50">No hidden fees. Every element is crafted to ensure a high-end, worry-free journey.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {tourPackage.features.map((feature, idx) => (
-                        <div key={idx} className="flex items-start gap-3 bg-brand-green/5 border border-brand-green/10 rounded-2xl p-4">
-                          <CheckCircle className="w-4 h-4 text-brand-blue shrink-0 mt-0.5" />
-                          <span className="text-xs sm:text-sm font-medium text-brand-charcoal">{feature}</span>
                         </div>
-                      ))}
-                    </div>
 
-                    <div className="bg-slate-50 border border-slate-200/80 p-5 rounded-2xl space-y-3">
-                      <div className="flex items-center gap-2 text-brand-blue font-bold font-serif text-sm">
-                        <Award className="w-4 h-4" />
-                        <span>Exclusive Grand Concierge Included</span>
+                        {/* Multi-paragraph Writing */}
+                        <div className="text-slate-700 text-sm sm:text-base leading-relaxed space-y-3 pt-1 font-light">
+                          {paragraphs.map((p, pIdx) => (
+                            <p key={pIdx}>{p}</p>
+                          ))}
+                        </div>
+
+                        {/* Tags: Meals tag & Highlights tag */}
+                        <div className="flex flex-wrap gap-2.5 pt-3 border-t border-slate-100/80">
+                          <span className="bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-3 py-1.5 rounded-xl font-medium text-xs flex items-center gap-1.5 shadow-2xs">
+                            <Utensils className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>{mealTag}</span>
+                          </span>
+
+                          <span className="bg-sky-50 text-sky-800 border border-sky-200/80 px-3 py-1.5 rounded-xl font-medium text-xs flex items-center gap-1.5 shadow-2xs">
+                            <MapPin className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                            <span>Highlights: {highlightTag}</span>
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-xs text-brand-charcoal/70 leading-relaxed">
-                        Enjoy the services of your dedicated local tour manager, reachability via custom chat or phone, private fast-track customs clearance at airport terminals, and priority access tickets at all heritage reserves.
-                      </p>
                     </div>
-                  </div>
-                )}
-
-                {/* TAB 3: EXCLUSIONS */}
-                {activeTab === "exclusions" && (
-                  <div className="space-y-6 animate-fade-in">
-                    <div>
-                      <h3 className="font-serif text-xl font-bold text-brand-charcoal flex items-center gap-2.5">
-                        <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
-                        Tour Exclusions
-                      </h3>
-                      <p className="text-xs text-brand-charcoal/50">The following items are not included in the standard tour package price.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {(tourPackage.exclusions || [
-                        "International flights & associated airport terminal taxes.",
-                        "Cambodia entry visa fees (Tourist Visa can be secured online or on-arrival).",
-                        "Personal expenses such as laundry, room service, telephone calls, and souvenirs.",
-                        "Optional travel insurance (strongly recommended for all guests).",
-                        "Any meals, beverages, or snacks not explicitly highlighted in the itinerary.",
-                        "Discretionary tips & gratuities for private drivers, guides, and service staff."
-                      ]).map((exclusion, idx) => (
-                        <div key={idx} className="flex items-start gap-3 bg-rose-50/40 border border-rose-100 rounded-2xl p-4">
-                          <X className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                          <span className="text-xs sm:text-sm font-medium text-brand-charcoal/90">{exclusion}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="bg-slate-50 border border-slate-200/80 p-5 rounded-2xl space-y-2">
-                      <p className="text-xs text-brand-charcoal/70 leading-relaxed font-light">
-                        Need help securing flight arrangements, group visas, or specialized medical travel insurance? State your exact requirements in the custom inquiry builder and our elite travel concierge will integrate them seamlessly.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
+                  );
+                })}
               </div>
             </div>
 
@@ -787,7 +824,7 @@ export default function PackageDetailPage({
             </div>
 
             {/* TRUST PLEDGE BANNER */}
-            <div className="bg-brand-green text-white rounded-3xl border border-transparent p-5 space-y-4 shadow-sm relative overflow-hidden">
+            <div className="bg-brand-green text-white rounded-3xl border border-transparent p-5 space-y-4 shadow-xs relative overflow-hidden">
               <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle, #FFFFFF 1px, transparent 1px)", backgroundSize: "16px 16px" }} />
               
               <div className="flex items-center gap-2.5">
@@ -811,122 +848,100 @@ export default function PackageDetailPage({
               </ul>
             </div>
 
+            {/* WISE CARD / PAYMENT PARTNER SIDEBAR CARD */}
+            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white rounded-3xl p-5 shadow-xs space-y-3.5 border border-slate-800 relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold font-mono text-xs">
+                    W
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider block">RECOMMENDED PAYMENT</span>
+                    <h4 className="font-serif text-sm font-bold text-white">Pay Securely via Wise</h4>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-300 leading-relaxed font-light">
+                Save on foreign exchange fees when settling deposit or balance payments. Wise offers mid-market exchange rates with zero hidden markups.
+              </p>
+
+              <a
+                href="https://wise.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono text-xs font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-2xs group cursor-pointer"
+              >
+                <CreditCard className="w-4 h-4 text-slate-950" />
+                <span>Open Wise Card Account</span>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-950/70 group-hover:translate-x-0.5 transition-transform" />
+              </a>
+            </div>
+
           </div>
 
         </div>
 
-        {/* --- PREMIUM ACCOMMODATIONS SECTION --- */}
+        {/* --- COMPACT ACCOMMODATIONS SECTION --- */}
         {packageHotels.length > 0 && (
-          <div className="border-t border-slate-200/80 pt-12 mt-12 space-y-8">
-            <div className="text-center sm:text-left">
-              <span className="text-[10px] font-mono text-brand-blue font-bold uppercase tracking-widest block mb-1">LUXURY SANCTUARY</span>
-              <h3 className="font-serif text-2xl font-bold text-brand-charcoal uppercase tracking-wide flex items-center gap-2.5">
+          <div className="border-t border-slate-200/80 pt-10 mt-10 space-y-6">
+            <div className="text-center sm:text-left space-y-1">
+              <span className="text-[10px] font-mono text-brand-blue font-bold uppercase tracking-widest block">LUXURY SANCTUARY</span>
+              <h3 className="font-serif text-2xl font-bold text-brand-charcoal flex items-center gap-2.5">
                 <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
-                Premium Accommodations
+                Accommodations & Partner Hotels
               </h3>
             </div>
 
-            <div className={`grid grid-cols-1 ${packageHotels.length > 1 ? "md:grid-cols-2" : "max-w-4xl"} gap-8`}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {packageHotels.map((hotel) => (
                 <div 
                   key={hotel.id}
-                  className="bg-white rounded-[2rem] border border-slate-200/70 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col group"
+                  className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs hover:shadow-xs transition-all flex flex-col sm:flex-row group"
                 >
-                  {/* Hotel Image with Overlay */}
-                  <div className="relative w-full aspect-[1.78] overflow-hidden bg-brand-charcoal shrink-0">
+                  {/* Hotel Thumbnail */}
+                  <div className="relative w-full sm:w-48 h-40 sm:h-auto overflow-hidden bg-slate-100 shrink-0">
                     <img 
                       src={hotel.image} 
                       alt={hotel.name} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-                    
-                    {/* Stars Badge */}
-                    <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                      <div className="flex items-center text-amber-500">
+                    <div className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <div className="flex items-center text-amber-400">
                         {Array.from({ length: hotel.stars }).map((_, i) => (
-                          <Star key={i} className="w-3 h-3 fill-current stroke-[2]" />
+                          <Star key={i} className="w-2.5 h-2.5 fill-current stroke-[1.5]" />
                         ))}
                       </div>
-                      <span className="text-[9px] font-sans font-bold text-slate-700 uppercase tracking-wider ml-1">
-                        5-STAR
-                      </span>
-                    </div>
-
-                    {/* Bottom Info Overlay */}
-                    <div className="absolute bottom-4 left-5 right-5 text-white">
-                      <h4 className="font-serif font-bold text-base sm:text-lg tracking-wide leading-snug drop-shadow-sm flex items-center flex-wrap gap-1.5">
-                        <span>{hotel.name}</span>
-                        <span className="text-amber-300 text-[11px] font-sans font-normal italic tracking-normal bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-md border border-amber-300/30 shrink-0">
-                          or similar stays
-                        </span>
-                      </h4>
-                      <p className="text-white/80 text-xs flex items-center gap-1 mt-1 font-light font-sans truncate">
-                        <MapPin className="w-3.5 h-3.5 text-brand-blue-accent shrink-0" />
-                        {hotel.location}
-                      </p>
                     </div>
                   </div>
 
-                  {/* Hotel Details Area */}
-                  <div className="p-6 flex-1 flex flex-col justify-between space-y-6">
-                    <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-light">
-                      {hotel.description}
-                    </p>
-
-                    {/* Halal-Vetted Highlights List */}
-                    <div className="bg-brand-lightbg border border-brand-blue-accent/15 rounded-2xl p-4 sm:p-5 space-y-4">
-                      <span className="text-[10px] font-sans font-bold tracking-widest text-brand-blue-accent block uppercase">
-                        HALAL COMPLIANCE PROTOCOL:
-                      </span>
-                      
-                      <div className="space-y-3">
-                        {hotel.highlights && hotel.highlights.length > 0 ? (
-                          hotel.highlights.map((highlight, hIdx) => (
-                            <div key={hIdx} className="flex items-start gap-3">
-                              <CheckCircle className="w-4 h-4 text-brand-blue-accent stroke-[2] shrink-0 mt-0.5" />
-                              <div>
-                                <p className="text-[11px] font-sans font-bold text-slate-800 uppercase tracking-wide">Highlight {hIdx + 1}</p>
-                                <p className="text-xs text-slate-600 mt-0.5 leading-relaxed font-light">
-                                  {highlight}
-                                </p>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <>
-                            <div className="flex items-start gap-3">
-                              <CheckCircle className="w-4 h-4 text-brand-blue-accent stroke-[2] shrink-0 mt-0.5" />
-                              <div>
-                                <p className="text-[11px] font-sans font-bold text-slate-800 uppercase tracking-wide">Prayer Facilities</p>
-                                <p className="text-xs text-slate-600 mt-0.5 leading-relaxed font-light">
-                                  {hotel.prayerFacilities}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-start gap-3">
-                              <CheckCircle className="w-4 h-4 text-brand-blue-accent stroke-[2] shrink-0 mt-0.5" />
-                              <div>
-                                <p className="text-[11px] font-sans font-bold text-slate-800 uppercase tracking-wide">Breakfast Dining</p>
-                                <p className="text-xs text-slate-600 mt-0.5 leading-relaxed font-light">
-                                  {hotel.halalBreakfast}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-start gap-3">
-                              <CheckCircle className="w-4 h-4 text-brand-blue-accent stroke-[2] shrink-0 mt-0.5" />
-                              <div>
-                                <p className="text-[11px] font-sans font-bold text-slate-800 uppercase tracking-wide">Nearby Masjid</p>
-                                <p className="text-xs text-slate-600 mt-0.5 leading-relaxed font-light">
-                                  {hotel.nearbyMosque}
-                                </p>
-                              </div>
-                            </div>
-                          </>
-                        )}
+                  {/* Compact Info Area */}
+                  <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-serif font-bold text-base text-brand-charcoal group-hover:text-brand-blue transition-colors">
+                          {hotel.name}
+                        </h4>
+                        <span className="text-[10px] font-mono text-amber-600 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded uppercase shrink-0 font-medium">
+                          5-Star
+                        </span>
                       </div>
+                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-1 font-light">
+                        <MapPin className="w-3 h-3 text-brand-blue-accent shrink-0" />
+                        {hotel.location}
+                      </p>
+                      <p className="text-xs text-slate-600 line-clamp-2 mt-2 font-light leading-relaxed">
+                        {hotel.description}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-2 text-[11px] text-slate-700 font-medium">
+                      <span className="bg-slate-50 border border-slate-200/60 px-2 py-0.5 rounded flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" /> Halal Breakfast
+                      </span>
+                      <span className="bg-slate-50 border border-slate-200/60 px-2 py-0.5 rounded flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" /> Prayer Facilities
+                      </span>
                     </div>
                   </div>
                 </div>
