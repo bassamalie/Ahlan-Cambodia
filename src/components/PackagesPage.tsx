@@ -146,6 +146,13 @@ export default function PackagesPage({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredAndSortedPackages.map((pkg) => {
                 const isSaved = wishlist.includes(pkg.id);
+                const destinationTag = pkg.destinations && pkg.destinations.length > 0
+                  ? pkg.destinations.join(" • ")
+                  : (pkg as any).destination || (pkg as any).location || (
+                      `${pkg.name} ${pkg.description}`.toLowerCase().includes("siem reap") ? "Siem Reap" :
+                      `${pkg.name} ${pkg.description}`.toLowerCase().includes("phnom penh") ? "Phnom Penh" :
+                      `${pkg.name} ${pkg.description}`.toLowerCase().includes("koh rong") ? "Koh Rong" : "Cambodia"
+                    );
                 
                 return (
                   <div 
@@ -161,13 +168,21 @@ export default function PackagesPage({
                         decoding="async"
                         className="w-full h-full object-cover hover:scale-105 transition-all duration-700"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal/40 via-transparent to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal/50 via-transparent to-transparent" />
                       
                       {/* Floating Duration badge */}
                       <div className="absolute top-4 left-4 bg-brand-blue-accent border border-white/10 px-3 py-1 rounded-lg text-[10px] font-mono font-bold text-white flex items-center gap-1 shadow-sm">
-                        <Clock className="w-3 h-3 text-brand-blue-accent" />
+                        <Clock className="w-3 h-3 text-white shrink-0" />
                         <span>{pkg.duration}</span>
                       </div>
+
+                      {/* Floating Destination Tag on image */}
+                      {destinationTag && (
+                        <div className="absolute bottom-3 left-3 bg-[#0F1626]/85 backdrop-blur-md border border-white/20 text-white text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-md max-w-[80%]">
+                          <MapPin className="w-3 h-3 text-brand-blue-accent shrink-0" />
+                          <span className="truncate">{destinationTag}</span>
+                        </div>
+                      )}
 
                       {/* Floating Save button */}
                       <button 
@@ -190,23 +205,20 @@ export default function PackagesPage({
                         </p>
                       </div>
 
-                      {/* Package Features/Key Highlights list */}
-                      <div className="space-y-2.5 bg-brand-lightbg p-4 rounded-xl border border-brand-blue-accent/15">
-                        <span className="text-[9px] font-mono text-brand-blue-accent tracking-wider uppercase font-bold flex items-center gap-1">
-                          <Sparkles className="w-3 h-3" />
-                          Key Highlights
-                        </span>
-                        <div className="space-y-1.5 text-[11px] text-brand-charcoal">
-                          {(pkg.keyHighlights && pkg.keyHighlights.length > 0
-                            ? pkg.keyHighlights
-                            : pkg.features.slice(0, 3)
-                          ).map((feature, idx) => (
-                            <div key={idx} className="flex items-start gap-1.5">
-                              <CheckCircle className="w-3 h-3 text-brand-blue-accent shrink-0 mt-0.5" />
-                              <span className="font-sans font-medium text-brand-charcoal/80 leading-tight" title={feature}>{feature}</span>
-                            </div>
-                          ))}
-                        </div>
+                      {/* Package Highlights - Individual Pill Chips with Light Blue Background & Checkmark */}
+                      <div className="flex flex-col gap-1.5 py-1">
+                        {(pkg.keyHighlights && pkg.keyHighlights.length > 0
+                          ? pkg.keyHighlights
+                          : pkg.features.slice(0, 3)
+                        ).map((feature, idx) => (
+                          <div 
+                            key={idx} 
+                            className="w-fit max-w-full bg-[#F0F7FF] border border-[#D8E8FC] px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-[9.5px] sm:text-[10px] text-slate-800 font-sans font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                          >
+                            <span className="text-slate-900 font-bold text-[10px] shrink-0">✓</span>
+                            <span className="truncate leading-tight">{feature}</span>
+                          </div>
+                        ))}
                       </div>
 
                       {/* Card Footer action button */}

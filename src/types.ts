@@ -98,6 +98,7 @@ export interface Hotel {
   nearbyMosque: string; // e.g. "Siem Reap Mosque (5 mins)"
   description: string;
   highlights?: string[];
+  keyHighlights?: string[];
   priceRange?: string;
   amenities?: string[];
   

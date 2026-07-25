@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { 
-  Compass, Heart, Search, ArrowLeft, SlidersHorizontal, MapPin, Sparkles, CheckCircle, Star, Info 
+  Compass, Heart, Search, ArrowLeft, ArrowRight, SlidersHorizontal, MapPin, Sparkles, CheckCircle, Star, Info 
 } from "lucide-react";
 import { Hotel } from "../types";
 import { NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
@@ -222,29 +222,32 @@ export default function HotelsPage({
 
                     {/* Card Content body */}
                     <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
-                      <p className="text-brand-charcoal/80 text-xs leading-relaxed font-sans line-clamp-2">
+                      <p className="text-brand-charcoal/75 text-xs leading-relaxed font-sans">
                         {hotel.description}
                       </p>
 
-                      {/* 3 Hotel Features */}
-                      <div className="space-y-2 bg-brand-lightbg p-3 rounded-xl border border-brand-blue-accent/15">
-                        <span className="text-[9px] font-mono text-brand-blue-accent tracking-wider uppercase font-bold flex items-center gap-1">
-                          <Sparkles className="w-3 h-3" />
-                          Hotel Features
-                        </span>
+                      {/* Hotel Features / Highlights - Unboxed & Refined */}
+                      <div className="space-y-2 pt-2 border-t border-slate-100">
+                        <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-brand-blue-accent tracking-wider uppercase">
+                          <Sparkles className="w-3 h-3 text-brand-blue-accent" />
+                          <span>Hotel Features</span>
+                        </div>
                         
-                        <div className="space-y-1.5 text-[11px] text-brand-charcoal/85">
+                        <div className="flex flex-wrap gap-1.5">
                           {features.map((feat, idx) => (
-                            <div key={idx} className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-brand-blue-accent/5">
-                              <CheckCircle className="w-3 h-3 text-brand-green shrink-0" />
-                              <span className="font-medium text-brand-charcoal truncate">{feat}</span>
+                            <div 
+                              key={idx} 
+                              className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-700"
+                            >
+                              <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" />
+                              <span className="truncate">{feat.replace("Luxury ", "").replace("Full Service ", "").replace("Free High-Speed ", "Free ")}</span>
                             </div>
                           ))}
                         </div>
                       </div>
 
                       {/* Card Footer action button */}
-                      <div className="pt-3 border-t border-brand-blue-accent/10 flex items-center justify-end">
+                      <div className="pt-2 border-t border-slate-100 flex justify-end">
                         <a 
                           href={`/hotels/${(hotel.name || hotel.id).replace(/\s+/g, "-")}`}
                           onClick={(e) => {
@@ -253,9 +256,10 @@ export default function HotelsPage({
                               onSelectItem(hotel);
                             }
                           }}
-                          className="w-full bg-brand-blue hover:bg-brand-blue-accent text-white font-mono text-xs font-bold uppercase tracking-widest py-2.5 rounded-xl border border-brand-blue-accent/20 transition-luxury shadow-md cursor-pointer text-center"
+                          className="inline-flex items-center gap-1.5 bg-[#0F1626] hover:bg-brand-blue-accent text-white font-mono text-[11px] font-bold uppercase tracking-wider px-4 py-2 rounded-lg transition-all duration-300 shadow-xs hover:shadow-md cursor-pointer group"
                         >
-                          Explore Property →
+                          <span>Explore</span>
+                          <ArrowRight className="w-3.5 h-3.5 text-white/80 group-hover:translate-x-1 transition-transform" />
                         </a>
                       </div>
 

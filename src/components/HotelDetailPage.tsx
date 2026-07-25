@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { 
-  ArrowLeft, Heart, Star, MapPin, CheckCircle, ShieldCheck, 
+  ArrowLeft, ArrowRight, Heart, Star, MapPin, CheckCircle, ShieldCheck, 
   Utensils, Share2, Calendar, Users, Building, Info, 
   ChevronLeft, ChevronRight, X, Phone, Mail, Sparkles, Check, Globe, DollarSign, Clock,
   HelpCircle, ChevronDown, ChevronUp, ExternalLink
@@ -1333,47 +1333,103 @@ export default function HotelDetailPage({
           {(allHotels || [])
             .filter((h) => h.id !== hotel.id)
             .slice(0, 3)
-            .map((item) => (
-              <div 
-                key={item.id} 
-                onClick={() => {
-                  if (onSelectHotel) {
-                    onSelectHotel(item);
-                  }
-                }}
-                className="group cursor-pointer bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
-              >
-                <div className="relative h-48 overflow-hidden">
-                  <img 
-                    src={item.image} 
-                    alt={item.name} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-md border border-white/20 px-3 py-1 rounded-full text-[9px] font-mono text-white font-bold uppercase tracking-wider">
-                    {item.stars} Stars
-                  </div>
-                </div>
+            .map((item) => {
+              const isSaved = wishlist.includes(item.id);
+              return (
+                <div 
+                  key={item.id} 
+                  className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group"
+                >
+                  {/* Card image container */}
+                  <div className="relative h-52 overflow-hidden">
+                    <img 
+                      src={item.image || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
+                      alt={item.name} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
+                      referrerPolicy="no-referrer"
+                      onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    
+                    {/* Floating Wishlist Heart */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleWishlist(item.id);
+                      }}
+                      className="absolute top-4 right-4 bg-white/90 hover:bg-white text-brand-charcoal p-2.5 rounded-full shadow-md transition-all cursor-pointer"
+                      title={isSaved ? "Saved to wishlist" : "Save Hotel"}
+                    >
+                      <Heart className={`w-4 h-4 ${isSaved ? "text-brand-red fill-brand-red" : "text-brand-charcoal/60"}`} />
+                    </button>
 
-                <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
-                  <div className="space-y-1.5">
-                    <h4 className="font-serif text-sm font-bold text-brand-charcoal group-hover:text-brand-blue-accent transition-colors">
-                      {item.name}
-                    </h4>
-                    <p className="text-[11px] text-slate-500 flex items-center gap-1 font-mono">
-                      <MapPin className="w-3.5 h-3.5 text-brand-blue-accent" />
-                      <span>{item.location.split(",")[0]}</span>
+                    {/* Overlaid Stars */}
+                    <div className="absolute top-4 left-4 flex items-center gap-1 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20">
+                      {[...Array(item.stars || 5)].map((_, i) => (
+                        <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+
+                    {/* Title & Location Overlaid on Bottom of Image */}
+                    <div className="absolute bottom-4 left-4 right-4 text-white">
+                      <h3 className="font-serif text-lg font-bold uppercase tracking-wide leading-tight drop-shadow-xs line-clamp-1">
+                        {item.name}
+                      </h3>
+                      <p className="text-xs text-white/90 font-mono flex items-center gap-1 mt-1 truncate">
+                        <MapPin className="w-3 h-3 text-brand-blue-accent shrink-0" />
+                        <span className="truncate">{item.location}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card Content body */}
+                  <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
+                    <p className="text-brand-charcoal/75 text-xs leading-relaxed font-sans line-clamp-2">
+                      {item.description}
                     </p>
-                  </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                    <span className="text-[9px] font-mono uppercase text-slate-400">Nightly Rate</span>
-                    <span className="text-xs font-bold font-serif text-[#0F1626]">
-                      From ${item.price}
-                    </span>
+                    {/* Hotel Features / Highlights - Unboxed & Refined */}
+                    <div className="space-y-2 pt-2 border-t border-slate-100">
+                      <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-brand-blue-accent tracking-wider uppercase">
+                        <Sparkles className="w-3 h-3 text-brand-blue-accent" />
+                        <span>Hotel Features</span>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-1.5">
+                        {(item.keyHighlights && item.keyHighlights.length > 0
+                          ? item.keyHighlights
+                          : [item.prayerFacilities || "Qibla & Prayer Mat", item.halalBreakfast || "Halal Breakfast", "Luxury Rooms"]
+                        ).slice(0, 3).map((feat, idx) => (
+                          <div 
+                            key={idx} 
+                            className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-700"
+                          >
+                            <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" />
+                            <span className="truncate">{feat.replace("Luxury ", "").replace("Full Service ", "").replace("Free High-Speed ", "Free ")}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Card Footer action button */}
+                    <div className="pt-2 border-t border-slate-100 flex justify-end">
+                      <button 
+                        onClick={() => {
+                          if (onSelectHotel) {
+                            onSelectHotel(item);
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 bg-[#0F1626] hover:bg-brand-blue-accent text-white font-mono text-[11px] font-bold uppercase tracking-wider px-4 py-2 rounded-lg transition-all duration-300 shadow-xs hover:shadow-md cursor-pointer group"
+                      >
+                        <span>Explore</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-white/80 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
         </div>
       </div>
 

@@ -1087,84 +1087,101 @@ export default function PackageDetailPage({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {otherRecommended.map((pkg) => (
-                <div 
-                  key={pkg.id} 
-                  className="bg-white rounded-[2rem] border border-slate-200/70 overflow-hidden flex flex-col hover:shadow-lg hover:border-brand-blue-accent transition-all duration-300 group"
-                >
-                  {/* Image wrapper with absolute badges */}
-                  <div className="relative w-full aspect-[1.58] overflow-hidden bg-brand-charcoal">
-                    <img 
-                      src={pkg.image} 
-                      alt={pkg.name} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
-                    />
-                    
-                    {/* Dark gradient overlay at the bottom half */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-                    
-                    {/* Top-Left Duration Pill */}
-                    <div className="absolute top-4 left-4 bg-[#001D4C]/95 px-3.5 py-1.5 rounded-lg flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
-                      <span className="text-[11px] font-sans font-bold text-white uppercase tracking-wider">
-                        {pkg.duration}
-                      </span>
-                    </div>
+              {otherRecommended.map((pkg) => {
+                const isSaved = wishlist.includes(pkg.id);
+                const destinationTag = pkg.destinations && pkg.destinations.length > 0
+                  ? pkg.destinations.join(" • ")
+                  : (pkg as any).destination || (pkg as any).location || (
+                      `${pkg.name} ${pkg.description}`.toLowerCase().includes("siem reap") ? "Siem Reap" :
+                      `${pkg.name} ${pkg.description}`.toLowerCase().includes("phnom penh") ? "Phnom Penh" :
+                      `${pkg.name} ${pkg.description}`.toLowerCase().includes("koh rong") ? "Koh Rong" : "Cambodia"
+                    );
 
-                    {/* Bottom-Left Title Overlay */}
-                    <div className="absolute bottom-4 left-5 right-5">
-                      <h4 className="font-sans font-bold text-sm sm:text-base md:text-lg text-white uppercase tracking-wide leading-snug">
-                        {pkg.name}
-                      </h4>
-                    </div>
-                  </div>
-
-                  {/* Body Content Section */}
-                  <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between">
-                    <div>
-                      {/* Description */}
-                      <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-                        {pkg.description}
-                      </p>
-
-                      {/* Key Highlights box */}
-                      <div className="mt-5 mb-5 bg-brand-lightbg border border-brand-blue-accent/15 rounded-2xl p-4 sm:p-5">
-                        <span className="text-[10px] font-sans font-bold tracking-widest text-brand-blue-accent block mb-3 uppercase">
-                          KEY HIGHLIGHTS:
-                        </span>
-                        <div className="space-y-2.5">
-                          {(pkg.keyHighlights && pkg.keyHighlights.length > 0
-                            ? pkg.keyHighlights
-                            : pkg.features.slice(0, 3)
-                          ).map((feat, idx) => (
-                            <div key={idx} className="flex items-start gap-2.5">
-                              <Check className="w-3.5 h-3.5 text-brand-blue-accent stroke-[3.5] shrink-0 mt-0.5" />
-                              <p className="text-xs text-slate-600 font-medium leading-relaxed" title={feat}>
-                                {feat}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Footer price and call-to-action button */}
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                      <span className="text-xs sm:text-sm font-sans text-slate-500 font-normal">
-                        From <span className="text-base sm:text-lg font-bold text-[#111827] ml-1">${pkg.price}</span>
-                      </span>
+                return (
+                  <div 
+                    key={pkg.id} 
+                    className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.008] hover:border-brand-blue-accent transition-luxury flex flex-col border border-brand-blue-accent/15"
+                  >
+                    {/* Top Cover Image */}
+                    <div className="relative w-full aspect-[4/3] overflow-hidden bg-slate-100">
+                      <img 
+                        src={pkg.image} 
+                        alt={pkg.name} 
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover hover:scale-105 transition-all duration-700" 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal/50 via-transparent to-transparent" />
                       
-                      <button
-                        onClick={() => onSelectPackage?.(pkg)}
-                        className="bg-[#111827] hover:bg-brand-blue text-white font-sans text-[11px] font-bold uppercase tracking-wider px-5 py-2.5 rounded-full transition-all duration-300 flex items-center gap-1.5 cursor-pointer shadow-sm hover:shadow-md"
+                      {/* Floating Duration badge */}
+                      <div className="absolute top-4 left-4 bg-brand-blue-accent border border-white/10 px-3 py-1 rounded-lg text-[10px] font-mono font-bold text-white flex items-center gap-1 shadow-sm">
+                        <Clock className="w-3 h-3 text-white shrink-0" />
+                        <span>{pkg.duration}</span>
+                      </div>
+
+                      {/* Floating Destination Tag on image */}
+                      {destinationTag && (
+                        <div className="absolute bottom-3 left-3 bg-[#0F1626]/85 backdrop-blur-md border border-white/20 text-white text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-md max-w-[80%]">
+                          <MapPin className="w-3 h-3 text-brand-blue-accent shrink-0" />
+                          <span className="truncate">{destinationTag}</span>
+                        </div>
+                      )}
+
+                      {/* Floating Save button */}
+                      <button 
+                        onClick={() => onToggleWishlist(pkg.id)}
+                        className="absolute top-4 right-4 bg-white/90 hover:bg-white text-brand-charcoal p-2 rounded-full shadow border border-brand-blue-accent/20 transition-all cursor-pointer"
+                        title={isSaved ? "Saved to wishlist" : "Save Package"}
                       >
-                        <span>DETAIL</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        <Heart className={`w-3.5 h-3.5 ${isSaved ? "text-brand-red fill-brand-red" : "text-brand-charcoal/60"}`} />
                       </button>
                     </div>
+
+                    {/* Card Content body */}
+                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                      <div className="space-y-3">
+                        <h3 className="text-lg font-serif font-bold text-brand-charcoal tracking-wide leading-snug">
+                          {pkg.name}
+                        </h3>
+                        <p className="text-brand-charcoal/80 text-xs leading-relaxed font-sans">
+                          {pkg.brief || pkg.description}
+                        </p>
+                      </div>
+
+                      {/* Package Highlights - Individual Pill Chips with Light Blue Background & Checkmark */}
+                      <div className="flex flex-col gap-1.5 py-1">
+                        {(pkg.keyHighlights && pkg.keyHighlights.length > 0
+                          ? pkg.keyHighlights
+                          : pkg.features.slice(0, 3)
+                        ).map((feature, idx) => (
+                          <div 
+                            key={idx} 
+                            className="w-fit max-w-full bg-[#F0F7FF] border border-[#D8E8FC] px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-[9.5px] sm:text-[10px] text-slate-800 font-sans font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                          >
+                            <span className="text-slate-900 font-bold text-[10px] shrink-0">✓</span>
+                            <span className="truncate leading-tight">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Card Footer action button */}
+                      <div className="pt-3 border-t border-brand-blue-accent/10 flex items-center justify-between gap-2">
+                        <div className="text-left">
+                          <span className="text-[8px] font-mono text-brand-charcoal/40 block leading-none">P.P Price from</span>
+                          <span className="text-base font-serif font-bold text-brand-green">${pkg.price} <span className="text-[10px] font-mono font-normal text-brand-charcoal/50">USD</span></span>
+                        </div>
+                        <button 
+                          onClick={() => onSelectPackage?.(pkg)}
+                          className="text-[10px] font-mono bg-brand-blue hover:bg-brand-blue-accent text-white px-3 py-1.5 rounded-lg border border-brand-blue-accent/20 font-bold transition-all uppercase tracking-wider shadow-sm cursor-pointer whitespace-nowrap"
+                        >
+                          Detail →
+                        </button>
+                      </div>
+
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

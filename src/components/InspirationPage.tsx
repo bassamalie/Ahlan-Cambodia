@@ -202,12 +202,7 @@ export default function InspirationPage({
                       </p>
                     </div>
 
-                    <div className="pt-4 border-t border-brand-blue-accent/10 flex items-center justify-between">
-                      <span className="text-[10px] font-mono text-brand-blue-accent font-bold uppercase tracking-widest flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5 text-brand-blue-accent shrink-0" />
-                        Ahlan Editorial
-                      </span>
-                      
+                    <div className="pt-4 border-t border-brand-blue-accent/10 flex justify-end">
                       <button
                         onClick={() => onSelectItem(guide)}
                         className="text-xs font-mono bg-brand-blue hover:bg-brand-blue-accent text-white px-4 py-2 rounded-xl border border-brand-blue-accent/20 font-bold transition-all uppercase tracking-wider shadow-sm cursor-pointer"

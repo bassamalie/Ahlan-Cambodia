@@ -227,7 +227,7 @@ export default function HalalDiningPage({
                         <h3 className="text-xl font-serif font-bold text-brand-charcoal uppercase tracking-wide leading-snug mt-1.5">
                           {rest.name}
                         </h3>
-                        <p className="text-brand-charcoal/75 text-xs sm:text-sm leading-relaxed font-sans line-clamp-3">
+                        <p className="text-brand-charcoal/75 text-xs sm:text-sm leading-relaxed font-sans">
                           {rest.description}
                         </p>
                       </div>

@@ -240,7 +240,7 @@ export default function DestinationsPage({
                       <div className="space-y-2.5">
                         <span className="text-[10px] font-mono text-brand-blue-accent tracking-wider uppercase font-bold flex items-center gap-1">
                           <Sparkles className="w-3.5 h-3.5" />
-                          Highlight Itineraries
+                          Highlights
                         </span>
                         <div className="flex flex-wrap gap-1.5">
                           {dest.highlights.map((highlight, idx) => (

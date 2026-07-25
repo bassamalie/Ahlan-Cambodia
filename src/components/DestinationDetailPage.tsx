@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { 
-  ArrowLeft, Heart, Star, MapPin, Sparkles, CheckCircle, 
+  ArrowLeft, ArrowRight, Heart, Star, MapPin, Sparkles, CheckCircle, 
   Tv, Play, Utensils, BookOpen, Compass, Calendar, 
   ExternalLink, ChevronRight, Award, Info, ShieldCheck, Clock, Bookmark,
   Instagram, Youtube, ThumbsUp, MessageCircle, Send, Share2, Eye
@@ -762,77 +762,101 @@ export default function DestinationDetailPage({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredHotels.map((hotel) => (
-                <div 
-                  key={hotel.id}
-                  className="bg-white rounded-3xl overflow-hidden border border-brand-blue-accent/15 shadow-sm hover:scale-[1.01] hover:border-brand-blue-accent/30 hover:shadow-lg transition-luxury flex flex-col justify-between"
-                >
-                  <div className="h-60 relative overflow-hidden">
-                    <img 
-                      src={hotel.image || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
-                      alt={hotel.name} 
-                      className="w-full h-full object-cover" 
-                      referrerPolicy="no-referrer"
-                      onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
-                    
-                    <div className="absolute top-4 left-4 flex gap-1 bg-brand-blue/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-amber-500/20 text-xs font-mono text-amber-400">
-                      {Array.from({ length: hotel.stars }).map((_, i) => (
-                        <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      ))}
-                    </div>
-
-                    <div className="absolute bottom-4 left-6 right-6 text-white space-y-1">
-                      <h3 className="font-serif font-bold text-xl leading-tight tracking-wide">
-                        {hotel.name}
-                      </h3>
-                      <p className="text-xs text-white/80 flex items-center gap-1 font-mono">
-                        <MapPin className="w-3.5 h-3.5 text-brand-blue-accent" />
-                        {hotel.location}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-6 sm:p-8 space-y-6 flex-1 flex flex-col justify-between">
-                    <p className="text-brand-charcoal/80 text-xs sm:text-sm leading-relaxed">
-                      {hotel.description}
-                    </p>
-
-                    <div className="space-y-3 bg-brand-lightbg border border-brand-blue-accent/15 p-5 rounded-2xl">
-                      <div className="flex items-start gap-2.5">
-                        <CheckCircle className="w-4 h-4 text-brand-blue-accent shrink-0 mt-0.5" />
-                        <div className="text-xs">
-                          <span className="font-mono font-bold text-brand-charcoal uppercase tracking-wider text-[9px] block mb-0.5">{hotel.prayerFacilitiesLabel || "Prayer Facilities"}:</span>
-                          <span className="text-brand-charcoal/80 font-medium">{hotel.prayerFacilities}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2.5 pt-3 border-t border-brand-blue-accent/10">
-                        <Utensils className="w-4 h-4 text-brand-blue-accent shrink-0 mt-0.5" />
-                        <div className="text-xs">
-                          <span className="font-mono font-bold text-brand-charcoal uppercase tracking-wider text-[9px] block mb-0.5">{hotel.halalBreakfastLabel || "Halal Gastronomy"}:</span>
-                          <span className="text-brand-charcoal/80 font-medium">{hotel.halalBreakfast}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-brand-blue-accent/10 flex items-center justify-end text-xs font-mono">
-                      <a 
-                        href={`/hotels/${(hotel.name || hotel.id).replace(/\s+/g, "-")}`}
-                        onClick={(e) => {
-                          if (!e.ctrlKey && !e.metaKey && e.button !== 1 && !e.shiftKey) {
-                            e.preventDefault();
-                            onSelectItem("hotel", hotel);
-                          }
-                        }}
-                        className="w-full sm:w-auto bg-brand-blue hover:bg-brand-blue-accent text-white font-mono text-xs font-bold uppercase tracking-widest px-5 py-3 rounded-xl border border-brand-blue-accent/20 transition-luxury shadow-md cursor-pointer inline-block text-center"
+              {filteredHotels.map((hotel) => {
+                const isSaved = wishlist.hotels?.includes(hotel.id);
+                return (
+                  <div 
+                    key={hotel.id}
+                    className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group"
+                  >
+                    {/* Card image container */}
+                    <div className="relative h-52 overflow-hidden">
+                      <img 
+                        src={hotel.image || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
+                        alt={hotel.name} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
+                        referrerPolicy="no-referrer"
+                        onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      
+                      {/* Floating Wishlist Heart */}
+                      <button
+                        onClick={() => onToggleWishlist("hotels", hotel.id)}
+                        className="absolute top-4 right-4 bg-white/90 hover:bg-white text-brand-charcoal p-2.5 rounded-full shadow-md transition-all cursor-pointer"
+                        title={isSaved ? "Saved to wishlist" : "Save Hotel"}
                       >
-                        Explore Property →
-                      </a>
+                        <Heart className={`w-4 h-4 ${isSaved ? "text-brand-red fill-brand-red" : "text-brand-charcoal/60"}`} />
+                      </button>
+
+                      {/* Overlaid Stars */}
+                      <div className="absolute top-4 left-4 flex items-center gap-1 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20">
+                        {[...Array(hotel.stars || 5)].map((_, i) => (
+                          <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        ))}
+                      </div>
+
+                      {/* Title & Location Overlaid on Bottom of Image */}
+                      <div className="absolute bottom-4 left-4 right-4 text-white">
+                        <h3 className="font-serif text-lg font-bold uppercase tracking-wide leading-tight drop-shadow-xs line-clamp-1">
+                          {hotel.name}
+                        </h3>
+                        <p className="text-xs text-white/90 font-mono flex items-center gap-1 mt-1 truncate">
+                          <MapPin className="w-3 h-3 text-brand-blue-accent shrink-0" />
+                          <span className="truncate">{hotel.location}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Card Content body */}
+                    <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
+                      <p className="text-brand-charcoal/75 text-xs leading-relaxed font-sans line-clamp-2">
+                        {hotel.description}
+                      </p>
+
+                      {/* Hotel Features / Highlights - Unboxed & Refined */}
+                      <div className="space-y-2 pt-2 border-t border-slate-100">
+                        <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-brand-blue-accent tracking-wider uppercase">
+                          <Sparkles className="w-3 h-3 text-brand-blue-accent" />
+                          <span>Hotel Features</span>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-1.5">
+                          {(hotel.keyHighlights && hotel.keyHighlights.length > 0
+                            ? hotel.keyHighlights
+                            : [hotel.prayerFacilities || "Qibla & Prayer Mat", hotel.halalBreakfast || "Halal Breakfast", "Luxury Rooms"]
+                          ).slice(0, 3).map((feat, idx) => (
+                            <div 
+                              key={idx} 
+                              className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-700"
+                            >
+                              <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" />
+                              <span className="truncate">{feat.replace("Luxury ", "").replace("Full Service ", "").replace("Free High-Speed ", "Free ")}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Card Footer action button */}
+                      <div className="pt-2 border-t border-slate-100 flex justify-end">
+                        <a 
+                          href={`/hotels/${(hotel.name || hotel.id).replace(/\s+/g, "-")}`}
+                          onClick={(e) => {
+                            if (!e.ctrlKey && !e.metaKey && e.button !== 1 && !e.shiftKey) {
+                              e.preventDefault();
+                              onSelectItem("hotel", hotel);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 bg-[#0F1626] hover:bg-brand-blue-accent text-white font-mono text-[11px] font-bold uppercase tracking-wider px-4 py-2 rounded-lg transition-all duration-300 shadow-xs hover:shadow-md cursor-pointer group"
+                        >
+                          <span>Explore</span>
+                          <ArrowRight className="w-3.5 h-3.5 text-white/80 group-hover:translate-x-1 transition-transform" />
+                        </a>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -867,53 +891,98 @@ export default function DestinationDetailPage({
               )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {filteredPackages.map((pkg) => (
-                <div 
-                  key={pkg.id}
-                  className="bg-white rounded-3xl border border-brand-blue-accent/15 overflow-hidden shadow-sm hover:scale-[1.01] hover:border-brand-blue-accent hover:shadow-lg transition-luxury flex flex-col justify-between"
-                >
-                  <div className="relative h-52 overflow-hidden">
-                    <img src={pkg.image} alt={pkg.name} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                    <span className="absolute top-4 left-4 bg-brand-blue-accent border border-white/10 px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold text-white flex items-center gap-1.5 shadow-sm">
-                      <Clock className="w-3.5 h-3.5 text-brand-blue-accent" />
-                      <span>{pkg.duration}</span>
-                    </span>
-                    <h4 className="absolute bottom-4 left-4 right-4 text-white font-serif font-bold text-base tracking-wide">
-                      {pkg.name}
-                    </h4>
-                  </div>
-                  <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                    <p className="text-xs text-brand-charcoal/80 leading-relaxed">
-                      {pkg.description}
-                    </p>
-                    <div className="space-y-2 bg-brand-lightbg p-4 rounded-xl border border-brand-blue-accent/10">
-                      <span className="text-[9px] font-mono font-bold text-brand-blue-accent uppercase tracking-wider block">Key Highlights:</span>
-                      <ul className="space-y-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredPackages.map((pkg) => {
+                const isSaved = wishlist.packages?.includes(pkg.id);
+                const destinationTag = pkg.destinations && pkg.destinations.length > 0
+                  ? pkg.destinations.join(" • ")
+                  : (pkg as any).destination || (pkg as any).location || (destination ? destination.name : "Cambodia");
+
+                return (
+                  <div 
+                    key={pkg.id}
+                    className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.008] hover:border-brand-blue-accent transition-luxury flex flex-col border border-brand-blue-accent/15"
+                  >
+                    {/* Top Cover Image */}
+                    <div className="relative w-full aspect-[4/3] overflow-hidden bg-slate-100">
+                      <img 
+                        src={pkg.image} 
+                        alt={pkg.name} 
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover hover:scale-105 transition-all duration-700"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal/50 via-transparent to-transparent" />
+                      
+                      {/* Floating Duration badge */}
+                      <div className="absolute top-4 left-4 bg-brand-blue-accent border border-white/10 px-3 py-1 rounded-lg text-[10px] font-mono font-bold text-white flex items-center gap-1 shadow-sm">
+                        <Clock className="w-3 h-3 text-white shrink-0" />
+                        <span>{pkg.duration}</span>
+                      </div>
+
+                      {/* Floating Destination Tag on image */}
+                      {destinationTag && (
+                        <div className="absolute bottom-3 left-3 bg-[#0F1626]/85 backdrop-blur-md border border-white/20 text-white text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-md max-w-[80%]">
+                          <MapPin className="w-3 h-3 text-brand-blue-accent shrink-0" />
+                          <span className="truncate">{destinationTag}</span>
+                        </div>
+                      )}
+
+                      {/* Floating Save button */}
+                      <button 
+                        onClick={() => onToggleWishlist("packages", pkg.id)}
+                        className="absolute top-4 right-4 bg-white/90 hover:bg-white text-brand-charcoal p-2 rounded-full shadow border border-brand-blue-accent/20 transition-all cursor-pointer"
+                        title={isSaved ? "Saved to wishlist" : "Save Package"}
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${isSaved ? "text-brand-red fill-brand-red" : "text-brand-charcoal/60"}`} />
+                      </button>
+                    </div>
+
+                    {/* Card Content body */}
+                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                      <div className="space-y-3">
+                        <h3 className="text-lg font-serif font-bold text-brand-charcoal tracking-wide leading-snug">
+                          {pkg.name}
+                        </h3>
+                        <p className="text-brand-charcoal/80 text-xs leading-relaxed font-sans">
+                          {pkg.brief || pkg.description}
+                        </p>
+                      </div>
+
+                      {/* Package Highlights - Individual Pill Chips with Light Blue Background & Checkmark */}
+                      <div className="flex flex-col gap-1.5 py-1">
                         {(pkg.keyHighlights && pkg.keyHighlights.length > 0
                           ? pkg.keyHighlights
                           : pkg.features.slice(0, 3)
-                        ).map((feat, idx) => (
-                          <li key={idx} className="text-[11px] text-brand-charcoal/80 flex items-start gap-1.5">
-                            <span className="text-brand-blue-accent font-bold">✔</span>
-                            <span>{feat}</span>
-                          </li>
+                        ).map((feature, idx) => (
+                          <div 
+                            key={idx} 
+                            className="w-fit max-w-full bg-[#F0F7FF] border border-[#D8E8FC] px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-[9.5px] sm:text-[10px] text-slate-800 font-sans font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                          >
+                            <span className="text-slate-900 font-bold text-[10px] shrink-0">✓</span>
+                            <span className="truncate leading-tight">{feature}</span>
+                          </div>
                         ))}
-                      </ul>
-                    </div>
-                    <div className="pt-3 border-t border-brand-blue-accent/10 flex items-center justify-between text-xs font-mono">
-                      <span>From <strong className="text-brand-green font-serif font-bold text-base">${pkg.price}</strong></span>
-                      <button 
-                        onClick={() => onSelectItem("package", pkg)}
-                        className="text-xs font-mono bg-brand-blue hover:bg-brand-blue-accent text-white px-4 py-2 rounded-xl border border-brand-blue-accent/20 font-bold transition-all uppercase tracking-wider shadow-sm cursor-pointer"
-                      >
-                        Detail →
-                      </button>
+                      </div>
+
+                      {/* Card Footer action button */}
+                      <div className="pt-3 border-t border-brand-blue-accent/10 flex items-center justify-between gap-2">
+                        <div className="text-left">
+                          <span className="text-[8px] font-mono text-brand-charcoal/40 block leading-none">P.P Price from</span>
+                          <span className="text-base font-serif font-bold text-brand-green">${pkg.price} <span className="text-[10px] font-mono font-normal text-brand-charcoal/50">USD</span></span>
+                        </div>
+                        <button 
+                          onClick={() => onSelectItem("package", pkg)}
+                          className="text-[10px] font-mono bg-brand-blue hover:bg-brand-blue-accent text-white px-3 py-1.5 rounded-lg border border-brand-blue-accent/20 font-bold transition-all uppercase tracking-wider shadow-sm cursor-pointer whitespace-nowrap"
+                        >
+                          Detail →
+                        </button>
+                      </div>
+
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

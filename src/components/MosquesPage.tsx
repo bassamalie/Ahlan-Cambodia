@@ -163,23 +163,6 @@ export default function MosquesPage({
                       </div>
                     </div>
 
-                    {/* Nearby Dining Recommendations */}
-                    <div className="space-y-2">
-                      <span className="text-[9px] font-mono text-brand-blue-accent tracking-wider uppercase font-bold">
-                        Recommended Halal Dining Nearby
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {mosque.nearbyRestaurants.map((restaurantName, idx) => (
-                          <span 
-                            key={idx}
-                            className="text-[10px] font-mono bg-brand-green/5 border border-brand-green/10 text-brand-green px-2.5 py-1 rounded-lg font-bold"
-                          >
-                            {restaurantName}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
                     {/* Card Footer action button */}
                     <div className="pt-4 border-t border-brand-blue-accent/10 flex justify-end">
                       <button 

@@ -5,7 +5,8 @@ import {
   ArrowLeft, Compass, MapPin, SlidersHorizontal, Info, AlertCircle, Heart,
   Bell, MessageSquare, Search, ChevronRight, User, Users, Briefcase, Building, 
   HelpCircle, ArrowRight, BookOpen, ShieldCheck, Mail, Phone, ExternalLink,
-  Calendar, RefreshCw, Layers, CheckSquare, X, DollarSign, Clock, HelpCircle as MosqueIcon, Globe, Utensils, FolderOpen
+  Calendar, RefreshCw, Layers, CheckSquare, X, DollarSign, Clock, HelpCircle as MosqueIcon, Globe, Utensils, FolderOpen,
+  Lock, Unlock, Key, LogOut, UserPlus, Shield, Edit2, EyeOff
 } from "lucide-react";
 import { Destination, Experience, TourPackage, Hotel, Restaurant, Mosque, TravelGuide } from "../types";
 import { tourPackages, hotels, restaurants, mosques, travelGuides } from "../data";
@@ -18,6 +19,46 @@ import { uploadToFirebaseStorage, listAllUploadedFiles, deleteFromFirebaseStorag
 import { saveDocInCollection } from "../dbService";
 import { sanitizeHotelPhotoGallery, NO_PHOTO_AVAILABLE_PLACEHOLDER, isValidPhotoUrl } from "../googlePlacesPhotoService";
 import { getEffectiveRoomTiers } from "./HotelDetailV2";
+
+export interface CmsUserPermission {
+  id: "guest-inquiries" | "destinations" | "experiences" | "packages" | "resorts-hotels" | "dining" | "mosques" | "travel-blog" | "media-library" | "homepage-settings" | "general-config";
+  label: string;
+  defaultAllowed: boolean;
+}
+
+export const CMS_PERMISSIONS_LIST: CmsUserPermission[] = [
+  { id: "guest-inquiries", label: "Guest Inquiries", defaultAllowed: true },
+  { id: "destinations", label: "Destinations", defaultAllowed: true },
+  { id: "experiences", label: "Curated Experiences", defaultAllowed: true },
+  { id: "packages", label: "Tour Packages", defaultAllowed: true },
+  { id: "resorts-hotels", label: "Resorts & Hotels", defaultAllowed: true },
+  { id: "dining", label: "Halal Dining", defaultAllowed: true },
+  { id: "mosques", label: "Mosque Finder", defaultAllowed: true },
+  { id: "travel-blog", label: "Travel Blog & Guides", defaultAllowed: true },
+  { id: "media-library", label: "Media Library", defaultAllowed: false },
+  { id: "homepage-settings", label: "Homepage Settings", defaultAllowed: false },
+  { id: "general-config", label: "General Config", defaultAllowed: false },
+];
+
+export interface CmsUser {
+  id: string;
+  email: string;
+  name: string;
+  role: "SUPER_ADMIN" | "CURATOR";
+  password: string;
+  createdAt: string;
+  allowedTabs: string[];
+}
+
+const DEFAULT_SUPER_USER: CmsUser = {
+  id: "usr-super-1",
+  email: "bassamalie@gmail.com",
+  name: "Bassamalie",
+  role: "SUPER_ADMIN",
+  password: "password123",
+  createdAt: "2024-01-01T00:00:00.000Z",
+  allowedTabs: CMS_PERMISSIONS_LIST.map(p => p.id)
+};
 
 interface AdminCMSProps {
   destinations: Destination[];
@@ -471,6 +512,164 @@ export default function AdminCMS({
     "guest-inquiries" | "destinations" | "experiences" | "packages" | "resorts-hotels" | "dining" | "mosques" | "travel-blog" | 
     "general-config" | "homepage-settings" | "user-accounts" | "media-library"
   >("guest-inquiries");
+
+  // User Management & Authentication State
+  const [cmsUsers, setCmsUsers] = useState<CmsUser[]>(() => {
+    try {
+      const saved = localStorage.getItem("ahlan_cms_users_v3");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [DEFAULT_SUPER_USER];
+  });
+
+  const [currentUser, setCurrentUser] = useState<CmsUser | null>(() => {
+    try {
+      const saved = localStorage.getItem("ahlan_admin_session_v3");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.email) return parsed;
+      }
+    } catch (e) {}
+    return null; // Requires login
+  });
+
+  // Login Form state
+  const [loginEmail, setLoginEmail] = useState("bassamalie@gmail.com");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  // New Curator Account Form state (Super User only)
+  const [newCuratorEmail, setNewCuratorEmail] = useState("");
+  const [newCuratorName, setNewCuratorName] = useState("");
+  const [newCuratorPassword, setNewCuratorPassword] = useState("");
+  const [newCuratorPermissions, setNewCuratorPermissions] = useState<string[]>(
+    CMS_PERMISSIONS_LIST.filter(p => p.defaultAllowed).map(p => p.id)
+  );
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+
+  // Super User password change state
+  const [superOldPassword, setSuperOldPassword] = useState("");
+  const [superNewPassword, setSuperNewPassword] = useState("");
+
+  // Sync users list to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("ahlan_cms_users_v3", JSON.stringify(cmsUsers));
+    } catch (e) {}
+  }, [cmsUsers]);
+
+  // Sync current user session to localStorage
+  useEffect(() => {
+    try {
+      if (currentUser) {
+        localStorage.setItem("ahlan_admin_session_v3", JSON.stringify(currentUser));
+      } else {
+        localStorage.removeItem("ahlan_admin_session_v3");
+      }
+    } catch (e) {}
+  }, [currentUser]);
+
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+
+    const emailTrim = loginEmail.trim().toLowerCase();
+    const passTrim = loginPassword.trim();
+
+    if (!emailTrim || !passTrim) {
+      setLoginError("Please enter both Gmail address and password.");
+      return;
+    }
+
+    const matchedUser = cmsUsers.find(
+      u => u.email.toLowerCase() === emailTrim && u.password === passTrim
+    );
+
+    if (matchedUser) {
+      setCurrentUser(matchedUser);
+      triggerToast(`Welcome back, ${matchedUser.name}!`, "success");
+      if (matchedUser.role === "SUPER_ADMIN") {
+        setActiveTab("guest-inquiries");
+      } else {
+        const firstAllowed = matchedUser.allowedTabs[0] || "guest-inquiries";
+        setActiveTab(firstAllowed as any);
+      }
+    } else {
+      setLoginError("Invalid credentials. Please verify your Gmail address and password.");
+    }
+  };
+
+  const handleAdminLogout = () => {
+    setCurrentUser(null);
+    setLoginPassword("");
+    setLoginError(null);
+    triggerToast("Logged out of Admin Portal.", "info");
+  };
+
+  const handleCreateCuratorUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser || currentUser.role !== "SUPER_ADMIN") return;
+
+    const emailTrim = newCuratorEmail.trim().toLowerCase();
+    if (!emailTrim || !emailTrim.includes("@")) {
+      triggerToast("Please enter a valid Gmail address.", "error");
+      return;
+    }
+
+    if (!newCuratorName.trim()) {
+      triggerToast("Please enter curator full name.", "error");
+      return;
+    }
+
+    if (!newCuratorPassword.trim() || newCuratorPassword.trim().length < 4) {
+      triggerToast("Password must be at least 4 characters long.", "error");
+      return;
+    }
+
+    if (editingUserId) {
+      setCmsUsers(prev => prev.map(u => {
+        if (u.id === editingUserId) {
+          return {
+            ...u,
+            email: emailTrim,
+            name: newCuratorName.trim(),
+            password: newCuratorPassword.trim(),
+            allowedTabs: newCuratorPermissions
+          };
+        }
+        return u;
+      }));
+      triggerToast(`Updated curator account permissions for ${newCuratorName}`, "success");
+      setEditingUserId(null);
+    } else {
+      if (cmsUsers.some(u => u.email.toLowerCase() === emailTrim)) {
+        triggerToast("An account with this email address already exists.", "error");
+        return;
+      }
+
+      const newUser: CmsUser = {
+        id: `usr-${Date.now()}`,
+        email: emailTrim,
+        name: newCuratorName.trim(),
+        role: "CURATOR",
+        password: newCuratorPassword.trim(),
+        createdAt: new Date().toISOString(),
+        allowedTabs: newCuratorPermissions
+      };
+
+      setCmsUsers(prev => [...prev, newUser]);
+      triggerToast(`Successfully created curator account for ${newUser.name} (${newUser.email})`, "success");
+    }
+
+    setNewCuratorEmail("");
+    setNewCuratorName("");
+    setNewCuratorPassword("");
+    setNewCuratorPermissions(CMS_PERMISSIONS_LIST.filter(p => p.defaultAllowed).map(p => p.id));
+  };
 
   // Local state for Homepage Settings
   const [localHeroTitle, setLocalHeroTitle] = useState("");
@@ -2521,6 +2720,151 @@ export default function AdminCMS({
     { id: 4, text: "System Integrity Sync: Asset caches optimized and live in production.", time: "1 day ago", read: true }
   ];
 
+  // If not logged in, render the password-protected Login Screen
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-[#0A0E17] text-white flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans">
+        {/* Ambient Backdrops */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-blue-accent/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-10 right-10 w-80 h-80 bg-amber-500/5 blur-[100px] rounded-full pointer-events-none" />
+
+        <div className="w-full max-w-md relative z-10 space-y-6 animate-fade-in">
+          
+          {/* Brand Header */}
+          <div className="text-center space-y-3">
+            <div className="flex justify-center mb-2">
+              <TransparentLogo 
+                src={generalConfig?.websiteLogo || logoImg} 
+                alt="Ahlan Cambodia Logo" 
+                className="h-14 sm:h-16 w-auto object-contain brightness-0 invert opacity-95 hover:opacity-100 transition-opacity drop-shadow-md"
+              />
+            </div>
+            <div className="inline-flex items-center gap-2 bg-brand-blue-accent/10 border border-brand-blue-accent/20 px-3.5 py-1 rounded-full text-[10px] font-mono text-brand-blue-accent font-bold uppercase tracking-widest">
+              <Shield className="w-3.5 h-3.5" />
+              <span>Password Protected Console</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-serif font-extrabold text-white tracking-wider uppercase">
+              Admin Login
+            </h1>
+            <p className="text-xs text-slate-400 font-sans max-w-sm mx-auto">
+              Please enter your authorized Gmail account credentials to access the Ahlan Cambodia CMS platform.
+            </p>
+          </div>
+
+          {/* Login Form Card */}
+          <div className="bg-[#0F1626] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+            
+            {loginError && (
+              <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-start gap-3 text-red-400 text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span className="font-medium leading-relaxed">{loginError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              
+              {/* Email Input */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block flex items-center justify-between">
+                  <span>Curator Gmail Address</span>
+                  <Mail className="w-3.5 h-3.5 text-brand-blue-accent/80" />
+                </label>
+                
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="e.g. bassamalie@gmail.com"
+                  required
+                  className="w-full bg-[#070A11] border border-white/10 focus:border-brand-blue-accent rounded-xl px-4 py-3 text-xs text-white outline-none font-mono font-medium transition-all focus:ring-1 focus:ring-brand-blue-accent"
+                />
+              </div>
+
+              {/* Password Entry */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block flex items-center justify-between">
+                  <span>Portal Password</span>
+                  <Lock className="w-3.5 h-3.5 text-brand-blue-accent/80" />
+                </label>
+                <div className="relative">
+                  <input
+                    type={showLoginPassword ? "text" : "password"}
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Enter account password"
+                    required
+                    className="w-full bg-[#070A11] border border-white/10 focus:border-brand-blue-accent rounded-xl pl-4 pr-10 py-3 text-xs text-white outline-none font-mono font-medium transition-all focus:ring-1 focus:ring-brand-blue-accent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-brand-blue-accent hover:bg-white text-[#0B0F19] font-mono font-bold text-xs uppercase tracking-widest py-3.5 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer mt-2"
+              >
+                <Key className="w-4 h-4" />
+                <span>Authenticate & Access Console</span>
+              </button>
+
+            </form>
+
+            {/* Default Credentials Badge */}
+            <div className="pt-4 border-t border-white/5 text-center text-[10px] font-mono text-slate-400 space-y-1 bg-[#070A11]/60 p-3.5 rounded-2xl border border-white/5">
+              <p className="font-bold text-brand-blue-accent uppercase tracking-wider flex items-center justify-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Super User Credentials</span>
+              </p>
+              <p>Gmail: <span className="text-white font-bold">bassamalie@gmail.com</span></p>
+              <p>Default Password: <span className="text-white font-bold">password123</span></p>
+            </div>
+
+          </div>
+
+          {/* Return to Public Platform */}
+          <div className="text-center">
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-2 text-slate-400 hover:text-white font-mono text-xs transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Return to Public Platform</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // Filter sidebar navigation items based on current logged in user permissions
+  const allNavItems = [
+    { id: "guest-inquiries", label: "Guest Inquiries", icon: MessageSquare, count: inquiries.length },
+    { id: "homepage-settings", label: "Homepage Settings", icon: Settings },
+    { id: "destinations", label: "Destinations", icon: Compass, count: destinations.length },
+    { id: "experiences", label: "Experiences", icon: Star, count: experiences.length },
+    { id: "packages", label: "Packages", icon: Briefcase, count: localPackages.length },
+    { id: "resorts-hotels", label: "Hotel", icon: ImageIcon, count: localHotels.length },
+    { id: "dining", label: "Dining", icon: Utensils, count: localRestaurants.length },
+    { id: "mosques", label: "Mosques", icon: MosqueIcon, count: localMosques.length },
+    { id: "travel-blog", label: "BLOG", icon: BookOpen, count: localGuides.length },
+    { id: "media-library", label: "Media Library", icon: FolderOpen },
+    { id: "general-config", label: "General Config", icon: Layers },
+    { id: "user-accounts", label: "User Accounts", icon: Users, count: cmsUsers.length }
+  ];
+
+  const visibleNavItems = allNavItems.filter(item => {
+    if (currentUser.role === "SUPER_ADMIN") return true;
+    if (item.id === "user-accounts") return false; // Super admin only
+    return currentUser.allowedTabs.includes(item.id);
+  });
+
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#F8FAFC] text-[#1E293B] font-sans antialiased">
       
@@ -2529,20 +2873,19 @@ export default function AdminCMS({
         
         <div className="space-y-6">
           {/* Logo & Branding Area */}
-          <div className="px-6 flex flex-col">
+          <div className="px-5 flex flex-col space-y-4">
             <div className="flex items-center">
-              {/* Ahlan Cambodia Brand Logo */}
               <TransparentLogo 
-                src={logoImg} 
+                src={generalConfig?.websiteLogo || logoImg} 
                 alt="Ahlan Cambodia Logo" 
-                className="h-10 w-auto object-contain brightness-0 invert opacity-95"
+                className="h-12 sm:h-14 w-auto max-w-[220px] object-contain brightness-0 invert opacity-95 hover:opacity-100 transition-opacity drop-shadow-md"
               />
             </div>
             
             {/* Return To Live Site Button */}
             <button 
               onClick={onBack}
-              className="mt-6 w-full flex items-center justify-center gap-2 border border-brand-blue-accent/20 hover:border-brand-blue-accent bg-brand-blue-accent/5 hover:bg-brand-blue-accent/10 text-brand-blue-accent text-[10px] font-mono font-bold uppercase tracking-widest py-2 px-4 rounded-xl transition-luxury shadow-inner cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 border border-brand-blue-accent/30 hover:border-brand-blue-accent bg-brand-blue-accent/10 hover:bg-brand-blue-accent/20 text-brand-blue-accent text-[10px] font-mono font-bold uppercase tracking-widest py-2.5 px-4 rounded-xl transition-luxury shadow-inner cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Return to Live Site</span>
@@ -2551,20 +2894,7 @@ export default function AdminCMS({
 
           {/* Navigation Items */}
           <nav className="px-3 space-y-1">
-            {[
-              { id: "guest-inquiries", label: "Guest Inquiries", icon: MessageSquare, count: inquiries.length },
-              { id: "homepage-settings", label: "Homepage Settings", icon: Settings },
-              { id: "destinations", label: "Destinations", icon: Compass, count: destinations.length },
-              { id: "experiences", label: "Experiences", icon: Star, count: experiences.length },
-              { id: "packages", label: "Packages", icon: Briefcase, count: localPackages.length },
-              { id: "resorts-hotels", label: "Hotel", icon: ImageIcon, count: localHotels.length },
-              { id: "dining", label: "Dining", icon: Utensils, count: localRestaurants.length },
-              { id: "mosques", label: "Mosques", icon: MosqueIcon, count: localMosques.length },
-              { id: "travel-blog", label: "BLOG", icon: BookOpen, count: localGuides.length },
-              { id: "media-library", label: "Media Library", icon: FolderOpen },
-              { id: "general-config", label: "General Config", icon: Layers },
-              { id: "user-accounts", label: "User Accounts", icon: Users, count: 1 }
-            ].map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
@@ -2717,15 +3047,28 @@ export default function AdminCMS({
               )}
             </div>
 
-            {/* Profile Avatar Widget */}
+            {/* Profile Avatar Widget & Logout */}
             <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-serif font-bold text-slate-800">Bassamalie</p>
-                <p className="text-[9px] font-mono text-brand-blue-accent font-bold uppercase tracking-wider">Official Curator</p>
+                <p className="text-xs font-serif font-bold text-slate-800">{currentUser.name}</p>
+                <p className="text-[9px] font-mono text-brand-blue-accent font-bold uppercase tracking-wider">
+                  {currentUser.role === "SUPER_ADMIN" ? "Super User" : "Curator Account"}
+                </p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-[#0F1626] text-brand-blue-accent border border-brand-blue-accent/30 font-bold flex items-center justify-center select-none shadow-md">
-                B
+              <div 
+                className="w-10 h-10 rounded-full bg-[#0F1626] text-brand-blue-accent border border-brand-blue-accent/30 font-bold flex items-center justify-center select-none shadow-md uppercase font-serif"
+                title={currentUser.email}
+              >
+                {currentUser.name.charAt(0) || "U"}
               </div>
+              <button
+                type="button"
+                onClick={handleAdminLogout}
+                title="Log Out of CMS"
+                className="p-2 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
 
           </div>
@@ -8411,26 +8754,331 @@ export default function AdminCMS({
           )}
 
 
-          {/* 11. USER ACCOUNTS */}
+          {/* 11. USER ACCOUNTS & PERMISSIONS (SUPER USER ONLY) */}
           {activeTab === "user-accounts" && (
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm max-w-xl mx-auto animate-fade-in">
-              <div className="border-b border-slate-100 pb-4">
-                <h2 className="text-lg font-serif font-extrabold text-[#0F1626] uppercase tracking-wide">Authorized Curator Profiles</h2>
-                <p className="text-xs text-slate-500">Manage administrator access, API tokens, and curator security badges</p>
+            <div className="space-y-8 max-w-5xl mx-auto animate-fade-in">
+              
+              {/* Header Banner */}
+              <div className="bg-[#0F1626] border border-brand-blue-accent/20 rounded-3xl p-6 sm:p-8 text-white space-y-3 shadow-xl relative overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                  <div className="space-y-1">
+                    <div className="inline-flex items-center gap-2 bg-brand-blue-accent/10 border border-brand-blue-accent/20 px-3 py-1 rounded-full text-[10px] font-mono text-brand-blue-accent font-bold uppercase tracking-wider">
+                      <Shield className="w-3.5 h-3.5" />
+                      <span>Super User Access Console</span>
+                    </div>
+                    <h2 className="text-xl font-serif font-extrabold text-white uppercase tracking-wider">
+                      User Management & Role Permissions
+                    </h2>
+                    <p className="text-xs text-slate-400 max-w-2xl">
+                      As Super User, you can register new team members using their Gmail address, define their access functions, and manage password security.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-right shrink-0">
+                    <span className="text-[10px] font-mono text-slate-400 block uppercase tracking-wider">Registered Accounts</span>
+                    <span className="text-2xl font-mono font-bold text-brand-blue-accent">{cmsUsers.length}</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs">
-                <div className="w-12 h-12 rounded-full bg-[#0F1626] text-brand-blue-accent border border-brand-blue-accent/20 font-serif font-bold text-lg flex items-center justify-center select-none shadow-sm">
-                  B
+              {/* Super User Account Card & Password Update */}
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <h3 className="text-sm font-serif font-bold text-[#0F1626] uppercase tracking-wider flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-brand-blue-accent" />
+                    <span>Super User Account</span>
+                  </h3>
+                  <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 font-mono text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+                    Super User (Full Control)
+                  </span>
                 </div>
-                <div className="flex-1 space-y-0.5">
-                  <h4 className="font-bold text-sm text-[#0F1626]">Bassamalie</h4>
-                  <p className="text-[10px] font-mono text-slate-500 font-semibold uppercase tracking-wider text-brand-blue-accent">Official App Curator</p>
-                  <p className="text-[10px] font-mono text-slate-400">bassamalie@gmail.com</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                    <div className="w-12 h-12 rounded-full bg-[#0F1626] text-brand-blue-accent border border-brand-blue-accent/20 font-serif font-bold text-lg flex items-center justify-center select-none shadow-sm uppercase shrink-0">
+                      B
+                    </div>
+                    <div className="space-y-0.5 min-w-0">
+                      <h4 className="font-bold text-sm text-[#0F1626]">Bassamalie</h4>
+                      <p className="text-[10px] font-mono text-brand-blue-accent font-bold uppercase tracking-wider">Super User</p>
+                      <p className="text-[10px] font-mono text-slate-500 truncate">bassamalie@gmail.com</p>
+                    </div>
+                  </div>
+
+                  {/* Super User Password Change */}
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!superNewPassword || superNewPassword.length < 4) {
+                        triggerToast("New password must be at least 4 characters.", "error");
+                        return;
+                      }
+                      setCmsUsers(prev => prev.map(u => u.role === "SUPER_ADMIN" ? { ...u, password: superNewPassword } : u));
+                      if (currentUser?.role === "SUPER_ADMIN") {
+                        setCurrentUser({ ...currentUser, password: superNewPassword });
+                      }
+                      setSuperNewPassword("");
+                      triggerToast("Super User password updated successfully!", "success");
+                    }} 
+                    className="space-y-2 bg-slate-50 border border-slate-200 p-4 rounded-2xl"
+                  >
+                    <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
+                      Update Super User Password
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="password"
+                        value={superNewPassword}
+                        onChange={(e) => setSuperNewPassword(e.target.value)}
+                        placeholder="Enter new password"
+                        className="flex-1 bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-2 text-xs font-mono outline-none"
+                      />
+                      <button
+                        type="submit"
+                        className="bg-[#0F1626] hover:bg-brand-blue-accent hover:text-[#0F1626] text-white px-4 py-2 rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider transition-colors shrink-0 cursor-pointer"
+                      >
+                        Update
+                      </button>
+                    </div>
+                  </form>
+
                 </div>
-                <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 font-mono text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
-                  Primary Owner
-                </span>
+              </div>
+
+              {/* Create / Edit Curator Account Form */}
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <div>
+                    <h3 className="text-sm font-serif font-bold text-[#0F1626] uppercase tracking-wider flex items-center gap-2">
+                      <UserPlus className="w-4 h-4 text-brand-blue-accent" />
+                      <span>{editingUserId ? "Edit Curator Account Permissions" : "Add New Curator User"}</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Enter the team member's Gmail address and select allowed access functions.
+                    </p>
+                  </div>
+
+                  {editingUserId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingUserId(null);
+                        setNewCuratorEmail("");
+                        setNewCuratorName("");
+                        setNewCuratorPassword("");
+                        setNewCuratorPermissions(CMS_PERMISSIONS_LIST.filter(p => p.defaultAllowed).map(p => p.id));
+                      }}
+                      className="text-xs font-mono font-bold text-slate-500 hover:text-red-500 bg-slate-100 px-3 py-1.5 rounded-xl cursor-pointer"
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
+                </div>
+
+                <form onSubmit={handleCreateCuratorUser} className="space-y-6">
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    
+                    {/* Gmail Address */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
+                        Gmail Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        value={newCuratorEmail}
+                        onChange={(e) => setNewCuratorEmail(e.target.value)}
+                        placeholder="e.g. curator@gmail.com"
+                        required
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-blue-accent focus:bg-white rounded-xl px-3.5 py-2.5 text-xs font-mono outline-none text-[#0F1626] font-medium"
+                      />
+                    </div>
+
+                    {/* Curator Name */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
+                        Curator Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={newCuratorName}
+                        onChange={(e) => setNewCuratorName(e.target.value)}
+                        placeholder="e.g. Ahmad Al-Mansoor"
+                        required
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-blue-accent focus:bg-white rounded-xl px-3.5 py-2.5 text-xs outline-none text-[#0F1626] font-medium"
+                      />
+                    </div>
+
+                    {/* Account Password */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
+                        Assign Initial Password *
+                      </label>
+                      <input
+                        type="text"
+                        value={newCuratorPassword}
+                        onChange={(e) => setNewCuratorPassword(e.target.value)}
+                        placeholder="e.g. curator2026"
+                        required
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-blue-accent focus:bg-white rounded-xl px-3.5 py-2.5 text-xs font-mono outline-none text-[#0F1626] font-medium"
+                      />
+                    </div>
+
+                  </div>
+
+                  {/* Access Functions Checklist */}
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#0F1626] block">
+                        Assign Accessible Feature Functions
+                      </label>
+                      <span className="text-[10px] font-mono text-slate-400 font-bold">
+                        {newCuratorPermissions.length} / {CMS_PERMISSIONS_LIST.length} Functions Assigned
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-slate-50 border border-slate-200 p-4 rounded-2xl">
+                      {CMS_PERMISSIONS_LIST.map((perm) => {
+                        const isChecked = newCuratorPermissions.includes(perm.id);
+                        const isDefaultDisabled = !perm.defaultAllowed;
+                        return (
+                          <label 
+                            key={perm.id} 
+                            className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
+                              isChecked 
+                                ? "bg-white border-brand-blue-accent/50 shadow-sm" 
+                                : "bg-slate-100/60 border-slate-200 opacity-80 hover:opacity-100"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setNewCuratorPermissions([...newCuratorPermissions, perm.id]);
+                                } else {
+                                  setNewCuratorPermissions(newCuratorPermissions.filter(id => id !== perm.id));
+                                }
+                              }}
+                              className="w-4 h-4 text-brand-blue-accent rounded focus:ring-brand-blue-accent"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-xs font-semibold text-[#0F1626] block truncate">{perm.label}</span>
+                              {isDefaultDisabled && (
+                                <span className="text-[8px] font-mono bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider inline-block mt-0.5">
+                                  Disabled By Default
+                                </span>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    
+                    <p className="text-[10px] font-sans text-slate-500 italic bg-amber-50 border border-amber-200/60 p-3 rounded-xl flex items-center gap-2">
+                      <Info className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>Note: By default, new users do NOT receive access to Homepage Settings, Media Library, or General Config unless explicitly checked above.</span>
+                    </p>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="bg-[#0F1626] hover:bg-brand-blue-accent hover:text-[#0F1626] text-white px-6 py-3 rounded-xl text-xs font-mono font-bold uppercase tracking-widest transition-luxury shadow-md cursor-pointer flex items-center gap-2"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>{editingUserId ? "Save Updated Permissions" : "Register Curator Account"}</span>
+                  </button>
+
+                </form>
+              </div>
+
+              {/* Active Curator Users Table */}
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <h3 className="text-sm font-serif font-bold text-[#0F1626] uppercase tracking-wider flex items-center gap-2">
+                    <Users className="w-4 h-4 text-brand-blue-accent" />
+                    <span>Active Curator Accounts ({cmsUsers.length})</span>
+                  </h3>
+                </div>
+
+                <div className="space-y-4">
+                  {cmsUsers.map((usr) => {
+                    const isSuper = usr.role === "SUPER_ADMIN";
+                    return (
+                      <div 
+                        key={usr.id} 
+                        className={`p-4 sm:p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                          isSuper 
+                            ? "bg-slate-900 text-white border-brand-blue-accent/30 shadow-md" 
+                            : "bg-slate-50 text-slate-800 border-slate-200"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <div className={`w-10 h-10 rounded-full font-serif font-bold flex items-center justify-center text-sm uppercase shrink-0 ${
+                            isSuper ? "bg-brand-blue-accent text-[#0F1626]" : "bg-[#0F1626] text-brand-blue-accent"
+                          }`}>
+                            {usr.name.charAt(0)}
+                          </div>
+                          <div className="min-w-0 space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-sm truncate">{usr.name}</h4>
+                              <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                                isSuper 
+                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
+                                  : "bg-brand-blue-accent/15 text-brand-blue-accent border border-brand-blue-accent/20"
+                              }`}>
+                                {usr.role}
+                              </span>
+                            </div>
+                            <p className={`text-[10px] font-mono truncate ${isSuper ? "text-slate-400" : "text-slate-500"}`}>
+                              {usr.email} • Password: <span className="font-bold">{usr.password}</span>
+                            </p>
+                            {!isSuper && (
+                              <p className="text-[10px] font-mono text-slate-400">
+                                Access Functions: <strong className="text-brand-blue-accent">{usr.allowedTabs?.length || 0}</strong> of {CMS_PERMISSIONS_LIST.length} modules enabled
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {!isSuper && (
+                          <div className="flex items-center gap-2 self-end sm:self-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingUserId(usr.id);
+                                setNewCuratorEmail(usr.email);
+                                setNewCuratorName(usr.name);
+                                setNewCuratorPassword(usr.password);
+                                setNewCuratorPermissions(usr.allowedTabs || []);
+                                window.scrollTo({ top: 400, behavior: "smooth" });
+                              }}
+                              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider bg-white border border-slate-200 hover:border-brand-blue-accent text-slate-700 hover:text-brand-blue-accent transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                              <span>Edit Permissions</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Are you sure you want to remove curator account ${usr.name} (${usr.email})?`)) {
+                                  setCmsUsers(prev => prev.filter(u => u.id !== usr.id));
+                                  triggerToast(`Removed curator account: ${usr.name}`, "info");
+                                }
+                              }}
+                              className="p-2 rounded-xl text-red-500 hover:bg-red-50 border border-slate-200 transition-colors cursor-pointer"
+                              title="Delete User"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
             </div>
