@@ -242,7 +242,7 @@ export default function HalalDiningPage({
                               onSelectItem(rest);
                             }
                           }}
-                          className="bg-brand-charcoal hover:bg-brand-blue text-white font-mono text-xs font-bold uppercase tracking-wider px-6 py-2.5 rounded-xl transition-all shadow-md cursor-pointer inline-flex items-center gap-1.5"
+                          className="bg-[#0F1626] hover:bg-brand-blue-accent text-white font-mono text-xs font-bold uppercase tracking-wider px-6 py-2.5 rounded-xl transition-all shadow-md cursor-pointer inline-flex items-center gap-1.5"
                         >
                           EXPLORE →
                         </a>
