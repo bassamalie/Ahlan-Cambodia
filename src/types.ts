@@ -128,6 +128,7 @@ export interface Hotel {
   halalCertified?: boolean;
   privatePool?: boolean;
   stay22Url?: string;
+  expediaUrl?: string;
   stay22HotelId?: string;
   stay22Aid?: string;
 
@@ -249,10 +250,14 @@ export interface TravelGuide {
 export interface Testimonial {
   id: string;
   name: string;
-  country: string;
-  text: string;
+  country?: string;
+  location?: string;
+  text?: string;
+  comment?: string;
   rating: number;
-  image: string;
+  image?: string;
+  avatar?: string;
+  packageTitle?: string;
 }
 
 export interface QuoteRequest {

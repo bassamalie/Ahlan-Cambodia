@@ -1,9 +1,59 @@
 import React, { useState, useEffect } from "react";
 import { 
   ArrowLeft, Calendar, Clock, Share2, Heart, 
-  BookOpen, Sparkles, AlertCircle, Quote, Check, ArrowRight
+  BookOpen, Sparkles, AlertCircle, Quote, Check, ArrowRight,
+  CreditCard, ExternalLink
 } from "lucide-react";
 import { TravelGuide } from "../types";
+
+function formatBlogHtml(rawContent: string): string {
+  if (!rawContent) return "";
+
+  let html = rawContent;
+
+  // 1. Unescape HTML entities if encoded (&lt;, &gt;, &quot;, &amp;, &#39;)
+  if (html.includes("&lt;") || html.includes("&gt;")) {
+    try {
+      const txt = document.createElement("textarea");
+      txt.innerHTML = html;
+      const decoded = txt.value;
+      if (/<[a-z][\s\S]*>/i.test(decoded)) {
+        html = decoded;
+      } else {
+        html = html
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&amp;/g, "&");
+      }
+    } catch (e) {
+      html = html
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&amp;/g, "&");
+    }
+  }
+
+  // 2. Remove invalid <p> wrappers around <div> blocks or buttons
+  html = html.replace(/<p>\s*(<div[\s\S]*?<\/div>)\s*<\/p>/gi, "$1");
+  html = html.replace(/<p>\s*(&lt;div[\s\S]*?&lt;\/div&gt;)\s*<\/p>/gi, "$1");
+
+  // 3. Clean up any remaining encoded tags
+  html = html
+    .replace(/&lt;a\s+/gi, "<a ")
+    .replace(/&lt;\/a&gt;/gi, "</a>")
+    .replace(/&lt;div\s*/gi, "<div ")
+    .replace(/&lt;\/div&gt;/gi, "</div>")
+    .replace(/&lt;span\s*/gi, "<span ")
+    .replace(/&lt;\/span&gt;/gi, "</span>")
+    .replace(/&lt;p\s*/gi, "<p ")
+    .replace(/&lt;\/p&gt;/gi, "</p>");
+
+  return html;
+}
 
 interface BlogDetailPageProps {
   guide: TravelGuide;
@@ -168,7 +218,8 @@ export default function BlogDetailPage({
   };
 
   const handleShare = () => {
-    const url = `${window.location.origin}/inspiration/${guide.id}`;
+    const slug = (guide as any).slug || (guide.title ? guide.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : guide.id);
+    const url = `${window.location.origin}/inspiration/${slug}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
@@ -291,30 +342,39 @@ export default function BlogDetailPage({
 
             {/* Main Content Body */}
             <div className="space-y-6">
-              {guide.content.includes("<") || guide.content.includes("</") || guide.content.includes("<p>") || guide.content.includes("<h2>") || guide.content.includes("<h3>") ? (
-                <div 
-                  dangerouslySetInnerHTML={{ __html: guide.content }} 
-                  className="prose prose-slate max-w-none text-slate-700 leading-relaxed space-y-4 text-base blog-content-body"
-                />
-              ) : (
-                <>
-                  <div className="text-slate-700 text-base sm:text-lg leading-relaxed font-light font-sans space-y-4">
-                    {guide.content.split("\n").map((p) => p.trim()).filter((p) => p.length > 0).map((para, idx) => (
-                      <p key={idx}>{para}</p>
+              {(() => {
+                const processed = formatBlogHtml(guide.content);
+                const hasHtml = /<[a-z][\s\S]*>/i.test(processed);
+                
+                if (hasHtml) {
+                  return (
+                    <div 
+                      dangerouslySetInnerHTML={{ __html: processed }} 
+                      className="prose prose-slate max-w-none text-slate-700 leading-relaxed space-y-4 text-base blog-content-body"
+                    />
+                  );
+                }
+
+                return (
+                  <>
+                    <div className="text-slate-700 text-base sm:text-lg leading-relaxed font-light font-sans space-y-4">
+                      {guide.content.split("\n").map((p) => p.trim()).filter((p) => p.length > 0).map((para, idx) => (
+                        <p key={idx}>{para}</p>
+                      ))}
+                    </div>
+                    {rawExt?.sections && rawExt.sections.map((sec: any, idx: number) => (
+                      <section key={idx} className="space-y-3.5 pt-4">
+                        <h2 className="font-serif font-bold text-xl sm:text-2xl text-slate-900 tracking-wide uppercase">
+                          {sec.heading}
+                        </h2>
+                        <p className="text-slate-600 leading-relaxed font-light text-sm sm:text-base">
+                          {sec.body}
+                        </p>
+                      </section>
                     ))}
-                  </div>
-                  {rawExt?.sections && rawExt.sections.map((sec: any, idx: number) => (
-                    <section key={idx} className="space-y-3.5 pt-4">
-                      <h2 className="font-serif font-bold text-xl sm:text-2xl text-slate-900 tracking-wide uppercase">
-                        {sec.heading}
-                      </h2>
-                      <p className="text-slate-600 leading-relaxed font-light text-sm sm:text-base">
-                        {sec.body}
-                      </p>
-                    </section>
-                  ))}
-                </>
-              )}
+                  </>
+                );
+              })()}
             </div>
 
           </div>
@@ -339,6 +399,33 @@ export default function BlogDetailPage({
                   </li>
                 ))}
               </ul>
+            </div>
+
+            {/* Wise Travel Card Sidebar Banner */}
+            <div className="bg-gradient-to-br from-[#002B28] to-[#004D47] border border-[#00B9A5]/40 rounded-3xl p-6 text-white space-y-4 shadow-md relative overflow-hidden group">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-[#00B9A5]/15 rounded-full blur-xl group-hover:bg-[#00B9A5]/25 transition-all pointer-events-none" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#00B9A5] flex items-center justify-center text-white shadow-sm shrink-0">
+                  <CreditCard className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#00E6C3] block">TRAVEL ESSENTIAL</span>
+                  <h4 className="font-serif font-bold text-base text-white leading-tight">Wise Travel Card</h4>
+                </div>
+              </div>
+              <p className="text-xs text-white/80 leading-relaxed font-light">
+                Pay effortlessly in Cambodian Riel and USD with low transparent fees and real exchange rates.
+              </p>
+              <a
+                href="https://wise.prf.hn/click/camref:1011l4i5gZ"
+                target="_blank"
+                rel="nofollow sponsored noopener"
+                className="w-full inline-flex items-center justify-center gap-2 bg-[#00B9A5] hover:bg-[#00a392] text-white font-sans font-bold text-sm py-3 px-5 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-[0.98] text-center"
+                id="btn-wise-sidebar"
+              >
+                <span>Get Your Wise Travel Card</span>
+                <ExternalLink className="w-4 h-4 text-white/90" />
+              </a>
             </div>
 
             {/* Quick editorial stamp */}

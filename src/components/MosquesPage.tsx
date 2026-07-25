@@ -121,6 +121,8 @@ export default function MosquesPage({
                     <img 
                       src={mosque.image} 
                       alt={mosque.name} 
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal via-transparent to-transparent" />

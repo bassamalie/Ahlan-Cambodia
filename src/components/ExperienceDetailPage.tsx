@@ -429,7 +429,7 @@ export default function ExperienceDetailPage({
       </div>
 
       {/* --- Sticky Bar (Simplified for Seamless Navigation) --- */}
-      <div className="sticky top-[72px] sm:top-[88px] z-30 w-full bg-brand-blue/95 backdrop-blur-md border-b border-brand-blue-accent/25 shadow-md h-14 sm:h-16 flex items-center">
+      <div className="sticky top-[81px] sm:top-[97px] z-30 w-full bg-brand-blue/95 backdrop-blur-md border-b border-brand-blue-accent/25 shadow-md h-14 sm:h-16 flex items-center">
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <button 

@@ -35,7 +35,8 @@ import {
   ParkingCircle,
   Camera,
   Award,
-  Waves
+  Waves,
+  CreditCard
 } from "lucide-react";
 import { Hotel, Restaurant, Mosque } from "../types";
 import { sanitizeHotelPhotoGallery, NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
@@ -318,8 +319,10 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
     .filter(h => h.id !== hotel.id)
     .slice(0, 4);
 
-  // External rates booking URL
-  const bookingUrl = hotel.stay22Url || hotel.website || `https://www.google.com/travel/hotels/search?q=${encodeURIComponent(hotel.name + " " + destinationName)}`;
+  // External Expedia / Stay22 rates booking URL
+  const expediaSearchQuery = encodeURIComponent(`${hotel.name} ${destinationName} Cambodia`);
+  const defaultExpediaUrl = `https://www.expedia.com/Hotel-Search?destination=${expediaSearchQuery}`;
+  const bookingUrl = hotel.expediaUrl || hotel.stay22Url || defaultExpediaUrl;
 
   // Google Maps link
   const mapLink = hotel.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + " " + (hotel.address || destinationName))}`;
@@ -328,7 +331,7 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
     <div className="min-h-screen bg-white text-[#0F1626] font-sans pb-24 selection:bg-brand-blue-accent/20">
       
       {/* 1. TOP BREADCRUMB & HEADER ACTIONS */}
-      <div className="bg-[#0F1626] border-b border-white/10 sticky top-[73px] sm:top-[89px] z-30 shadow-md">
+      <div className="bg-[#0F1626] border-b border-white/10 sticky top-[81px] sm:top-[97px] z-30 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs font-mono font-bold tracking-wider uppercase text-slate-300 overflow-x-auto scrollbar-none">
             <button
@@ -383,7 +386,7 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
               href={bookingUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-brand-blue-accent hover:bg-sky-500 text-white text-xs font-mono font-bold tracking-wider uppercase transition-all shadow-md cursor-pointer shrink-0 border border-sky-300/30 hover:scale-[1.02]"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-brand-blue-accent hover:bg-brand-blue text-white text-xs font-mono font-bold tracking-wider uppercase transition-all shadow-md cursor-pointer shrink-0 border border-white/20 hover:scale-[1.02]"
             >
               <span>BOOK NOW</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -394,7 +397,7 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-8">
         
-        {/* 2. HERO PHOTO GALLERY GRID (Asymmetric 4-photo layout) */}
+        {/* 2. HERO PHOTO GALLERY GRID (Asymmetric multi-photo layout) */}
         <div className="space-y-3">
           {uniquePhotos.length === 0 ? (
             <div className="w-full h-80 rounded-2xl bg-slate-100 border border-slate-200 flex flex-col items-center justify-center text-slate-400 space-y-2">
@@ -404,11 +407,14 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 rounded-2xl overflow-hidden bg-slate-900 border border-slate-200/80 shadow-xs relative">
-              {/* Main Left Image (~65% width) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-1.5 sm:gap-2 rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-xs relative">
+              {/* Main Left Image (~66% width) */}
               <div
-                onClick={() => setIsLightboxOpen(true)}
-                className="lg:col-span-2 relative h-[360px] sm:h-[460px] bg-slate-950 group overflow-hidden cursor-pointer"
+                onClick={() => {
+                  setSelectedImageIndex(0);
+                  setIsLightboxOpen(true);
+                }}
+                className="lg:col-span-2 relative h-[360px] sm:h-[460px] bg-slate-100 group overflow-hidden cursor-pointer"
               >
                 <img
                   src={primaryImage}
@@ -418,22 +424,23 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
                   onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
                 />
                 
-                <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    setSelectedImageIndex(0);
                     setIsLightboxOpen(true);
                   }}
-                  className="absolute bottom-4 right-4 bg-[#0F1626]/90 hover:bg-[#0F1626] text-white px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider backdrop-blur-md border border-white/20 flex items-center gap-2 cursor-pointer transition-all shadow-md"
+                  className="absolute bottom-4 right-4 bg-[#0F1626]/90 hover:bg-[#0F1626] text-white px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider backdrop-blur-md border border-white/20 flex items-center gap-2 cursor-pointer transition-all shadow-md"
                 >
-                  <Camera className="w-4 h-4 text-amber-400" />
+                  <Camera className="w-4 h-4 text-brand-blue-accent" />
                   <span>View all photos ({uniquePhotos.length || 1})</span>
                 </button>
               </div>
 
-              {/* Right Side Stacked Thumbnails (~35% width) */}
-              <div className="hidden lg:grid grid-rows-3 gap-3 h-[460px]">
+              {/* Right Side Stacked Thumbnails (~33% width) */}
+              <div className="hidden lg:grid grid-rows-3 gap-1.5 sm:gap-2 h-[460px]">
                 {uniquePhotos.slice(1, 4).map((imgUrl, idx) => (
                   <div
                     key={idx}
@@ -441,7 +448,7 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
                       setSelectedImageIndex(idx + 1);
                       setIsLightboxOpen(true);
                     }}
-                    className="relative w-full h-full bg-slate-950 overflow-hidden cursor-pointer group rounded-none"
+                    className="relative w-full h-full bg-slate-100 overflow-hidden cursor-pointer group"
                   >
                     <img
                       src={imgUrl}
@@ -450,14 +457,15 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
                       referrerPolicy="no-referrer"
                       onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
                     />
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-mono font-bold uppercase tracking-widest">
-                      Expand Photo
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-mono font-bold uppercase tracking-widest gap-1.5">
+                      <Camera className="w-3.5 h-3.5 text-brand-blue-accent" />
+                      <span>Expand</span>
                     </div>
                   </div>
                 ))}
                 {uniquePhotos.length < 4 && (
-                  <div className="w-full h-full bg-slate-800/40 flex items-center justify-center text-slate-400 text-xs font-mono">
-                    Official Estate Gallery
+                  <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-mono font-medium">
+                    Property Gallery
                   </div>
                 )}
               </div>
@@ -466,19 +474,13 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
         </div>
 
         {/* 3. HOTEL TITLE, BADGES & ADDRESS HEADER */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-3">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-4">
           {/* Top Badges */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="bg-amber-50 text-amber-900 border border-amber-200 text-xs font-mono font-bold px-3 py-1 rounded-lg flex items-center gap-1 shadow-2xs">
               <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
               {hotel.stars || 5}-Star Luxury Hotel
             </span>
-            {hotel.muslimFriendly && hotel.muslimFriendlyBadge && !hotel.isGoogleImport && (
-              <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-mono font-bold px-3 py-1 rounded-lg flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                {hotel.muslimFriendlyBadge}
-              </span>
-            )}
             {hotel.priceCategory && (
               <span className="bg-slate-100 text-slate-700 border border-slate-200 text-xs font-mono font-bold px-3 py-1 rounded-lg">
                 {hotel.priceCategory}
@@ -486,41 +488,39 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
             )}
           </div>
 
-          {/* Hotel Name */}
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-extrabold text-[#0F1626] uppercase tracking-tight leading-tight">
-            {hotel.name}
-          </h1>
+          {/* Hotel Name with Blue Vertical Line */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            <span className="w-2 h-8 sm:h-10 bg-brand-blue-accent rounded-full inline-block shrink-0" />
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-extrabold text-[#0F1626] uppercase tracking-tight leading-tight">
+              {hotel.name}
+            </h1>
+          </div>
 
           {/* Subtitle / Address */}
-          <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-600">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-600 pl-5">
             <MapPin className="w-4 h-4 text-brand-blue-accent shrink-0" />
             <span>{hotel.address || hotel.location || `${destinationName}, Cambodia`}</span>
           </div>
         </div>
 
-        {/* 4. QUICK HIGHLIGHT PILLS GRID */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
+        {/* 4. QUICK HIGHLIGHTS BAR (Clean horizontal bar replacing bento tiles) */}
+        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-y-4 gap-x-6 text-xs text-slate-700">
             {[
-              { icon: Waves, label: "Outdoor Pool" },
-              { icon: Wifi, label: "Free WiFi" },
-              { icon: Compass, label: "Prayer Room" },
-              { icon: Utensils, label: "Halal Breakfast" },
-              { icon: Car, label: "Airport Transfer" },
-              { icon: Users, label: "Family Friendly" },
-              { icon: Sparkles, label: "Spa & Wellness" },
-              { icon: Eye, label: "Scenic View" }
+              { icon: Waves, label: "Outdoor Swimming Pool" },
+              { icon: Wifi, label: "Complimentary Wi-Fi" },
+              { icon: Car, label: "Airport Chauffeur Transfer" },
+              { icon: Users, label: "Family Rooms & Suites" },
+              { icon: Sparkles, label: "Full Spa & Wellness" },
+              { icon: Eye, label: "Scenic Panoramic Views" }
             ].map((pill, pIdx) => {
               const IconComp = pill.icon;
               return (
-                <div
-                  key={pIdx}
-                  className="bg-slate-50 border border-slate-200/60 rounded-xl p-3 flex flex-col items-center text-center justify-center space-y-1.5 hover:bg-slate-100 transition-colors"
-                >
-                  <IconComp className="w-4 h-4 text-brand-blue-accent" />
-                  <span className="text-[11px] font-semibold text-slate-800 leading-tight">
-                    {pill.label}
-                  </span>
+                <div key={pIdx} className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-brand-blue-accent/10 text-brand-blue-accent shrink-0">
+                    <IconComp className="w-4 h-4" />
+                  </div>
+                  <span className="font-semibold text-slate-800 text-xs">{pill.label}</span>
                 </div>
               );
             })}
@@ -535,137 +535,65 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
             
             {/* ABOUT THE HOTEL */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-5">
-              <h3 className="font-serif font-extrabold text-lg sm:text-xl text-[#0F1626] uppercase tracking-wider border-b border-slate-100 pb-3">
-                About The Hotel
+              <h3 className="font-serif font-extrabold text-lg sm:text-xl text-[#0F1626] uppercase tracking-wider flex items-center gap-3 border-b border-slate-100 pb-3">
+                <span className="w-1.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0" />
+                <span>About The Hotel</span>
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                {/* Description Column */}
-                <div className="md:col-span-2 space-y-3 text-sm text-slate-700 leading-relaxed font-sans">
-                  <p className={isAboutExpanded ? "" : "line-clamp-4"}>
-                    {hotel.editorialDescription || hotel.extendedDescription || hotel.description}
-                  </p>
-                  <button
-                    onClick={() => setIsAboutExpanded(!isAboutExpanded)}
-                    className="text-xs font-mono font-bold text-brand-blue-accent hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>{isAboutExpanded ? "Read less ^" : "Read more v"}</span>
-                  </button>
-                </div>
+              <div className="space-y-4 text-sm text-slate-700 leading-relaxed font-sans">
+                <p className={isAboutExpanded ? "" : "line-clamp-5"}>
+                  {hotel.editorialDescription || hotel.extendedDescription || hotel.description}
+                </p>
+                <button
+                  onClick={() => setIsAboutExpanded(!isAboutExpanded)}
+                  className="text-xs font-mono font-bold text-brand-blue-accent hover:underline flex items-center gap-1 cursor-pointer pt-1"
+                >
+                  <span>{isAboutExpanded ? "Show less ^" : "Read full description v"}</span>
+                </button>
 
-                {/* Right Green Highlights Box */}
-                <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-4 space-y-2.5 text-xs text-emerald-950 font-medium">
+                <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-4 text-xs font-medium text-slate-600">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Located in {destinationName}</span>
+                    <CheckCircle2 className="w-4 h-4 text-brand-blue-accent shrink-0" />
+                    <span>Prime location in {destinationName}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Rated {hotel.rating || 4.8} on Google Places</span>
+                    <CheckCircle2 className="w-4 h-4 text-brand-blue-accent shrink-0" />
+                    <span>Rated {hotel.rating || 4.8} / 5 on Google</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Halal Certified Gastronomy</span>
+                    <CheckCircle2 className="w-4 h-4 text-brand-blue-accent shrink-0" />
+                    <span>Concierge & Guest Support</span>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* MUSLIM FRIENDLY HOSPITALITY (DARK BRAND ACCENT CARD) */}
-            <div className="bg-[#0F1626] text-white rounded-2xl p-6 sm:p-8 shadow-md border border-brand-blue-accent/30 space-y-6">
-              <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-center shrink-0">
-                  <Moon className="w-5 h-5 text-amber-400" />
-                </div>
-                <div>
-                  <h3 className="font-serif font-bold text-lg sm:text-xl text-white uppercase tracking-wider">
-                    Muslim Friendly Hospitality
-                  </h3>
-                  <p className="text-xs text-slate-300 font-sans">
-                    Thoughtful facilities for Muslim travellers
-                  </p>
-                </div>
-              </div>
-
-              {/* 5 Feature Items */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-                <div className="bg-white/5 backdrop-blur-xs p-4 rounded-xl border border-white/10 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Compass className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span className="font-bold text-white uppercase tracking-wider text-[11px]">Prayer Room</span>
-                  </div>
-                  <p className="text-slate-300 text-[11px] font-sans leading-relaxed pt-1">
-                    {hotel.prayerFacilities || "In-room prayer mats & Qibla direction marked."}
-                  </p>
-                </div>
-
-                <div className="bg-white/5 backdrop-blur-xs p-4 rounded-xl border border-white/10 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Utensils className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span className="font-bold text-white uppercase tracking-wider text-[11px]">Halal Breakfast</span>
-                  </div>
-                  <p className="text-slate-300 text-[11px] font-sans leading-relaxed pt-1">
-                    {hotel.halalBreakfast || "Certified halal breakfast options."}
-                  </p>
-                </div>
-
-                <div className="bg-white/5 backdrop-blur-xs p-4 rounded-xl border border-white/10 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Building className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span className="font-bold text-white uppercase tracking-wider text-[11px]">Nearby Mosques</span>
-                  </div>
-                  <p className="text-slate-300 text-[11px] font-sans leading-relaxed pt-1">
-                    {hotel.nearbyMosque || `Grand Mosque in ${destinationName} (10 mins)`}
-                  </p>
-                </div>
-
-                <div className="bg-white/5 backdrop-blur-xs p-4 rounded-xl border border-white/10 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span className="font-bold text-white uppercase tracking-wider text-[11px]">Ramadan Services</span>
-                  </div>
-                  <p className="text-slate-300 text-[11px] font-sans leading-relaxed pt-1">
-                    Special iftar & suhoor arrangements.
-                  </p>
-                </div>
-
-                <div className="bg-white/5 backdrop-blur-xs p-4 rounded-xl border border-white/10 sm:col-span-2 lg:col-span-2 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span className="font-bold text-white uppercase tracking-wider text-[11px]">Alcohol Policy</span>
-                  </div>
-                  <p className="text-slate-300 text-[11px] font-sans leading-relaxed pt-1">
-                    Alcohol served in public dining areas only. In-room minibar can be alcohol-purged prior to check-in.
-                  </p>
                 </div>
               </div>
             </div>
 
             {/* HOTEL AMENITIES */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-5">
-              <h3 className="font-serif font-extrabold text-lg sm:text-xl text-[#0F1626] uppercase tracking-wider border-b border-slate-100 pb-3">
-                Hotel Amenities
+              <h3 className="font-serif font-extrabold text-lg sm:text-xl text-[#0F1626] uppercase tracking-wider flex items-center gap-3 border-b border-slate-100 pb-3">
+                <span className="w-1.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0" />
+                <span>Hotel Amenities & Facilities</span>
               </h3>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
                   { icon: Waves, name: "Outdoor Pool" },
-                  { icon: Wifi, name: "Free WiFi" },
+                  { icon: Wifi, name: "Free High-Speed WiFi" },
                   { icon: Dumbbell, name: "Fitness Centre" },
                   { icon: Sparkles, name: "Spa & Wellness" },
-                  { icon: Utensils, name: "Restaurant" },
+                  { icon: Utensils, name: "Gourmet Restaurant" },
                   { icon: Clock, name: "24-Hour Front Desk" },
                   { icon: Car, name: "Airport Transfer" },
-                  { icon: ParkingCircle, name: "Parking" }
+                  { icon: ParkingCircle, name: "Private Parking" }
                 ].map((item, aIdx) => {
                   const IconC = item.icon;
                   return (
                     <div
                       key={aIdx}
-                      className="p-3 bg-slate-50 border border-slate-200/60 rounded-xl flex items-center gap-3"
+                      className="py-2.5 px-3 bg-slate-50 border border-slate-200/60 rounded-xl flex items-center gap-3"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-slate-200/60 flex items-center justify-center shrink-0 text-brand-blue-accent">
-                        <IconC className="w-4 h-4" />
+                      <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 text-brand-blue-accent">
+                        <IconC className="w-3.5 h-3.5" />
                       </div>
                       <span className="text-xs font-semibold text-slate-800">{item.name}</span>
                     </div>
@@ -674,11 +602,12 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
               </div>
             </div>
 
-            {/* LOCATION & NEARBY ATTRACTIONS (UPDATED GOOGLE MAPS DESIGN MATCHING USER ATTACHMENT) */}
+            {/* LOCATION & NEARBY ATTRACTIONS */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-5">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="font-serif font-extrabold text-lg sm:text-xl text-[#0F1626] uppercase tracking-wider">
-                  Location & Nearby Attractions
+                <h3 className="font-serif font-extrabold text-lg sm:text-xl text-[#0F1626] uppercase tracking-wider flex items-center gap-3">
+                  <span className="w-1.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0" />
+                  <span>Location & Nearby Attractions</span>
                 </h3>
                 <a
                   href={mapLink}
@@ -751,8 +680,9 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
 
                 {/* Right Top Attractions List */}
                 <div className="space-y-3">
-                  <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
-                    Top Attractions
+                  <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                    <span className="w-1 h-3.5 bg-brand-blue-accent rounded-full inline-block shrink-0" />
+                    <span>Top Attractions</span>
                   </h4>
                   <div className="space-y-2">
                     {attractions.slice(0, 5).map((att, attIdx) => (
@@ -778,10 +708,11 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                 <div>
-                  <h3 className="font-serif font-extrabold text-lg sm:text-xl text-[#0F1626] uppercase tracking-wider">
-                    Google Reviews
+                  <h3 className="font-serif font-extrabold text-lg sm:text-xl text-[#0F1626] uppercase tracking-wider flex items-center gap-3">
+                    <span className="w-1.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0" />
+                    <span>Google Reviews</span>
                   </h3>
-                  <div className="flex items-center gap-2 pt-1">
+                  <div className="flex items-center gap-2 pt-1 pl-4.5">
                     <span className="text-2xl font-serif font-extrabold text-[#0F1626]">
                       {hotel.rating || 4.8}
                     </span>
@@ -812,18 +743,18 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {(hotel.guestReviews && hotel.guestReviews.length > 0 ? hotel.guestReviews : [
                   {
-                    author: "Aiman R.",
+                    author: "Alexander R.",
                     rating: 5,
-                    text: "Excellent stay! The room was clean, spacious and the staff were very friendly. Great location near the palace and night market. Highly recommended for Muslim travellers.",
+                    text: "Excellent stay! The room was clean, spacious and the staff were exceptionally welcoming. Outstanding central location near the major sights and riverside.",
                     relativeTime: "2 weeks ago",
                     flag: "🇸🇬"
                   },
                   {
-                    author: "Nurul H.",
+                    author: "Elena M.",
                     rating: 5,
-                    text: "Love the prayer room and the nearby halal food options. Breakfast was great too! Beautiful pool and river views.",
+                    text: "Lovely property with great amenities and attentive guest service. Breakfast was wonderful and the rooftop pool view is incredible.",
                     relativeTime: "1 month ago",
-                    flag: "🇲🇾"
+                    flag: "🇬🇧"
                   }
                 ]).map((rev, rIdx) => (
                   <div
@@ -877,7 +808,7 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
                 </p>
                 <div className="pt-1">
                   <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
-                    ✓ Verified Hotel
+                    ✓ Verified Hotel Property
                   </span>
                 </div>
               </div>
@@ -886,14 +817,14 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
               <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 text-center space-y-3">
                 <h4 className="font-bold text-xs text-slate-900">Ready to book your stay?</h4>
                 <p className="text-[11px] text-slate-600 leading-snug font-sans">
-                  Compare live prices from our trusted booking partner.
+                  Compare live rates from our trusted booking partner.
                 </p>
 
                 <a
                   href={bookingUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full bg-[#059669] hover:bg-[#047857] text-white font-mono font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full bg-brand-blue-accent hover:bg-brand-blue text-white font-mono font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Check Live Rates</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -948,8 +879,9 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
 
             {/* SIDEBAR CARD 2: HOTEL INFORMATION */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
-              <h4 className="font-serif font-extrabold text-sm text-[#0F1626] uppercase tracking-wider border-b border-slate-100 pb-3">
-                Hotel Information
+              <h4 className="font-serif font-extrabold text-sm text-[#0F1626] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
+                <span className="w-1 h-4 bg-brand-blue-accent rounded-full inline-block shrink-0" />
+                <span>Hotel Information</span>
               </h4>
 
               <div className="space-y-3 text-xs font-medium">
@@ -958,8 +890,8 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
                   { label: "Check-out", value: hotel.checkOut || "12:00 PM" },
                   { label: "Property Type", value: hotel.propertyType || "Luxury Hotel" },
                   { label: "Languages Spoken", value: hotel.languages || "English, Khmer" },
-                  { label: "Halal Food Nearby", value: "Yes" },
-                  { label: "Prayer Facilities", value: "Yes" }
+                  { label: "Location", value: destinationName },
+                  { label: "Concierge", value: "24/7 Available" }
                 ].map((row, rIdx) => (
                   <div key={rIdx} className="flex items-center justify-between border-b border-slate-100 pb-2.5 last:border-0 last:pb-0">
                     <span className="text-slate-500 font-sans">{row.label}</span>
@@ -969,29 +901,38 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
               </div>
             </div>
 
-            {/* SIDEBAR CARD 3: FEATURED PHOTO CARD */}
-            {uniquePhotos.length > 0 && (
-              <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-xs h-48 group">
-                <img
-                  src={uniquePhotos[1] || uniquePhotos[0]}
-                  alt={`${hotel.name} feature`}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
-                />
-                <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute bottom-3 left-3 right-3">
-                  <span className="bg-white/90 backdrop-blur-xs text-[#0F1626] font-mono text-[11px] font-bold px-3 py-1 rounded-lg inline-block shadow-2xs">
-                    Rooftop Infinity Pool
-                  </span>
+            {/* SIDEBAR CARD 3: WISE TRAVEL CARD BANNER */}
+            <div className="bg-gradient-to-br from-[#002B28] to-[#004D47] border border-[#00B9A5]/40 rounded-2xl p-6 text-white space-y-4 shadow-md relative overflow-hidden group">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-[#00B9A5]/15 rounded-full blur-xl group-hover:bg-[#00B9A5]/25 transition-all pointer-events-none" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#00B9A5] flex items-center justify-center text-white shadow-sm shrink-0">
+                  <CreditCard className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#00E6C3] block">TRAVEL ESSENTIAL</span>
+                  <h4 className="font-serif font-bold text-base text-white leading-tight">Wise Travel Card</h4>
                 </div>
               </div>
-            )}
+              <p className="text-xs text-white/80 leading-relaxed font-light font-sans">
+                Pay effortlessly in Cambodian Riel and USD with low transparent fees and real exchange rates.
+              </p>
+              <a
+                href="https://wise.prf.hn/click/camref:1011l4i5gZ"
+                target="_blank"
+                rel="nofollow sponsored noopener"
+                className="w-full inline-flex items-center justify-center gap-2 bg-[#00B9A5] hover:bg-[#00a392] text-white font-sans font-bold text-sm py-3 px-5 rounded-xl transition-all shadow-md hover:shadow-lg active:scale-[0.98] text-center cursor-pointer"
+                id="btn-wise-sidebar-hotel"
+              >
+                <span>Get Your Wise Travel Card</span>
+                <ExternalLink className="w-4 h-4 text-white/90" />
+              </a>
+            </div>
 
-            {/* SIDEBAR CARD 4: NEARBY HALAL RESTAURANTS */}
+            {/* SIDEBAR CARD 4: NEARBY DINING */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
-              <h4 className="font-serif font-extrabold text-sm text-[#0F1626] uppercase tracking-wider border-b border-slate-100 pb-3">
-                Nearby Halal Restaurants
+              <h4 className="font-serif font-extrabold text-sm text-[#0F1626] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
+                <span className="w-1 h-4 bg-brand-blue-accent rounded-full inline-block shrink-0" />
+                <span>Nearby Dining</span>
               </h4>
 
               <div className="space-y-3">
@@ -1016,42 +957,15 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
               </button>
             </div>
 
-            {/* SIDEBAR CARD 5: NEARBY MOSQUES */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
-              <h4 className="font-serif font-extrabold text-sm text-[#0F1626] uppercase tracking-wider border-b border-slate-100 pb-3">
-                Nearby Mosques
-              </h4>
-
-              <div className="space-y-3">
-                {nearbyMosquesData.map((mosque, mIdx) => (
-                  <div key={mIdx} className="flex items-start justify-between gap-2 text-xs border-b border-slate-100 pb-2.5 last:border-0 last:pb-0">
-                    <div>
-                      <h5 className="font-bold text-slate-900">{mosque.name}</h5>
-                      <p className="text-[10px] text-slate-500 font-sans">{mosque.note}</p>
-                    </div>
-                    <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded shrink-0">
-                      {mosque.distance}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                onClick={() => onNavigateView && onNavigateView("mosques")}
-                className="w-full text-center text-xs font-mono font-bold text-brand-blue-accent hover:underline pt-1 block cursor-pointer"
-              >
-                View more mosques &gt;
-              </button>
-            </div>
-
           </div>
 
         </div>
 
         {/* 6. YOU MAY ALSO LIKE (RECOMMENDED HOTELS) */}
         <div className="pt-8 border-t border-slate-200/80 space-y-6">
-          <h3 className="font-serif font-extrabold text-xl sm:text-2xl text-[#0F1626] uppercase tracking-wider">
-            You May Also Like
+          <h3 className="font-serif font-extrabold text-xl sm:text-2xl text-[#0F1626] uppercase tracking-wider flex items-center gap-3">
+            <span className="w-1.5 h-7 bg-brand-blue-accent rounded-full inline-block shrink-0" />
+            <span>You May Also Like</span>
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -1077,11 +991,6 @@ export const HotelDetailV2: React.FC<HotelDetailV2Props> = ({
                       referrerPolicy="no-referrer"
                       onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
                     />
-                    {recHotel.muslimFriendly && recHotel.muslimFriendlyBadge && !recHotel.isGoogleImport && (
-                      <div className="absolute top-3 right-3 bg-emerald-500 text-white font-mono text-[10px] font-bold px-2.5 py-1 rounded-md shadow-xs">
-                        {recHotel.muslimFriendlyBadge}
-                      </div>
-                    )}
                   </div>
 
                   <div className="p-4 space-y-2">

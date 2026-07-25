@@ -184,6 +184,8 @@ export default function HotelsPage({
                       <img 
                         src={hotel.image || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
                         alt={hotel.name} 
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover hover:scale-105 transition-all duration-700"
                         referrerPolicy="no-referrer"
                         onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}

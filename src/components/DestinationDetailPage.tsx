@@ -528,7 +528,7 @@ export default function DestinationDetailPage({
       </div>
 
       {/* --- Tab Navigation: Beautiful Full-Width Seamless Dark Bar --- */}
-      <div className="sticky top-[72px] sm:top-[88px] z-30 w-full bg-brand-blue/95 backdrop-blur-md border-b border-brand-blue-accent/25 shadow-md py-3">
+      <div className="sticky top-[81px] sm:top-[97px] z-30 w-full bg-brand-blue/95 backdrop-blur-md border-b border-brand-blue-accent/25 shadow-md py-3">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           
           {/* Destination Name & Back Button */}

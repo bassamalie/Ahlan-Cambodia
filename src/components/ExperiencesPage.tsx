@@ -379,7 +379,27 @@ export default function ExperiencesPage({
             </p>
           </div>
 
-          {filteredAndSortedExperiences.length === 0 ? (
+          {loadingViator && filteredAndSortedExperiences.length === 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="bg-white rounded-3xl overflow-hidden border border-brand-blue-accent/15 animate-pulse shadow-sm flex flex-col">
+                  <div className="w-full h-64 bg-slate-200" />
+                  <div className="p-6 sm:p-8 space-y-4 flex-1 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="h-3 bg-slate-200 rounded w-1/2" />
+                      <div className="h-6 bg-slate-200 rounded w-3/4" />
+                      <div className="h-3.5 bg-slate-200 rounded w-full" />
+                      <div className="h-3.5 bg-slate-200 rounded w-5/6" />
+                    </div>
+                    <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
+                      <div className="h-4 bg-slate-200 rounded w-1/3" />
+                      <div className="h-8 bg-slate-200 rounded-xl w-24" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredAndSortedExperiences.length === 0 ? (
             <div className="text-center bg-white rounded-3xl border border-brand-blue-accent/15 p-12 space-y-4">
               <p className="text-brand-charcoal/50 text-sm">
                 No luxury experiences match your specific search criteria.
@@ -406,6 +426,8 @@ export default function ExperiencesPage({
                       <img 
                         src={exp.image} 
                         alt={exp.name} 
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover hover:scale-105 transition-all duration-700"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal/60 via-transparent to-transparent" />

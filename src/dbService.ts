@@ -64,8 +64,7 @@ export async function fetchCollection<T extends { id: string }>(
 
     if (snapshot.empty) {
       if (isSeeded) {
-        // Collection was already seeded in the past and is now empty because user explicitly deleted items
-        console.log(`Collection "${collectionName}" is empty in Firestore (previously seeded). Returning [].`);
+        // Collection was already seeded in the past and is now empty
         return [];
       } else if (defaultData && defaultData.length > 0) {
         // Brand new database initialization: seed sample items ONCE into Firestore
@@ -88,7 +87,7 @@ export async function fetchCollection<T extends { id: string }>(
         return [];
       }
     } else {
-      // Collection is not empty; ensure seed status is recorded as true so we know it has been initialized
+      // Record seed status so future fetches know this collection is initialized
       if (!isSeeded) {
         try {
           await setDoc(seedStatusRef, { [collectionName]: true }, { merge: true });
@@ -96,7 +95,7 @@ export async function fetchCollection<T extends { id: string }>(
           // ignore
         }
       }
-      
+
       const items: T[] = [];
       snapshot.forEach((docSnap) => {
         items.push(docSnap.data() as T);

@@ -220,8 +220,22 @@ export default function App() {
     }
   }, [generalConfig.customHeadScript]);
   
-  // Dynamic destinations state
-  const [allDestinations, setAllDestinations] = useState<Destination[]>(destinations);
+  // Helper function for instant local storage caching & fast hydration
+  const loadCache = <T,>(key: string, fallback: T[] = []): T[] => {
+    try {
+      const raw = localStorage.getItem(`ahlan_cache_${key}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      // Ignore cache parse errors
+    }
+    return fallback;
+  };
+
+  // Dynamic destinations state with instant cache hydration
+  const [allDestinations, setAllDestinations] = useState<Destination[]>(() => loadCache("destinations", destinations));
 
   const handleAddDestination = (newDest: Destination) => {
     setAllDestinations((prev) => [newDest, ...prev]);
@@ -239,7 +253,7 @@ export default function App() {
   };
 
   // Dynamic experiences state
-  const [allExperiences, setAllExperiences] = useState<Experience[]>(experiences);
+  const [allExperiences, setAllExperiences] = useState<Experience[]>(() => loadCache("experiences", []));
 
   const handleAddExperience = (newExp: Experience) => {
     setAllExperiences((prev) => [newExp, ...prev]);
@@ -257,7 +271,7 @@ export default function App() {
   };
 
   // Dynamic packages state
-  const [allPackages, setAllPackages] = useState<TourPackage[]>(tourPackages);
+  const [allPackages, setAllPackages] = useState<TourPackage[]>(() => loadCache("packages", []));
 
   const handleAddPackage = (newPkg: TourPackage) => {
     setAllPackages((prev) => [newPkg, ...prev]);
@@ -275,7 +289,7 @@ export default function App() {
   };
 
   // Dynamic hotels state
-  const [allHotels, setAllHotels] = useState<Hotel[]>(hotels);
+  const [allHotels, setAllHotels] = useState<Hotel[]>(() => loadCache("hotels", []));
 
   const handleAddHotel = (newHotel: Hotel) => {
     setAllHotels((prev) => [newHotel, ...prev]);
@@ -293,25 +307,28 @@ export default function App() {
   };
 
   // Dynamic restaurants state
-  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>(restaurants);
+  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>(() => loadCache("restaurants", []));
 
   const handleAddRestaurant = (newRest: Restaurant) => {
     setAllRestaurants((prev) => [newRest, ...prev]);
     saveDocInCollection("restaurants", newRest);
+    saveDocInCollection("dining", newRest);
   };
 
   const handleUpdateRestaurant = (updatedRest: Restaurant) => {
     setAllRestaurants((prev) => prev.map((r) => r.id === updatedRest.id ? updatedRest : r));
     saveDocInCollection("restaurants", updatedRest);
+    saveDocInCollection("dining", updatedRest);
   };
 
   const handleDeleteRestaurant = (id: string) => {
     setAllRestaurants((prev) => prev.filter((r) => r.id !== id));
     deleteDocFromCollection("restaurants", id);
+    deleteDocFromCollection("dining", id);
   };
 
   // Dynamic mosques state
-  const [allMosques, setAllMosques] = useState<Mosque[]>(mosques);
+  const [allMosques, setAllMosques] = useState<Mosque[]>(() => loadCache("mosques", []));
 
   const handleAddMosque = (newMosque: Mosque) => {
     setAllMosques((prev) => [newMosque, ...prev]);
@@ -329,7 +346,7 @@ export default function App() {
   };
 
   // Dynamic travel guides state
-  const [allGuides, setAllGuides] = useState<TravelGuide[]>(travelGuides);
+  const [allGuides, setAllGuides] = useState<TravelGuide[]>(() => loadCache("travelGuides", []));
 
   const handleAddGuide = (newGuide: TravelGuide) => {
     setAllGuides((prev) => [newGuide, ...prev]);
@@ -347,32 +364,38 @@ export default function App() {
   };
 
   const isInitialLoadFinishedRef = useRef(false);
-  const [isLoadingDB, setIsLoadingDB] = useState(true);
+  const [isLoadingDB, setIsLoadingDB] = useState(false); // Non-blocking: render UI shell immediately
 
-  // Fetch and seed all dynamic state on boot
+  // Fetch and seed all dynamic state in background on boot
   useEffect(() => {
     async function loadAllDBData() {
       try {
-        setIsLoadingDB(true);
-
         const [
           dbDestinations,
           dbExperiences,
-          dbPackages,
+          dbPackagesMain,
+          dbTours,
           dbHotels,
-          dbRestaurants,
+          dbRestaurantsMain,
+          dbDining,
           dbMosques,
-          dbGuides,
+          dbGuidesMain,
+          dbBlogs,
+          dbTravelTips,
           dbHomepageSettings,
           dbGeneralConfig
         ] = await Promise.all([
           fetchCollection("destinations", destinations),
-          fetchCollection("experiences", experiences),
-          fetchCollection("packages", tourPackages),
-          fetchCollection("hotels", hotels),
-          fetchCollection("restaurants", restaurants),
-          fetchCollection("mosques", mosques),
-          fetchCollection("travelGuides", travelGuides),
+          fetchCollection("experiences"),
+          fetchCollection("packages"),
+          fetchCollection("tours"),
+          fetchCollection("hotels"),
+          fetchCollection("restaurants"),
+          fetchCollection("dining"),
+          fetchCollection("mosques"),
+          fetchCollection("travelGuides"),
+          fetchCollection("blogs"),
+          fetchCollection("travelTips"),
           fetchDocument("settings", "homepage", {
             heroTitle: "Welcome to Cambodia",
             heroSubtitle: "Ahlan Cambodia - Your gateway to Muslim-friendly travel in Cambodia. Discover authentic experiences, trusted local experts, halal-friendly stays, and unforgettable journeys.",
@@ -397,21 +420,61 @@ export default function App() {
           })
         ]);
 
-        setAllDestinations(dbDestinations);
-        setAllExperiences(dbExperiences);
-        setAllPackages(dbPackages);
-        setAllHotels(dbHotels);
-        setAllRestaurants(dbRestaurants);
-        setAllMosques(dbMosques);
-        setAllGuides(dbGuides);
+        // Merge dual collections
+        const dbRestaurants = [...dbRestaurantsMain];
+        dbDining.forEach((item) => {
+          if (!dbRestaurants.some((r) => r.id === item.id)) dbRestaurants.push(item);
+        });
+
+        const dbPackages = [...dbPackagesMain];
+        dbTours.forEach((item) => {
+          if (!dbPackages.some((p) => p.id === item.id)) dbPackages.push(item);
+        });
+
+        const dbGuides = [...dbGuidesMain];
+        dbBlogs.concat(dbTravelTips).forEach((item) => {
+          if (!dbGuides.some((g) => g.id === item.id)) dbGuides.push(item);
+        });
+
+        // Helper to safely merge local state with Firestore so user edits/creations are never wiped out
+        const safeMerge = <T extends { id: string }>(prevItems: T[], fetchedItems: T[]): T[] => {
+          if (fetchedItems.length === 0) return prevItems;
+          const map = new Map<string, T>();
+          prevItems.forEach((item) => map.set(item.id, item));
+          fetchedItems.forEach((item) => {
+            const existing = map.get(item.id);
+            map.set(item.id, existing ? { ...existing, ...item } : item);
+          });
+          return Array.from(map.values());
+        };
+
+        setAllDestinations((prev) => safeMerge(prev, dbDestinations));
+        setAllExperiences((prev) => safeMerge(prev, dbExperiences));
+        setAllPackages((prev) => safeMerge(prev, dbPackages));
+        setAllHotels((prev) => safeMerge(prev, dbHotels));
+        setAllRestaurants((prev) => safeMerge(prev, dbRestaurants));
+        setAllMosques((prev) => safeMerge(prev, dbMosques));
+        setAllGuides((prev) => safeMerge(prev, dbGuides));
+
         setHomepageSettings(dbHomepageSettings);
         setGeneralConfig(dbGeneralConfig);
-        
+
+        // Update localStorage cache with non-empty results
+        try {
+          if (dbDestinations.length > 0) localStorage.setItem("ahlan_cache_destinations", JSON.stringify(dbDestinations));
+          if (dbExperiences.length > 0) localStorage.setItem("ahlan_cache_experiences", JSON.stringify(dbExperiences));
+          if (dbPackages.length > 0) localStorage.setItem("ahlan_cache_packages", JSON.stringify(dbPackages));
+          if (dbHotels.length > 0) localStorage.setItem("ahlan_cache_hotels", JSON.stringify(dbHotels));
+          if (dbRestaurants.length > 0) localStorage.setItem("ahlan_cache_restaurants", JSON.stringify(dbRestaurants));
+          if (dbMosques.length > 0) localStorage.setItem("ahlan_cache_mosques", JSON.stringify(dbMosques));
+          if (dbGuides.length > 0) localStorage.setItem("ahlan_cache_travelGuides", JSON.stringify(dbGuides));
+        } catch (e) {
+          // localStorage full or unavailable
+        }
+
         isInitialLoadFinishedRef.current = true;
       } catch (err) {
         console.error("Error loading data from Firestore", err);
-      } finally {
-        setIsLoadingDB(false);
       }
     }
     loadAllDBData();
@@ -536,12 +599,24 @@ export default function App() {
         }
       } else if (first === "inspiration") {
         if (parts.length > 1) {
-          const idOrName = decodeURIComponent(parts[1]).toLowerCase().trim();
-          const cleanTarget = idOrName.replace(/-/g, " ").trim();
-          const found = allGuides.find(g => 
-            g.title.toLowerCase().replace(/-/g, " ").trim() === cleanTarget ||
-            g.id.toLowerCase().replace(/-/g, " ").trim() === cleanTarget
-          );
+          const rawSegment = decodeURIComponent(parts[1]).trim();
+          const cleanTarget = rawSegment.toLowerCase().replace(/-/g, " ").trim();
+          const slugTarget = rawSegment.toLowerCase().trim();
+          const found = allGuides.find(g => {
+            const gTitle = g.title ? g.title.toLowerCase().trim() : "";
+            const gTitleSlug = gTitle.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+            const gTitleClean = gTitle.replace(/-/g, " ");
+            const gSlug = (g as any).slug ? (g as any).slug.toLowerCase().trim() : "";
+            const gId = g.id ? g.id.toLowerCase().trim() : "";
+
+            return (
+              gId === slugTarget ||
+              gSlug === slugTarget ||
+              gTitleSlug === slugTarget ||
+              gTitleClean === cleanTarget ||
+              gId.replace(/-/g, " ").trim() === cleanTarget
+            );
+          });
           if (found) {
             setActiveGuide(found);
             setCurrentView("blog-detail");
@@ -598,7 +673,10 @@ export default function App() {
     } else if (currentView === "inspiration") {
       path = "/inspiration";
     } else if (currentView === "blog-detail" && activeGuide) {
-      path = `/inspiration/${activeGuide.id}`;
+      const guideSlug = (activeGuide as any).slug || (activeGuide.title 
+        ? activeGuide.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") 
+        : activeGuide.id);
+      path = `/inspiration/${guideSlug}`;
     } else if (currentView === "admin-cms") {
       path = "/admin-cms";
     }
@@ -753,7 +831,8 @@ export default function App() {
       return `/mosques/${cleanSlug}`;
     }
     if (type === "guide" || type === "blog") {
-      return `/inspiration/${data.id}`;
+      const slug = data.slug || (data.title ? data.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : data.id);
+      return `/inspiration/${slug}`;
     }
     return "/";
   };
@@ -934,18 +1013,6 @@ export default function App() {
 
   // Calculate total saved count
   const totalSavedCount: number = Object.keys(wishlist).reduce((acc: number, key: string) => acc + (wishlist[key]?.length || 0), 0);
-
-  if (isLoadingDB) {
-    return (
-      <div className="min-h-screen bg-[#0F1626] flex flex-col items-center justify-center p-6 text-center text-white font-sans">
-        <div className="relative mb-6">
-          <div className="w-16 h-16 border-4 border-brand-blue-accent/30 border-t-brand-blue-accent rounded-full animate-spin"></div>
-        </div>
-        <h2 className="font-serif text-2xl font-bold text-white tracking-wide">Ahlan Cambodia</h2>
-        <p className="text-xs text-white/60 mt-2 font-mono tracking-wider uppercase">Loading database content...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white text-brand-charcoal min-h-screen relative font-sans">

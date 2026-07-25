@@ -709,7 +709,7 @@ export default function HotelDetailPage({
       </div>
 
       {/* --- Sticky Bar (Seamless Navigation) --- */}
-      <div className="sticky top-[72px] sm:top-[88px] z-30 w-full bg-brand-blue/95 backdrop-blur-md border-b border-brand-blue-accent/25 shadow-md h-14 sm:h-16 flex items-center">
+      <div className="sticky top-[81px] sm:top-[97px] z-30 w-full bg-brand-blue/95 backdrop-blur-md border-b border-brand-blue-accent/25 shadow-md h-14 sm:h-16 flex items-center">
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 min-w-0">
             <button 
@@ -740,59 +740,14 @@ export default function HotelDetailPage({
       </div>
 
       {/* --- Main Content Grid --- */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           
           {/* LEFT 2 COLUMNS: Tabs & Details */}
           <div className="lg:col-span-2 space-y-8">
             
-            {/* Vetted Halal High Trust Badges */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white border border-brand-blue-accent/15 rounded-3xl p-6 shadow-sm">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="bg-brand-green/10 p-2 rounded-xl border border-brand-blue-accent/20">
-                    <Sparkles className="w-4 h-4 text-brand-blue-accent" />
-                  </div>
-                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-slate-500 font-bold">
-                    {hotel.prayerFacilitiesLabel || "Prayer Facilities"}
-                  </h4>
-                </div>
-                <p className="text-xs font-sans font-semibold text-brand-charcoal/90 pl-0.5 leading-relaxed">
-                  {hotel.prayerFacilities}
-                </p>
-              </div>
-
-              <div className="space-y-2 border-t sm:border-t-0 sm:border-l border-slate-100 pt-4 sm:pt-0 sm:pl-4">
-                <div className="flex items-center gap-2">
-                  <div className="bg-brand-green/10 p-2 rounded-xl border border-brand-blue-accent/20">
-                    <Utensils className="w-4 h-4 text-brand-blue-accent" />
-                  </div>
-                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-slate-500 font-bold">
-                    {hotel.halalBreakfastLabel || "Halal Breakfast"}
-                  </h4>
-                </div>
-                <p className="text-xs font-sans font-semibold text-brand-charcoal/90 pl-0.5 leading-relaxed">
-                  {hotel.halalBreakfast}
-                </p>
-              </div>
-
-              <div className="space-y-2 border-t sm:border-t-0 sm:border-l border-slate-100 pt-4 sm:pt-0 sm:pl-4">
-                <div className="flex items-center gap-2">
-                  <div className="bg-brand-green/10 p-2 rounded-xl border border-brand-blue-accent/20">
-                    <Building className="w-4 h-4 text-brand-blue-accent" />
-                  </div>
-                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-slate-500 font-bold">
-                    {hotel.nearbyMosqueLabel || "Nearby Mosque"}
-                  </h4>
-                </div>
-                <p className="text-xs font-sans font-semibold text-brand-charcoal/90 pl-0.5 leading-relaxed">
-                  {hotel.nearbyMosque}
-                </p>
-              </div>
-            </div>
-
-            {/* Aesthetic Tabs Selector */}
-            <div className="flex border-b border-brand-blue-accent/15 bg-white rounded-t-2xl px-2 sm:px-6 pt-3 select-none">
+            {/* Minimalist Navigation Tabs */}
+            <div className="flex border-b border-slate-200 bg-white rounded-t-2xl px-2 sm:px-6 pt-3 select-none">
               {[
                 { id: "overview", label: "Overview & Features" },
                 { id: "halal", label: "Experiences" },
@@ -802,7 +757,7 @@ export default function HotelDetailPage({
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-3 sm:px-6 py-4 font-mono text-[10px] uppercase tracking-widest font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                  className={`px-3 sm:px-6 py-4 font-mono text-[11px] uppercase tracking-widest font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                     activeTab === tab.id 
                       ? "border-brand-blue-accent text-brand-blue-accent" 
                       : "border-transparent text-slate-400 hover:text-slate-600"
@@ -814,14 +769,14 @@ export default function HotelDetailPage({
             </div>
 
             {/* TAB CONTENT PANEL */}
-            <div className="bg-white border-x border-b border-slate-200/60 rounded-b-3xl p-6 sm:p-10 shadow-sm min-h-[300px]">
+            <div className="bg-white border-x border-b border-slate-200/80 rounded-b-3xl p-6 sm:p-10 shadow-sm min-h-[300px]">
               
               {/* TAB 1: OVERVIEW */}
               {activeTab === "overview" && (
                 <div className="space-y-8 animate-fade-in">
                   <div className="space-y-4">
-                    <h3 className="text-lg font-serif font-bold text-brand-charcoal flex items-center gap-2.5">
-                      <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+                    <h3 className="text-xl font-serif font-bold text-brand-charcoal flex items-center gap-3">
+                      <span className="w-1.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0" />
                       About {hotel.name}
                     </h3>
                     <div className="text-brand-charcoal/80 text-sm leading-relaxed font-sans space-y-4">
@@ -831,21 +786,27 @@ export default function HotelDetailPage({
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <h4 className="text-[10px] font-mono uppercase tracking-widest text-brand-blue font-bold">Atmosphere Vibe</h4>
-                    <p className="text-sm font-sans font-semibold text-brand-green/90 italic">
+                  <div className="space-y-3 bg-slate-50 border-l-4 border-brand-blue-accent p-5 rounded-r-2xl">
+                    <h4 className="text-[11px] font-mono uppercase tracking-widest text-brand-blue font-bold flex items-center gap-2">
+                      <span className="w-1 h-4 bg-brand-blue-accent rounded-full inline-block shrink-0" />
+                      Atmosphere & Vibe
+                    </h4>
+                    <p className="text-sm font-sans font-semibold text-brand-charcoal/90 italic">
                       "{ext.atmosphere}"
                     </p>
                   </div>
 
                   {/* Brand Amenities Section */}
-                  <div className="space-y-5 pt-4 border-t border-slate-100">
-                    <h4 className="text-[10px] font-mono uppercase tracking-widest text-slate-500 font-bold">Premium Amenities Included</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <h4 className="text-[11px] font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-2">
+                      <span className="w-1 h-4 bg-brand-blue-accent rounded-full inline-block shrink-0" />
+                      Premium Amenities
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {ext.amenitiesList.map((amenity, i) => (
-                        <div key={i} className="flex items-center gap-2.5 bg-brand-warmwhite/40 border border-slate-100 p-3 rounded-xl">
-                          <CheckCircle className="w-4 h-4 text-brand-green" />
-                          <span className="text-xs font-semibold text-brand-charcoal">{amenity.name}</span>
+                        <div key={i} className="flex items-center gap-2.5 py-1.5 px-3 bg-slate-50/70 border border-slate-200/60 rounded-xl">
+                          <CheckCircle className="w-4 h-4 text-brand-blue-accent shrink-0" />
+                          <span className="text-xs font-medium text-brand-charcoal">{amenity.name}</span>
                         </div>
                       ))}
                     </div>
@@ -854,12 +815,12 @@ export default function HotelDetailPage({
                   {/* Curated Hotel Photo Gallery */}
                   <div className="space-y-4 pt-6 border-t border-slate-100">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-[10px] font-mono uppercase tracking-widest text-slate-500 font-bold flex items-center gap-2">
-                        <Sparkles className="w-3.5 h-3.5 text-brand-blue-accent" />
+                      <h4 className="text-[11px] font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-2">
+                        <span className="w-1 h-4 bg-brand-blue-accent rounded-full inline-block shrink-0" />
                         <span>Curated Photo Gallery ({ext.galleryImages ? ext.galleryImages.length : 0} Photos)</span>
                       </h4>
-                      <span className="text-[10px] font-mono text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full font-bold">
-                        Vetted Architecture
+                      <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold">
+                        Vetted Property
                       </span>
                     </div>
 
@@ -872,7 +833,7 @@ export default function HotelDetailPage({
                             if (cIdx !== -1) setSelectedCollageIndex(cIdx);
                             else setSelectedCollageIndex(0);
                           }}
-                          className="group relative h-28 sm:h-36 rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
+                          className="group relative h-28 sm:h-36 rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
                         >
                           <img 
                             src={imgUrl} 
@@ -895,8 +856,8 @@ export default function HotelDetailPage({
               {activeTab === "halal" && (
                 <div className="space-y-8 animate-fade-in">
                   <div className="space-y-2">
-                    <h3 className="text-base font-serif font-bold text-[#0F1626] flex items-center gap-2.5">
-                      <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+                    <h3 className="text-xl font-serif font-bold text-brand-charcoal flex items-center gap-3">
+                      <span className="w-1.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0" />
                       Curated Local Experiences
                     </h3>
                   </div>
@@ -906,39 +867,35 @@ export default function HotelDetailPage({
                       No specific nearby experiences listed for this destination yet. Feel free to contact our concierge!
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-5">
                       {hotelExperiences.map((exp) => (
                         <div 
                           key={exp.id}
-                          className="bg-white rounded-2xl overflow-hidden border border-brand-blue-accent/15 shadow-sm hover:scale-[1.01] hover:border-brand-blue-accent hover:shadow-md transition-all duration-300 flex flex-col h-full"
+                          className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:border-brand-blue-accent hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row"
                         >
-                          <div className="h-48 relative overflow-hidden shrink-0">
+                          <div className="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden shrink-0">
                             <img src={exp.image} alt={exp.name} className="w-full h-full object-cover" />
-                            <span className={`absolute top-3 left-3 text-[8px] font-mono font-bold uppercase tracking-widest text-white shadow-md border border-white/10 px-2.5 py-1 rounded-md ${
-                              exp.category.toLowerCase() === "heritage" || exp.category.toLowerCase() === "nature"
-                                ? "bg-brand-blue"
-                                : "bg-brand-blue-accent"
-                            }`}>
+                            <span className="absolute top-3 left-3 text-[9px] font-mono font-bold uppercase tracking-widest text-white shadow-md border border-white/20 px-2.5 py-1 rounded-md bg-brand-blue">
                               {exp.category}
                             </span>
                           </div>
-                          <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                          <div className="p-5 sm:w-3/5 flex-1 flex flex-col justify-between space-y-3">
                             <div className="space-y-1.5">
-                              <h4 className="font-serif font-bold text-sm text-brand-charcoal tracking-wide leading-snug">
+                              <h4 className="font-serif font-bold text-base text-brand-charcoal tracking-wide leading-snug">
                                 {exp.name}
                               </h4>
-                              <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono text-slate-500">
+                              <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-500">
                                 <span className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3 text-brand-blue-accent" />
+                                  <Clock className="w-3.5 h-3.5 text-brand-blue-accent" />
                                   {exp.duration}
                                 </span>
                                 <span>•</span>
                                 <span className="flex items-center gap-1">
-                                  <MapPin className="w-3 h-3 text-brand-blue-accent" />
+                                  <MapPin className="w-3.5 h-3.5 text-brand-blue-accent" />
                                   {exp.location.split(",")[0]}
                                 </span>
                               </div>
-                              <p className="text-slate-600 text-xs leading-relaxed line-clamp-3">
+                              <p className="text-slate-600 text-xs leading-relaxed line-clamp-2">
                                 {exp.shortDescription || exp.description}
                               </p>
                             </div>
@@ -953,7 +910,7 @@ export default function HotelDetailPage({
                                     }
                                   }
                                 }}
-                                className="text-[10px] font-mono bg-brand-blue hover:bg-brand-blue-accent text-white hover:text-white px-3.5 py-2 rounded-lg font-bold transition-all uppercase tracking-wider shadow-sm cursor-pointer inline-block text-center"
+                                className="text-[10px] font-mono bg-brand-blue hover:bg-brand-blue-accent text-white px-4 py-2 rounded-lg font-bold transition-all uppercase tracking-wider shadow-sm cursor-pointer inline-block text-center"
                               >
                                 Explore →
                               </a>
@@ -970,14 +927,14 @@ export default function HotelDetailPage({
               {activeTab === "suites" && (
                 <div className="space-y-8 animate-fade-in">
                   <div className="space-y-2">
-                    <h3 className="text-lg font-serif font-bold text-brand-charcoal flex items-center gap-2.5">
-                      <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+                    <h3 className="text-xl font-serif font-bold text-brand-charcoal flex items-center gap-3">
+                      <span className="w-1.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0" />
                       Available Luxury Tiers
                     </h3>
                   </div>
 
-                  {/* Room Cards Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Room Cards Stack */}
+                  <div className="space-y-6">
                     {ext.roomTiers.map((room, idx) => (
                       <div 
                         key={idx} 
@@ -985,50 +942,50 @@ export default function HotelDetailPage({
                           setActiveRoomIndex(idx);
                           setSelectedRoomTier(room.name);
                         }}
-                        className={`group cursor-pointer bg-white border rounded-2xl overflow-hidden transition-luxury shadow-sm hover:shadow-md flex flex-col justify-between ${
+                        className={`group cursor-pointer bg-white border rounded-2xl overflow-hidden transition-all shadow-sm hover:shadow-md flex flex-col md:flex-row ${
                           selectedRoomTier === room.name 
-                            ? "border-brand-blue-accent ring-1 ring-brand-blue-accent" 
-                            : "border-slate-200/80 hover:border-brand-blue-accent/50"
+                            ? "border-brand-blue-accent ring-2 ring-brand-blue-accent/30" 
+                            : "border-slate-200 hover:border-brand-blue-accent/50"
                         }`}
                       >
-                        <div className="relative h-48 overflow-hidden shrink-0">
+                        <div className="relative md:w-2/5 h-52 md:h-auto overflow-hidden shrink-0">
                           <img 
                             src={room.image} 
                             alt={room.name} 
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                           />
-                          <div className="absolute top-3 right-3 bg-[#0F1626]/80 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-mono text-brand-blue-accent font-bold uppercase tracking-wider">
+                          <div className="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-mono text-brand-blue-accent font-bold uppercase tracking-wider">
                             {room.size}
                           </div>
                         </div>
 
-                        <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
+                        <div className="p-6 md:w-3/5 flex-1 flex flex-col justify-between space-y-4">
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <h4 className="font-serif text-sm font-bold text-[#0F1626]">{room.name}</h4>
-                              <div className="flex items-center gap-1 text-[10px] text-slate-400 font-mono">
-                                <Users className="w-3.5 h-3.5" />
+                              <h4 className="font-serif text-base font-bold text-[#0F1626]">{room.name}</h4>
+                              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-mono">
+                                <Users className="w-4 h-4 text-brand-blue-accent" />
                                 <span>{room.capacity}</span>
                               </div>
                             </div>
-                            <p className="text-[11px] text-slate-500 leading-relaxed font-sans line-clamp-3">
+                            <p className="text-xs text-slate-600 leading-relaxed font-sans">
                               {room.description}
                             </p>
                           </div>
 
                           <div className="space-y-3 pt-3 border-t border-slate-100">
                             {/* Features list */}
-                            <div className="flex flex-wrap gap-1">
-                              {room.features.slice(0, 3).map((feat, fIdx) => (
-                                <span key={fIdx} className="bg-slate-50 border border-slate-100 text-[9px] font-sans font-bold text-brand-charcoal/70 px-2 py-0.5 rounded-full">
+                            <div className="flex flex-wrap gap-1.5">
+                              {room.features.map((feat, fIdx) => (
+                                <span key={fIdx} className="bg-slate-100 border border-slate-200/60 text-[10px] font-sans font-medium text-brand-charcoal px-2.5 py-1 rounded-md">
                                   {feat}
                                 </span>
                               ))}
                             </div>
 
                             <div className="flex items-center justify-between pt-2">
-                              <span className="text-[10px] font-mono uppercase text-slate-400">Nightly Rate</span>
-                              <div className="text-sm font-bold text-brand-green font-mono">
+                              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Nightly Rate</span>
+                              <div className="text-base font-bold text-brand-green font-mono">
                                 ${Math.round(hotel.price * room.priceMultiplier)} / night
                               </div>
                             </div>
@@ -1044,13 +1001,13 @@ export default function HotelDetailPage({
               {activeTab === "location" && (
                 <div className="space-y-8 animate-fade-in">
                   <div className="space-y-2">
-                    <h3 className="text-lg font-serif font-bold text-brand-charcoal flex items-center gap-2.5">
-                      <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+                    <h3 className="text-xl font-serif font-bold text-brand-charcoal flex items-center gap-3">
+                      <span className="w-1.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0" />
                       Location Profile & Attractions
                     </h3>
                   </div>
 
-                  <div className="bg-brand-warmwhite/30 border border-slate-100 p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="bg-slate-50 border border-slate-200 p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                       <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400 block font-bold">Address Directory</span>
                       <p className="text-xs font-semibold text-brand-charcoal leading-relaxed">
@@ -1062,7 +1019,7 @@ export default function HotelDetailPage({
                       href={`https://maps.google.com/?q=${encodeURIComponent(hotel.name + " " + hotel.location)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-[#0F1626] hover:bg-brand-blue-accent hover:text-[#0F1626] text-white px-4 py-2 rounded-xl text-[10px] font-mono font-bold uppercase tracking-widest transition-luxury inline-flex items-center gap-1.5 w-fit"
+                      className="bg-[#0F1626] hover:bg-brand-blue-accent hover:text-[#0F1626] text-white px-4 py-2.5 rounded-xl text-[10px] font-mono font-bold uppercase tracking-widest transition-all inline-flex items-center gap-1.5 w-fit shrink-0"
                     >
                       <Globe className="w-3.5 h-3.5" />
                       <span>Open Google Maps</span>
@@ -1070,17 +1027,20 @@ export default function HotelDetailPage({
                   </div>
 
                   <div className="space-y-4 pt-4 border-t border-slate-100">
-                    <h4 className="text-[10px] font-mono uppercase tracking-widest text-slate-500 font-bold">Recommended Nearby Sightseeings</h4>
-                    <div className="space-y-4">
+                    <h4 className="text-[11px] font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-2">
+                      <span className="w-1 h-4 bg-brand-blue-accent rounded-full inline-block shrink-0" />
+                      Recommended Nearby Sightseeing
+                    </h4>
+                    <div className="space-y-3">
                       {ext.nearbyAttractions.map((att, i) => (
-                        <div key={i} className="flex items-start gap-4 bg-slate-50 border border-slate-200/60 p-4 rounded-xl">
-                          <div className="bg-brand-blue-accent/15 border border-brand-blue-accent/30 rounded-xl px-2.5 py-1.5 shrink-0 text-center min-w-[70px]">
+                        <div key={i} className="flex items-start gap-4 bg-white border border-slate-200 p-4 rounded-xl">
+                          <div className="bg-brand-blue-accent/10 border border-brand-blue-accent/25 rounded-xl px-2.5 py-1.5 shrink-0 text-center min-w-[70px]">
                             <span className="text-[9px] font-mono uppercase tracking-widest text-brand-blue-accent font-bold block">Distance</span>
-                            <span className="text-xs font-serif font-extrabold text-[#0F1626] whitespace-nowrap">{att.distance.split(" ")[0]} {att.distance.split(" ")[1]}</span>
+                            <span className="text-xs font-serif font-bold text-[#0F1626] whitespace-nowrap">{att.distance}</span>
                           </div>
                           <div className="space-y-1">
                             <h5 className="text-xs font-bold text-brand-charcoal">{att.name}</h5>
-                            <p className="text-[11px] text-slate-400 leading-relaxed">
+                            <p className="text-[11px] text-slate-500 leading-relaxed">
                               {att.description}
                             </p>
                           </div>
@@ -1101,17 +1061,15 @@ export default function HotelDetailPage({
             {/* STAY22 DIRECT BOOKING CARD */}
             <div className="bg-gradient-to-br from-[#0F1626] via-[#1A233A] to-[#0F1626] border border-emerald-500/30 rounded-3xl p-6 shadow-xl text-white space-y-4">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="bg-emerald-500/20 text-emerald-400 p-2 rounded-xl border border-emerald-500/30">
-                    <Building className="w-4 h-4" />
-                  </div>
+                <div className="flex items-center gap-2.5">
+                  <span className="w-1 h-5 bg-brand-blue-accent rounded-full shrink-0" />
                   <div>
                     <h3 className="font-serif text-sm font-bold text-white uppercase tracking-wide">Live Rates via Stay22</h3>
                     <p className="text-[10px] text-emerald-400 font-mono">Instant Booking & Best Price Guarantee</p>
                   </div>
                 </div>
                 <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono text-[9px] uppercase font-bold px-2.5 py-1 rounded-full">
-                  Stay22 Partner
+                  Partner
                 </span>
               </div>
 
@@ -1123,21 +1081,21 @@ export default function HotelDetailPage({
                 href={stay22Url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-emerald-500 hover:bg-emerald-400 text-[#0F1626] py-3.5 rounded-xl font-mono text-xs uppercase tracking-widest font-extrabold transition-luxury shadow-lg cursor-pointer flex items-center justify-center gap-2 text-center"
+                className="w-full bg-emerald-500 hover:bg-emerald-400 text-[#0F1626] py-3.5 rounded-xl font-mono text-xs uppercase tracking-widest font-extrabold transition-all shadow-lg cursor-pointer flex items-center justify-center gap-2 text-center"
               >
                 <span>Check Rates & Book on Stay22</span>
                 <ExternalLink className="w-4 h-4" />
               </a>
             </div>
 
-            <div id="hotel-inquiry-card" className="bg-white border border-brand-blue-accent/20 rounded-3xl p-6 sm:p-8 shadow-md sticky top-28 space-y-6">
+            <div id="hotel-inquiry-card" className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-md sticky top-28 space-y-6">
               
               <div className="border-b border-slate-100 pb-4">
-                <h3 className="font-serif text-base font-bold text-[#0F1626] uppercase tracking-wide flex items-center gap-2">
-                  <Sparkles className="w-4.5 h-4.5 text-brand-blue-accent shrink-0" />
+                <h3 className="font-serif text-base font-bold text-[#0F1626] uppercase tracking-wide flex items-center gap-2.5">
+                  <span className="w-1 h-5 bg-brand-blue-accent rounded-full shrink-0" />
                   <span>Stay Customiser</span>
                 </h3>
-                <p className="text-[10px] text-slate-400 font-mono mt-1">Configure your luxury Halal-certified holiday</p>
+                <p className="text-[10px] text-slate-400 font-mono mt-1">Configure your boutique luxury holiday</p>
               </div>
 
               {!formSubmitted ? (
@@ -1233,7 +1191,7 @@ export default function HotelDetailPage({
 
                   <button
                     type="submit"
-                    className="w-full bg-[#0F1626] hover:bg-brand-blue-accent hover:text-[#0F1626] text-white py-3.5 rounded-xl font-mono text-[10px] uppercase tracking-widest font-bold transition-luxury shadow-md cursor-pointer text-center"
+                    className="w-full bg-[#0F1626] hover:bg-brand-blue-accent hover:text-[#0F1626] text-white py-3.5 rounded-xl font-mono text-[10px] uppercase tracking-widest font-bold transition-all shadow-md cursor-pointer text-center"
                   >
                     Send Luxury Reservation Inquiry
                   </button>
@@ -1241,14 +1199,14 @@ export default function HotelDetailPage({
                 </form>
               ) : (
                 <div className="space-y-6 text-center py-6 animate-fade-in">
-                  <div className="bg-brand-green/15 border border-brand-blue-accent/25 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto text-brand-green">
+                  <div className="bg-emerald-100 border border-emerald-300 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto text-emerald-700">
                     <Check className="w-8 h-8" />
                   </div>
                   
                   <div className="space-y-2">
                     <h4 className="font-serif text-base font-bold text-brand-charcoal">Inquiry Submitted!</h4>
-                    <p className="text-xs text-slate-400 leading-relaxed font-sans px-4">
-                      Thank you, <span className="font-bold text-brand-green">{contactName}</span>. Your custom boutique stay inquiry has been sent to the Ahlan Cambodia Concierge desk.
+                    <p className="text-xs text-slate-500 leading-relaxed font-sans px-4">
+                      Thank you, <span className="font-bold text-emerald-700">{contactName}</span>. Your custom boutique stay inquiry has been sent to the Ahlan Cambodia Concierge desk.
                     </p>
                   </div>
 
@@ -1283,75 +1241,64 @@ export default function HotelDetailPage({
         </div>
       </div>
 
-      {/* --- SANCTUARY PHOTO GALLERY SECTION --- */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-24 pt-12 border-t border-brand-blue-accent/15 space-y-8">
+      {/* --- SANCTUARY PHOTO GALLERY SECTION (Clean Balanced Grid) --- */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20 pt-12 border-t border-slate-200 space-y-8">
         <div className="text-center sm:text-left flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 select-none">
           <div>
             <span className="text-[10px] font-mono text-brand-blue font-bold uppercase tracking-[0.2em] block mb-1">IMAGINE THE EXPERIENCE</span>
-            <h3 className="font-serif text-2xl font-bold text-brand-charcoal uppercase tracking-wide flex items-center gap-2.5">
-              <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+            <h3 className="font-serif text-2xl font-bold text-brand-charcoal uppercase tracking-wide flex items-center gap-3">
+              <span className="w-1.5 h-7 bg-brand-blue-accent rounded-full inline-block shrink-0" />
               Sanctuary Photo Gallery
             </h3>
           </div>
-          <span className="text-xs font-mono text-slate-400 bg-slate-100 border border-slate-200/50 px-3 py-1.5 rounded-lg shrink-0 self-start sm:self-auto">
+          <span className="text-xs font-mono text-slate-500 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shrink-0 self-start sm:self-auto">
             10 Curation Slides
           </span>
         </div>
 
-        {/* Customized asymmetrical grid to match the attached visual layout exactly with extremely rounded corners */}
-        <div className="grid grid-cols-12 gap-4">
-          {collageImages.map((img, idx) => {
-            let gridClasses = "";
-            if (idx === 0 || idx === 1) {
-              gridClasses = "col-span-12 md:col-span-6 aspect-[1.6]";
-            } else {
-              gridClasses = "col-span-6 md:col-span-3 aspect-[4/3]";
-            }
-
-            return (
-              <div 
-                key={idx}
-                onClick={() => setSelectedCollageIndex(idx)}
-                className={`relative ${gridClasses} rounded-[1.75rem] sm:rounded-[2rem] overflow-hidden cursor-pointer group bg-slate-100 border border-slate-200/40 shadow-sm`}
-              >
-                <img 
-                  src={img.url} 
-                  alt={img.title} 
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  referrerPolicy="no-referrer"
-                />
-                
-                {/* Simple subtle overlay on Hover with no text */}
-                <div className="absolute inset-0 bg-black/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
-            );
-          })}
+        {/* Clean balanced grid replacing asymmetric bento style */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {collageImages.map((img, idx) => (
+            <div 
+              key={idx}
+              onClick={() => setSelectedCollageIndex(idx)}
+              className="relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer group bg-slate-100 border border-slate-200 shadow-sm hover:shadow-md transition-all"
+            >
+              <img 
+                src={img.url} 
+                alt={img.title} 
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </div>
+          ))}
         </div>
       </div>
 
       {/* FAQ SECTION (5 FAQs) */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-24 pt-12 border-t border-brand-blue-accent/15 space-y-8" id="hotel-faq-section">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20 pt-12 border-t border-slate-200 space-y-8" id="hotel-faq-section">
         <div className="text-left space-y-1">
           <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand-blue font-bold block mb-1">
             Frequently Asked Questions
           </span>
-          <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#0F1626] tracking-wide flex items-center gap-2.5">
-            <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+          <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#0F1626] tracking-wide flex items-center gap-3">
+            <span className="w-1.5 h-7 bg-brand-blue-accent rounded-full inline-block shrink-0" />
             SANCTUARY INSIGHTS & FAQS
           </h2>
         </div>
 
-        <div className="space-y-4 pt-4">
+        <div className="space-y-3 pt-2">
           {hotelFaqs.map((faq, idx) => {
             const isOpen = openHotelFaqIndex === idx;
             return (
               <div 
                 key={idx}
-                className="bg-white border border-brand-blue-accent/15 rounded-2xl overflow-hidden shadow-sm transition-all duration-300"
+                className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm transition-all duration-300"
               >
                 <button
                   onClick={() => setOpenHotelFaqIndex(isOpen ? null : idx)}
-                  className="w-full text-left p-5 flex justify-between items-center gap-4 bg-brand-lightbg hover:bg-white transition-colors cursor-pointer"
+                  className="w-full text-left p-5 flex justify-between items-center gap-4 bg-slate-50 hover:bg-white transition-colors cursor-pointer"
                 >
                   <h4 className="font-serif font-bold text-xs sm:text-sm text-brand-charcoal uppercase tracking-wider leading-relaxed">
                     {faq.q}
@@ -1362,7 +1309,7 @@ export default function HotelDetailPage({
                 </button>
 
                 {isOpen && (
-                  <div className="p-5 sm:p-6 bg-white border-t border-brand-blue-accent/10 font-sans text-xs sm:text-sm text-brand-charcoal/80 leading-relaxed">
+                  <div className="p-5 sm:p-6 bg-white border-t border-slate-100 font-sans text-xs sm:text-sm text-brand-charcoal/80 leading-relaxed">
                     {faq.a}
                   </div>
                 )}
@@ -1372,18 +1319,18 @@ export default function HotelDetailPage({
         </div>
       </div>
 
-      {/* --- Related Muslim-friendly Hotels at bottom --- */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-24 pt-12 border-t border-brand-blue-accent/15 space-y-8">
+      {/* --- Related Hotels at bottom --- */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20 pt-12 border-t border-slate-200 space-y-8 pb-16">
         <div className="space-y-1">
           <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand-blue font-bold block mb-1">Recommended Lodgings</span>
-          <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#0F1626] tracking-wide flex items-center gap-2.5">
-            <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+          <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#0F1626] tracking-wide flex items-center gap-3">
+            <span className="w-1.5 h-7 bg-brand-blue-accent rounded-full inline-block shrink-0" />
             EXPLORE MORE SANCTUARIES
           </h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {hotels
+          {(allHotels || [])
             .filter((h) => h.id !== hotel.id)
             .slice(0, 3)
             .map((item) => (
@@ -1394,7 +1341,7 @@ export default function HotelDetailPage({
                     onSelectHotel(item);
                   }
                 }}
-                className="group cursor-pointer bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm hover:shadow-md transition-luxury flex flex-col justify-between"
+                className="group cursor-pointer bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div className="relative h-48 overflow-hidden">
                   <img 
@@ -1402,7 +1349,7 @@ export default function HotelDetailPage({
                     alt={item.name} 
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
-                  <div className="absolute top-4 right-4 bg-brand-green/90 backdrop-blur-md border border-brand-blue-accent/35 px-3 py-1 rounded-full text-[9px] font-mono text-white font-bold uppercase tracking-wider">
+                  <div className="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-md border border-white/20 px-3 py-1 rounded-full text-[9px] font-mono text-white font-bold uppercase tracking-wider">
                     {item.stars} Stars
                   </div>
                 </div>
@@ -1412,7 +1359,7 @@ export default function HotelDetailPage({
                     <h4 className="font-serif text-sm font-bold text-brand-charcoal group-hover:text-brand-blue-accent transition-colors">
                       {item.name}
                     </h4>
-                    <p className="text-[11px] text-slate-400 flex items-center gap-1 font-mono">
+                    <p className="text-[11px] text-slate-500 flex items-center gap-1 font-mono">
                       <MapPin className="w-3.5 h-3.5 text-brand-blue-accent" />
                       <span>{item.location.split(",")[0]}</span>
                     </p>

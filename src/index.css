@@ -275,3 +275,38 @@ img[data-align="right"] {
   clear: both !important;
 }
 
+/* Custom buttons and affiliate CTA cards inside blog content */
+.blog-content-body a {
+  transition: all 0.2s ease-in-out;
+}
+
+.blog-content-body a[style*="background"],
+.blog-content-body a[style*="background-color"],
+.blog-content-body a.btn,
+.blog-content-body a.button,
+.blog-content-body button {
+  text-decoration: none !important;
+  display: inline-block !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer !important;
+}
+
+.blog-content-body a[style*="background"]:hover,
+.blog-content-body a[style*="background-color"]:hover,
+.blog-content-body a.btn:hover,
+.blog-content-body a.button:hover,
+.blog-content-body button:hover {
+  transform: translateY(-2px);
+  opacity: 0.92;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+.blog-content-body div[style*="text-align:center"],
+.blog-content-body div[style*="text-align: center"] {
+  text-align: center !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+

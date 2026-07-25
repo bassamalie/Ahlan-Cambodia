@@ -15,6 +15,7 @@ interface PackageDetailPageProps {
   onToggleWishlist: (id: string) => void;
   onInquire: (customDetails?: any) => void;
   allPackages?: TourPackage[];
+  allHotels?: Hotel[];
   onSelectPackage?: (pkg: TourPackage) => void;
   onNavigateView?: (view: string) => void;
 }
@@ -26,6 +27,7 @@ export default function PackageDetailPage({
   onToggleWishlist,
   onInquire,
   allPackages = [],
+  allHotels = [],
   onSelectPackage,
   onNavigateView
 }: PackageDetailPageProps) {
@@ -164,13 +166,15 @@ export default function PackageDetailPage({
     setFormSubmitted(true);
   };
 
+  const availableHotels = allHotels || [];
+
   const packageHotels = (() => {
     // Priority 1: packageHotelsList (supports mix & match of up to 4 predefined / custom hotels)
     if (tourPackage.packageHotelsList && tourPackage.packageHotelsList.length > 0) {
       const list: Hotel[] = [];
       tourPackage.packageHotelsList.forEach((slot, idx) => {
         if (slot.type === "predefined" && slot.hotelId) {
-          const found = hotels.find(h => h.id === slot.hotelId);
+          const found = availableHotels.find(h => h.id === slot.hotelId);
           if (found) list.push(found);
         } else if (slot.type === "custom" && slot.customHotel) {
           list.push({
@@ -198,7 +202,7 @@ export default function PackageDetailPage({
     const list: Hotel[] = [];
     if (tourPackage.hotelIds && tourPackage.hotelIds.length > 0) {
       tourPackage.hotelIds.forEach(hid => {
-        const found = hotels.find(h => h.id === hid);
+        const found = availableHotels.find(h => h.id === hid);
         if (found) list.push(found);
       });
     }
@@ -223,31 +227,7 @@ export default function PackageDetailPage({
       });
     });
 
-    if (list.length > 0) return list;
-
-    // Fallback static defaults for pre-seeded packages
-    if (tourPackage.id === "luxury-cambodia") {
-      return [
-        hotels.find(h => h.id === "rosewood-phnom-penh"),
-        hotels.find(h => h.id === "raffles-angkor"),
-      ].filter((h): h is Hotel => !!h);
-    } else if (tourPackage.id === "cambodia-highlights") {
-      return [
-        hotels.find(h => h.id === "sofitel-phnom-penh"),
-        hotels.find(h => h.id === "shinta-mani-reap"),
-      ].filter((h): h is Hotel => !!h);
-    } else if (tourPackage.id === "family-escape") {
-      return [
-        hotels.find(h => h.id === "shinta-mani-reap"),
-        hotels.find(h => h.id === "sofitel-phnom-penh")
-      ].filter((h): h is Hotel => !!h);
-    } else if (tourPackage.id === "muslim-heritage-tour") {
-      return [
-        hotels.find(h => h.id === "rosewood-phnom-penh"),
-        hotels.find(h => h.id === "shinta-mani-reap"),
-      ].filter((h): h is Hotel => !!h);
-    }
-    return [hotels[0]].filter((h): h is Hotel => !!h);
+    return list;
   })();
 
   const getPackageDestinations = (id: string) => {
@@ -374,7 +354,7 @@ export default function PackageDetailPage({
       </div>
 
       {/* --- Sticky Bar (Seamless Navigation) --- */}
-      <div className="sticky top-[72px] sm:top-[88px] z-30 w-full bg-brand-blue/95 backdrop-blur-md border-b border-brand-blue-accent/25 shadow-md h-14 sm:h-16 flex items-center">
+      <div className="sticky top-[81px] sm:top-[97px] z-30 w-full bg-brand-blue/95 backdrop-blur-md border-b border-brand-blue-accent/25 shadow-md h-14 sm:h-16 flex items-center">
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 min-w-0">
             <button 
