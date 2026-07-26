@@ -368,7 +368,7 @@ export default function App() {
   };
 
   // Dynamic restaurants state
-  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>(() => loadCache("restaurants", []));
+  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>(() => loadCache("restaurants", restaurants));
 
   const handleAddRestaurant = (newRest: Restaurant) => {
     setAllRestaurants((prev) => {
@@ -2285,8 +2285,8 @@ export default function App() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {allRestaurants.slice(0, 4).map((rest) => {
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {(allRestaurants.length > 0 ? allRestaurants : restaurants).slice(0, 3).map((rest) => {
               const isSaved = wishlist.restaurants.includes(rest.id);
               return (
                 <div 
