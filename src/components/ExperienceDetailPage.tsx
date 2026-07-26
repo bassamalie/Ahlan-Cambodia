@@ -460,12 +460,11 @@ export default function ExperienceDetailPage({
         {/* --- 1. Overview & Landscape Feature Image Grid --- */}
         <section id="overview" className="w-full space-y-8">
           <div className="space-y-1">
-            <span className="text-xs font-mono text-brand-blue tracking-widest uppercase font-bold block">
+            <span className="text-xs font-mono text-brand-blue-accent tracking-widest uppercase font-bold block">
               Curated Narrative & Purpose
             </span>
-            <h2 className="text-2xl sm:text-3xl font-serif text-brand-charcoal font-bold flex items-center gap-2.5">
-              <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
-              EXPERIENCE OVERVIEW
+            <h2 className="text-2xl sm:text-3xl font-serif text-brand-charcoal font-bold">
+              Experience Overview
             </h2>
           </div>
 
@@ -496,42 +495,44 @@ export default function ExperienceDetailPage({
         </section>
 
         {/* --- 2. Experience Highlights --- */}
-        <section id="highlights" className="space-y-8 border-t border-brand-blue-accent/25 pt-12">
+        <section id="highlights" className="space-y-6 border-t border-brand-blue-accent/25 pt-12">
           <div className="space-y-1">
-            <span className="text-xs font-mono text-brand-blue tracking-widest uppercase font-bold block">
+            <span className="text-xs font-mono text-brand-blue-accent tracking-widest uppercase font-bold block">
               What's Included
             </span>
-            <h2 className="text-2xl sm:text-3xl font-serif text-brand-charcoal font-bold flex items-center gap-2.5">
-              <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+            <h2 className="text-2xl sm:text-3xl font-serif text-brand-charcoal font-bold">
               Experience Highlights
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {experience.highlights.map((highlight, idx) => (
-              <div 
-                key={idx} 
-                className="bg-white border border-brand-blue-accent/15 px-6 py-5 rounded-2xl flex items-start gap-4 hover:border-brand-blue-accent/30 hover:shadow-sm transition-all duration-300"
-              >
-                <div className="bg-brand-blue/10 text-brand-blue-accent p-1.5 rounded-lg shrink-0 border border-brand-blue-accent/15 mt-0.5">
-                  <CheckCircle className="w-4 h-4" />
+          <div className="bg-slate-50/80 border border-slate-200/80 rounded-3xl p-5 sm:p-7">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {experience.highlights.map((highlight, idx) => (
+                <div 
+                  key={idx} 
+                  className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 flex items-start gap-4 shadow-sm hover:border-brand-blue-accent/40 hover:shadow-md transition-all duration-300"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-brand-blue-accent/10 border border-brand-blue-accent/20 flex items-center justify-center shrink-0 text-brand-blue-accent font-mono text-xs font-bold mt-0.5">
+                    {idx < 9 ? `0${idx + 1}` : idx + 1}
+                  </div>
+                  <div className="space-y-0.5 pt-1">
+                    <p className="font-sans font-semibold text-sm sm:text-base text-brand-charcoal leading-snug">
+                      {highlight}
+                    </p>
+                  </div>
                 </div>
-                <span className="font-sans font-medium text-xs sm:text-sm text-brand-charcoal/85 leading-relaxed pt-0.5">
-                  {highlight}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
 
         {/* --- 3. Redesigned Gallery Grid (Big Left, 2x2 Right) --- */}
         <section id="gallery" className="space-y-8 border-t border-brand-blue-accent/25 pt-12">
           <div className="space-y-1">
-            <span className="text-xs font-mono text-brand-blue tracking-widest uppercase font-bold block">
+            <span className="text-xs font-mono text-brand-blue-accent tracking-widest uppercase font-bold block">
               Visual Canvas
             </span>
-            <h2 className="text-2xl sm:text-3xl font-serif text-brand-charcoal font-bold flex items-center gap-2.5">
-              <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+            <h2 className="text-2xl sm:text-3xl font-serif text-brand-charcoal font-bold">
               Photo Gallery
             </h2>
           </div>
@@ -581,11 +582,10 @@ export default function ExperienceDetailPage({
         {/* --- 4. Location Details (Full-Width Accent Card) --- */}
         <section id="location" className="space-y-8 border-t border-brand-blue-accent/25 pt-12">
           <div className="space-y-1">
-            <span className="text-xs font-mono text-brand-blue tracking-widest uppercase font-bold block">
+            <span className="text-xs font-mono text-brand-blue-accent tracking-widest uppercase font-bold block">
               Geography
             </span>
-            <h2 className="text-2xl sm:text-3xl font-serif text-brand-charcoal font-bold flex items-center gap-2.5">
-              <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+            <h2 className="text-2xl sm:text-3xl font-serif text-brand-charcoal font-bold">
               Location Details
             </h2>
           </div>
@@ -641,11 +641,10 @@ export default function ExperienceDetailPage({
         {/* --- 4.5 Frequently Asked Questions (Full-Width Stacked Section) --- */}
         <section id="location-faq" className="space-y-8 border-t border-brand-blue-accent/25 pt-12">
           <div className="space-y-1">
-            <span className="text-xs font-mono text-brand-blue tracking-widest uppercase font-bold block">
+            <span className="text-xs font-mono text-brand-blue-accent tracking-widest uppercase font-bold block">
               Common Queries
             </span>
-            <h2 className="text-2xl sm:text-3xl font-serif text-brand-charcoal font-bold flex items-center gap-2.5">
-              <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+            <h2 className="text-2xl sm:text-3xl font-serif text-brand-charcoal font-bold">
               Frequently Asked Questions
             </h2>
           </div>
@@ -684,11 +683,10 @@ export default function ExperienceDetailPage({
         {/* --- 5. Similar Experiences (3 in a row) --- */}
         <section id="similar-experiences" className="space-y-8 border-t border-brand-blue-accent/25 pt-12">
           <div className="space-y-1">
-            <span className="text-xs font-mono text-brand-blue tracking-widest uppercase font-bold block">
+            <span className="text-xs font-mono text-brand-blue-accent tracking-widest uppercase font-bold block">
               Related Pursuits
             </span>
-            <h2 className="text-2xl sm:text-3xl font-serif text-brand-charcoal font-bold flex items-center gap-2.5">
-              <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
+            <h2 className="text-2xl sm:text-3xl font-serif text-brand-charcoal font-bold">
               Similar Experiences
             </h2>
           </div>
