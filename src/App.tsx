@@ -1577,10 +1577,6 @@ export default function App() {
 
         {/* Hero content container */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          
-          <span className="inline-block bg-brand-blue-accent/20 border border-brand-blue-accent/40 text-brand-blue-accent font-mono text-[10px] sm:text-xs font-extrabold px-3.5 py-1 rounded-full uppercase tracking-widest backdrop-blur-md">
-            {t.kingdomTagline}
-          </span>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif text-white tracking-wider leading-tight max-w-5xl mx-auto font-bold drop-shadow">
             {language !== "EN" ? t.heroTitle : (homepageSettings.heroTitle || t.heroTitle)}
