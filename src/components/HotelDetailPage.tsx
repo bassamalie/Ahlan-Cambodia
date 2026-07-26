@@ -8,6 +8,7 @@ import {
 import { Hotel, Experience } from "../types";
 import { hotels } from "../data";
 import { NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
+import { useLanguage } from "../LanguageContext";
 
 interface HotelDetailPageProps {
   hotel: Hotel;
@@ -342,6 +343,7 @@ export default function HotelDetailPage({
   onSelectExperience,
   onNavigateView
 }: HotelDetailPageProps) {
+  const { t, lt } = useLanguage();
   const isSaved = wishlist.includes(hotel.id);
   const getHotelDestinationCity = (loc: string) => {
     if (loc.toLowerCase().includes("siem reap")) return "Siem Reap";
@@ -641,7 +643,7 @@ export default function HotelDetailPage({
               className="flex items-center gap-2 text-white/95 hover:text-white font-mono text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer bg-black/20 hover:bg-black/45 px-4 py-2 rounded-full border border-white/10 backdrop-blur-sm"
             >
               <ArrowLeft className="w-4 h-4 text-white" />
-              <span>Back</span>
+              <span>{t.back}</span>
             </button>
 
             {/* Breadcrumb */}
@@ -650,17 +652,17 @@ export default function HotelDetailPage({
                 onClick={() => onNavigateView ? onNavigateView("home") : onBack()} 
                 className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
               >
-                HOME
+                {t.home}
               </button> 
               <span className="text-white/40 font-bold">/</span> 
               <button 
                 onClick={() => onNavigateView ? onNavigateView("hotels") : onBack()} 
                 className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
               >
-                HOTELS
+                {t.hotels}
               </button> 
               <span className="text-white/40 font-bold">/</span> 
-              <span className="text-white/95 font-bold tracking-widest truncate max-w-[200px] sm:max-w-[300px] inline-block uppercase">{hotel.name}</span>
+              <span className="text-white/95 font-bold tracking-widest truncate max-w-[200px] sm:max-w-[300px] inline-block uppercase">{lt(hotel.name)}</span>
             </div>
           </div>
         </div>
@@ -669,10 +671,10 @@ export default function HotelDetailPage({
         <div className="relative z-10 h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end pb-8 space-y-4">
           <div className="space-y-3 max-w-4xl">
             <h1 className="text-3xl sm:text-5xl font-serif font-bold text-white tracking-wide leading-tight drop-shadow-md">
-              {hotel.name}
+              {lt(hotel.name)}
             </h1>
             <p className="hidden sm:block text-white/95 text-sm sm:text-base leading-relaxed font-sans max-w-3xl drop-shadow-sm font-light">
-              {ext.extendedDescription ? (ext.extendedDescription.slice(0, 180) + "...") : (hotel.description || "Discover meticulously vetted boutique accommodations offering premium halal amenities and pristine serene designs.")}
+              {lt(ext.extendedDescription ? (ext.extendedDescription.slice(0, 180) + "...") : (hotel.description || "Discover meticulously vetted boutique accommodations offering premium halal amenities and pristine serene designs."))}
             </p>
           </div>
 
@@ -681,12 +683,12 @@ export default function HotelDetailPage({
             <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-xs sm:text-sm font-mono text-white/90">
               <span className="flex items-center gap-2">
                 <Star className="w-4 h-4 text-slate-300" />
-                {hotel.stars} Stars
+                {hotel.stars} {lt("Stars")}
               </span>
               <span className="hidden sm:inline text-white/30">|</span>
               <span className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-slate-300" />
-                <span><span className="text-white font-sans font-medium">{hotel.location}</span></span>
+                <span><span className="text-white font-sans font-medium">{lt(hotel.location)}</span></span>
               </span>
             </div>
 
@@ -700,7 +702,7 @@ export default function HotelDetailPage({
                 }`}
               >
                 <Heart className={`w-4 h-4 ${isSaved ? "fill-brand-red text-brand-red" : ""}`} />
-                <span>{isSaved ? "Saved" : "Save Hotel"}</span>
+                <span>{isSaved ? t.saved : lt("Save Hotel")}</span>
               </button>
               
               <button
@@ -708,10 +710,10 @@ export default function HotelDetailPage({
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/25 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm relative"
               >
                 <Share2 className="w-4 h-4" />
-                <span>{copiedLink ? "Link Copied!" : "Share"}</span>
+                <span>{copiedLink ? t.linkCopied : t.share}</span>
                 {copiedLink && (
                   <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white text-[10px] font-mono px-2 py-1 rounded shadow-md whitespace-nowrap">
-                    Link Copied!
+                    {t.linkCopied}
                   </span>
                 )}
               </button>
@@ -729,11 +731,11 @@ export default function HotelDetailPage({
               className="flex items-center gap-1.5 text-white/90 hover:text-brand-blue-accent font-mono text-[11px] uppercase tracking-wider font-bold transition-colors cursor-pointer shrink-0"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-brand-blue-accent" />
-              <span>BACK</span>
+              <span>{t.back.toUpperCase()}</span>
             </button>
             <div className="h-4 w-[1px] bg-white/20 hidden sm:block" />
             <h2 className="text-white font-serif font-bold text-xs sm:text-sm uppercase tracking-wider truncate m-0">
-              {hotel.name}
+              {lt(hotel.name)}
             </h2>
           </div>
 

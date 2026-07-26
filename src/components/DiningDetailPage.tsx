@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Restaurant } from "../types";
 import { NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
+import { useLanguage } from "../LanguageContext";
 
 function getAutoThumbnail(url: string): string | null {
   if (!url) return null;
@@ -226,6 +227,7 @@ export default function DiningDetailPage({
   onInquire,
   onNavigateView 
 }: DiningDetailPageProps) {
+  const { t, lt } = useLanguage();
   const [copiedLink, setCopiedLink] = useState(false);
   const [activeFAQ, setActiveFAQ] = useState<number | null>(null);
 
@@ -402,7 +404,7 @@ export default function DiningDetailPage({
               id="btn-dining-back"
             >
               <ArrowLeft className="w-4 h-4 text-white" />
-              <span>Back</span>
+              <span>{t.back}</span>
             </button>
 
             {/* Breadcrumb */}
@@ -411,17 +413,17 @@ export default function DiningDetailPage({
                 onClick={() => onNavigateView ? onNavigateView("home") : onBack()} 
                 className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
               >
-                HOME
+                {t.home}
               </button> 
               <span className="text-white/40 font-bold">/</span> 
               <button 
                 onClick={() => onNavigateView ? onNavigateView("restaurants") : onBack()} 
                 className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
               >
-                DINING
+                {t.dining}
               </button> 
               <span className="text-white/40 font-bold">/</span> 
-              <span className="text-white/95 font-bold tracking-widest truncate max-w-[200px] sm:max-w-[300px] inline-block uppercase">{restaurant.name}</span>
+              <span className="text-white/95 font-bold tracking-widest truncate max-w-[200px] sm:max-w-[300px] inline-block uppercase">{lt(restaurant.name)}</span>
             </div>
           </div>
         </div>
@@ -431,11 +433,11 @@ export default function DiningDetailPage({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end h-full space-y-4">
             <div className="space-y-3 max-w-4xl">
               <h1 className="text-3xl sm:text-5xl font-serif font-bold text-white tracking-wide leading-tight drop-shadow-md">
-                {restaurant.name}
+                {lt(restaurant.name)}
               </h1>
               <div className="hidden sm:block text-white/90 text-sm sm:text-base leading-relaxed font-sans max-w-3xl drop-shadow-sm font-light space-y-3">
                 {restaurant.description.split("\n").map((p) => p.trim()).filter((p) => p.length > 0).map((para, idx) => (
-                  <p key={idx}>{para}</p>
+                  <p key={idx}>{lt(para)}</p>
                 ))}
               </div>
             </div>

@@ -55,12 +55,13 @@ import InspirationPage from "./components/InspirationPage";
 import { SocialVideoCard } from "./components/SocialVideoCard";
 import PackageInquiryPage from "./components/PackageInquiryPage";
 import { getPackageSlug } from "./utils/pdfGenerator";
+import { useLanguage } from "./LanguageContext";
 
 export default function App() {
   // Navigation & Scroll states
   const [scrolled, setScrolled] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-  const [language, setLanguage] = useState<string>("EN");
+  const { language, setLanguage, t, languagesList } = useLanguage();
   const [currentView, setCurrentView] = useState<"home" | "destinations" | "experiences" | "packages" | "hotels" | "restaurants" | "mosques" | "destination-detail" | "experience-detail" | "package-detail" | "hotel-detail" | "dining-detail" | "mosque-detail" | "blog-detail" | "admin-cms" | "inspiration" | "package-inquiry">("home");
   const [activeDestination, setActiveDestination] = useState<Destination | null>(null);
   const [activeExperience, setActiveExperience] = useState<Experience | null>(null);
@@ -1204,7 +1205,7 @@ export default function App() {
               }} 
               className={`hover:text-brand-blue-accent transition-colors cursor-pointer font-mono text-sm uppercase tracking-wider font-semibold ${currentView === "destinations" ? "text-brand-blue-accent font-bold" : ""}`}
             >
-              DESTINATIONS
+              {t.destinations}
             </button>
             <button 
               onClick={() => {
@@ -1213,7 +1214,7 @@ export default function App() {
               }} 
               className={`hover:text-brand-blue-accent transition-colors cursor-pointer font-mono text-sm uppercase tracking-wider font-semibold ${currentView === "experiences" ? "text-brand-blue-accent font-bold" : ""}`}
             >
-              EXPERIENCES
+              {t.experiences}
             </button>
             <button 
               onClick={() => {
@@ -1222,7 +1223,7 @@ export default function App() {
               }} 
               className={`hover:text-brand-blue-accent transition-colors cursor-pointer font-mono text-sm uppercase tracking-wider font-semibold ${currentView === "packages" ? "text-brand-blue-accent font-bold" : ""}`}
             >
-              PACKAGES
+              {t.packages}
             </button>
             <button 
               onClick={() => {
@@ -1231,7 +1232,7 @@ export default function App() {
               }} 
               className={`hover:text-brand-blue-accent transition-colors cursor-pointer font-mono text-sm uppercase tracking-wider font-semibold ${currentView === "hotels" ? "text-brand-blue-accent font-bold" : ""}`}
             >
-              HOTELS
+              {t.hotels}
             </button>
             <button 
               onClick={() => {
@@ -1240,7 +1241,7 @@ export default function App() {
               }} 
               className={`hover:text-brand-blue-accent transition-colors cursor-pointer font-mono text-sm uppercase tracking-wider font-semibold ${currentView === "restaurants" ? "text-brand-blue-accent font-bold" : ""}`}
             >
-              DINING
+              {t.halalDining}
             </button>
             <button 
               onClick={() => {
@@ -1249,7 +1250,7 @@ export default function App() {
               }} 
               className={`hover:text-brand-blue-accent transition-colors cursor-pointer font-mono text-sm uppercase tracking-wider font-semibold ${currentView === "mosques" ? "text-brand-blue-accent font-bold" : ""}`}
             >
-              MOSQUES
+              {t.mosques}
             </button>
             <button 
               onClick={() => {
@@ -1258,40 +1259,12 @@ export default function App() {
               }} 
               className={`hover:text-brand-blue-accent transition-colors cursor-pointer font-mono text-sm uppercase tracking-wider font-semibold ${currentView === "inspiration" ? "text-brand-blue-accent font-bold" : ""}`}
             >
-              INSPIRATION
+              {t.inspiration}
             </button>
           </div>
 
           {/* Right Action Controls */}
           <div className="flex items-center gap-3">
-
-            {/* Language Selector */}
-            <div className="relative group hidden sm:block">
-              <button className="flex items-center gap-1.5 bg-transparent border border-brand-blue-accent/40 hover:bg-[#0F1626] hover:text-white hover:border-[#0F1626] px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all text-brand-charcoal group shadow-sm">
-                <Globe className="w-3.5 h-3.5 text-brand-blue-accent group-hover:text-brand-blue-accent/90 transition-colors" />
-                <span>{language}</span>
-              </button>
-              <div className="absolute right-0 mt-1 w-28 bg-white border border-brand-blue-accent/20 shadow-xl rounded-xl overflow-hidden hidden group-hover:block text-brand-charcoal">
-                {[
-                  { code: "EN", name: "English" },
-                  { code: "MS", name: "Melayu" },
-                  { code: "AR", name: "العربية" },
-                  { code: "KH", name: "ខ្មែរ" }
-                ].map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => {
-                      setLanguage(lang.code);
-                      alert(`Language changed to ${lang.name}. Dynamic multi-lingual interface initialized.`);
-                    }}
-                    className="w-full text-left px-3 py-2 text-xs font-mono font-medium hover:bg-[#0F1626] hover:text-white transition-all"
-                  >
-                    {lang.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Mobile Hamburger menu */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -1299,7 +1272,6 @@ export default function App() {
             >
               {mobileMenuOpen ? <X className="w-5 h-5 text-brand-blue-accent" /> : <Menu className="w-5 h-5 text-brand-blue-accent" />}
             </button>
-
           </div>
         </div>
 
@@ -1315,7 +1287,7 @@ export default function App() {
                 }} 
                 className={`hover:text-brand-blue-accent py-2 border-b border-brand-blue-accent/10 text-left cursor-pointer ${currentView === "destinations" ? "text-brand-blue-accent font-bold" : "text-brand-charcoal"}`}
               >
-                DESTINATIONS
+                {t.destinations}
               </button>
               <button 
                 onClick={() => {
@@ -1325,7 +1297,7 @@ export default function App() {
                 }} 
                 className={`hover:text-brand-blue-accent py-2 border-b border-brand-blue-accent/10 text-left cursor-pointer ${currentView === "experiences" ? "text-brand-blue-accent font-bold" : "text-brand-charcoal"}`}
               >
-                EXPERIENCES
+                {t.experiences}
               </button>
               <button 
                 onClick={() => {
@@ -1335,7 +1307,7 @@ export default function App() {
                 }} 
                 className={`hover:text-brand-blue-accent py-2 border-b border-brand-blue-accent/10 text-left cursor-pointer ${currentView === "packages" ? "text-brand-blue-accent font-bold" : "text-brand-charcoal"}`}
               >
-                PACKAGES
+                {t.packages}
               </button>
               <button 
                 onClick={() => {
@@ -1345,7 +1317,7 @@ export default function App() {
                 }} 
                 className={`hover:text-brand-blue-accent py-2 border-b border-brand-blue-accent/10 text-left cursor-pointer ${currentView === "hotels" ? "text-brand-blue-accent font-bold" : "text-brand-charcoal"}`}
               >
-                HOTELS
+                {t.hotels}
               </button>
               <button 
                 onClick={() => {
@@ -1355,7 +1327,7 @@ export default function App() {
                 }} 
                 className={`hover:text-brand-blue-accent py-2 border-b border-brand-blue-accent/10 text-left cursor-pointer ${currentView === "restaurants" ? "text-brand-blue-accent font-bold" : "text-brand-charcoal"}`}
               >
-                DINING
+                {t.halalDining}
               </button>
               <button 
                 onClick={() => {
@@ -1365,7 +1337,7 @@ export default function App() {
                 }} 
                 className={`hover:text-brand-blue-accent py-2 border-b border-brand-blue-accent/10 text-left cursor-pointer ${currentView === "mosques" ? "text-brand-blue-accent font-bold" : "text-brand-charcoal"}`}
               >
-                MOSQUES
+                {t.mosques}
               </button>
               <button 
                 onClick={() => {
@@ -1373,14 +1345,10 @@ export default function App() {
                   setMobileMenuOpen(false);
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }} 
-                className={`hover:text-brand-blue-accent py-2 border-b border-brand-blue-accent/10 text-left cursor-pointer ${currentView === "inspiration" ? "text-brand-blue-accent font-bold" : "text-brand-charcoal"}`}
+                className={`hover:text-brand-blue-accent py-2 text-left cursor-pointer ${currentView === "inspiration" ? "text-brand-blue-accent font-bold" : "text-brand-charcoal"}`}
               >
-                INSPIRATION
+                {t.inspiration}
               </button>
-              <div className="flex justify-between items-center pt-2">
-                <span className="text-brand-charcoal/60 text-[10px]">Select Currency:</span>
-                <span className="text-xs font-bold text-brand-blue-accent">USD / KHR</span>
-              </div>
             </div>
           </div>
         )}
@@ -1610,12 +1578,16 @@ export default function App() {
         {/* Hero content container */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
           
+          <span className="inline-block bg-brand-blue-accent/20 border border-brand-blue-accent/40 text-brand-blue-accent font-mono text-[10px] sm:text-xs font-extrabold px-3.5 py-1 rounded-full uppercase tracking-widest backdrop-blur-md">
+            {t.kingdomTagline}
+          </span>
+
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif text-white tracking-wider leading-tight max-w-5xl mx-auto font-bold drop-shadow">
-            {homepageSettings.heroTitle}
+            {language !== "EN" ? t.heroTitle : (homepageSettings.heroTitle || t.heroTitle)}
           </h1>
 
           <p className="text-white/90 text-sm sm:text-base md:text-lg lg:text-xl max-w-4xl mx-auto leading-relaxed font-sans drop-shadow">
-            {homepageSettings.heroSubtitle}
+            {language !== "EN" ? t.heroSubtitle : (homepageSettings.heroSubtitle || t.heroSubtitle)}
           </p>
 
           {/* Floating Universal Search Bar */}
@@ -1625,12 +1597,12 @@ export default function App() {
               {/* Category tabs */}
               <div className="flex flex-wrap items-center justify-center gap-1.5 pb-2 border-b border-white/10">
                 {[
-                  { key: "All", name: "All Destinations" },
-                  { key: "Hotels", name: "Luxury Hotels" },
-                  { key: "Experiences", name: "Handpicked Experiences" },
-                  { key: "Packages", name: "Tour Packages" },
-                  { key: "Restaurants", name: "Halal Food" },
-                  { key: "Mosques", name: "Featured Mosques" }
+                  { key: "All", name: t.allRegions },
+                  { key: "Hotels", name: t.hotels },
+                  { key: "Experiences", name: t.experiences },
+                  { key: "Packages", name: t.packages },
+                  { key: "Restaurants", name: t.halalDining },
+                  { key: "Mosques", name: t.mosques }
                 ].map((cat) => (
                   <button
                     key={cat.key}
@@ -1654,7 +1626,7 @@ export default function App() {
                     type="text"
                     value={textSearch}
                     onChange={(e) => setTextSearch(e.target.value)}
-                    placeholder={`Search within Cambodia ${searchCategory !== "All" ? searchCategory : "everything"}... (e.g. Sunrise, Halal, Angkor, Al-Serkal)`}
+                    placeholder={t.searchPlaceholder}
                     className="w-full bg-black/40 border border-white/10 rounded-xl py-3.5 pl-11 pr-4 text-xs sm:text-sm text-white placeholder-white/40 outline-none focus:border-brand-blue-accent"
                   />
                   {textSearch && (
@@ -1662,7 +1634,7 @@ export default function App() {
                       onClick={() => setTextSearch("")} 
                       className="absolute right-3 top-3 text-[10px] font-mono font-bold bg-white/10 text-white/80 hover:bg-white/20 px-2 py-1 rounded"
                     >
-                      Clear
+                      {t.clearFilters}
                     </button>
                   )}
                 </div>
@@ -1675,7 +1647,7 @@ export default function App() {
                   className="bg-brand-blue hover:bg-brand-blue-accent text-white font-mono text-xs font-bold tracking-widest uppercase px-6 py-3.5 rounded-xl border border-brand-blue-accent/30 transition-all flex items-center justify-center gap-1 shrink-0 shadow"
                 >
                   <Search className="w-3.5 h-3.5 text-brand-blue-accent" />
-                  <span>Execute Search</span>
+                  <span>{t.searchBtn}</span>
                 </button>
               </div>
 
@@ -1820,10 +1792,10 @@ export default function App() {
           
           <div className="text-center space-y-5">
             <h2 className="text-3xl sm:text-4xl font-serif text-brand-charcoal font-bold">
-              WHY CHOOSE AHLAN CAMBODIA
+              {t.whyChooseTitle}
             </h2>
             <p className="text-brand-charcoal/60 text-sm max-w-xl mx-auto leading-relaxed">
-              We operate at the intersection of ultimate travel comfort and uncompromising Halal compliance, ensuring your spiritual values are fully respected.
+              {t.whyChooseSubtitle}
             </p>
           </div>
 
@@ -1860,11 +1832,11 @@ export default function App() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-brand-blue-accent/20 pb-4">
             <div className="space-y-4">
               <h2 className="text-3xl sm:text-4xl font-serif text-brand-charcoal font-bold">
-                Popular Destinations
+                {t.destinationsTitle}
               </h2>
             </div>
             <p className="text-brand-charcoal/60 text-xs sm:text-sm max-w-md leading-relaxed">
-              Explore Cambodia's legendary heritage hubs, sophisticated riversides, and private white-sand island reserves.
+              {t.destinationsSubtitle}
             </p>
           </div>
 
@@ -1947,10 +1919,10 @@ export default function App() {
           
           <div className="text-center space-y-5">
             <h2 className="text-3xl sm:text-4xl font-serif text-brand-charcoal font-bold">
-              Featured Tour Packages
+              {t.packagesTitle}
             </h2>
             <p className="text-brand-charcoal/60 text-sm max-w-xl mx-auto leading-relaxed">
-              Curated master itineraries incorporating seamless custom transit, private local historians, and certified dining.
+              {t.packagesSubtitle}
             </p>
           </div>
 
@@ -2093,11 +2065,11 @@ export default function App() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-brand-blue-accent/20 pb-4">
             <div className="space-y-4">
               <h2 className="text-3xl sm:text-4xl font-serif text-brand-charcoal font-bold">
-                Handpicked Khmer Experiences
+                {t.experiencesTitle}
               </h2>
             </div>
             <p className="text-brand-charcoal/60 text-xs sm:text-sm max-w-md leading-relaxed">
-              Elevate your stay with signature day-trips highlighting Cambodia’s pristine natural reserves and Muslim-friendly artisan crafts.
+              {t.experiencesSubtitle}
             </p>
           </div>
 
@@ -2318,11 +2290,11 @@ export default function App() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-brand-blue-accent/20 pb-4">
             <div className="space-y-4">
               <h2 className="text-3xl sm:text-4xl font-serif text-brand-charcoal font-bold">
-                Verified Food Guide
+                {t.diningTitle}
               </h2>
             </div>
             <p className="text-brand-charcoal/60 text-xs sm:text-sm max-w-md leading-relaxed">
-              Dine with absolute conviction. Discover verified, clean restaurants serving traditional Khmer, Malaysian, and Mughlai flavors.
+              {t.diningSubtitle}
             </p>
           </div>
 
@@ -2436,10 +2408,10 @@ export default function App() {
           
           <div className="text-center space-y-5">
             <h2 className="text-3xl sm:text-4xl font-serif text-brand-charcoal font-bold">
-              Featured Mosques in Cambodia
+              {t.mosquesTitle}
             </h2>
             <p className="text-brand-charcoal/60 text-sm max-w-xl mx-auto leading-relaxed">
-              Majestic hubs of worship providing daily congregation prayers, Jummah services, and serene community connections.
+              {t.mosquesSubtitle}
             </p>
           </div>
 
@@ -2531,11 +2503,11 @@ export default function App() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-brand-blue-accent/20 pb-4">
             <div className="space-y-4">
               <h2 className="text-3xl sm:text-4xl font-serif text-brand-charcoal font-bold">
-                Kingdom Inspiration Chronicles
+                {t.guidesTitle}
               </h2>
             </div>
             <p className="text-brand-charcoal/60 text-xs sm:text-sm max-w-md leading-relaxed">
-              Carefully researched articles to prepare your journey covering visas, traditional customs, and culinary tips.
+              {t.guidesSubtitle}
             </p>
           </div>
 

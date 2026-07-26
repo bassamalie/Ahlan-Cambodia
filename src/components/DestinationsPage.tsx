@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import { Destination } from "../types";
 import { optimizeCardImageUrl, NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
+import { useLanguage } from "../LanguageContext";
 
 interface DestinationsPageProps {
   destinations: Destination[];
@@ -20,6 +21,7 @@ export default function DestinationsPage({
   onSelectItem,
   onBack
 }: DestinationsPageProps) {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("All");
   const [sortBy, setSortBy] = useState<"featured" | "name">("featured");
@@ -79,20 +81,20 @@ export default function DestinationsPage({
               className="flex items-center gap-2 text-white hover:text-brand-blue-accent font-mono text-xs uppercase tracking-wider font-bold transition-all bg-white/10 hover:bg-white/15 border border-white/20 px-4 py-2.5 rounded-xl shadow-sm w-fit cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4 text-brand-blue-accent" />
-              <span>Return to Home</span>
+              <span>{t.backToHome}</span>
             </button>
             
             <div className="font-mono text-[10px] text-white/60 uppercase tracking-widest">
-              <span>Home</span> &nbsp;/&nbsp; <span className="text-brand-blue-accent font-bold">Destinations</span>
+              <span>{t.backToHome}</span> &nbsp;/&nbsp; <span className="text-brand-blue-accent font-bold">{t.destinations}</span>
             </div>
           </div>
 
           <div className="max-w-3xl space-y-4">
             <h1 className="text-3xl sm:text-5xl font-serif font-bold text-white tracking-wide">
-              CAMBODIAN DESTINATIONS
+              {t.destinationsTitle}
             </h1>
             <p className="text-white/85 text-xs sm:text-sm leading-relaxed max-w-2xl font-sans">
-              Discover legendary heritage hubs, sophisticated cities, serene riversides, and private white-sand island reserves. Each destination features fully verified Halal dining, Qibla indicators, and local Cham Muslim guides.
+              {t.destinationsSubtitle}
             </p>
           </div>
         </div>

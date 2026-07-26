@@ -11,6 +11,7 @@ import { hotels } from "../data";
 import WiseTravelCard from "./WiseTravelCard";
 import { getTourCode, generatePackagePdf } from "../utils/pdfGenerator";
 import { NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
+import { useLanguage } from "../LanguageContext";
 
 interface PackageDetailPageProps {
   tourPackage: TourPackage;
@@ -39,6 +40,7 @@ export default function PackageDetailPage({
   onSelectPackage,
   onNavigateView
 }: PackageDetailPageProps) {
+  const { t, lt } = useLanguage();
   const galleryImages = (tourPackage.gallery && tourPackage.gallery.length > 0)
     ? tourPackage.gallery.map(url => ({ url, title: "" }))
     : tourPackage.image
@@ -48,6 +50,7 @@ export default function PackageDetailPage({
   const isSaved = wishlist.includes(tourPackage.id);
   const [activeTab, setActiveTab] = useState<"itinerary" | "inclusions" | "exclusions">("itinerary");
   const [expandedDay, setExpandedDay] = useState<number | null>(0); // Default expand Day 1
+
   
   // Customizer form state
   const [travelers, setTravelers] = useState<number>(2);
@@ -332,7 +335,7 @@ export default function PackageDetailPage({
               className="flex items-center gap-2 text-white/95 hover:text-white font-mono text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer bg-black/20 hover:bg-black/45 px-4 py-2 rounded-full border border-white/10 backdrop-blur-sm"
             >
               <ArrowLeft className="w-4 h-4 text-white" />
-              <span>Back</span>
+              <span>{t.back}</span>
             </button>
 
             {/* Breadcrumb */}
@@ -341,17 +344,17 @@ export default function PackageDetailPage({
                 onClick={() => onNavigateView ? onNavigateView("home") : onBack()} 
                 className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
               >
-                HOME
+                {t.home}
               </button> 
               <span className="text-white/40 font-bold">/</span> 
               <button 
                 onClick={() => onNavigateView ? onNavigateView("packages") : onBack()} 
                 className="hover:text-white transition-colors cursor-pointer text-white/75 uppercase"
               >
-                PACKAGES
+                {t.packages}
               </button> 
               <span className="text-white/40 font-bold">/</span> 
-              <span className="text-white/95 font-bold tracking-widest truncate max-w-[200px] sm:max-w-[300px] inline-block uppercase">{tourPackage.name}</span>
+              <span className="text-white/95 font-bold tracking-widest truncate max-w-[200px] sm:max-w-[300px] inline-block uppercase">{lt(tourPackage.name)}</span>
             </div>
           </div>
         </div>
@@ -360,10 +363,10 @@ export default function PackageDetailPage({
         <div className="relative z-10 h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end pb-8 space-y-4">
           <div className="space-y-3 max-w-4xl">
             <h1 className="text-3xl sm:text-5xl font-serif font-bold text-white tracking-wide leading-tight drop-shadow-md">
-              {tourPackage.name}
+              {lt(tourPackage.name)}
             </h1>
             <p className="hidden sm:block text-white/95 text-sm sm:text-base leading-relaxed font-sans max-w-3xl drop-shadow-sm font-light">
-              {tourPackage.brief || "Explore our expertly balanced sanctuary itineraries crafted specifically for Muslim travelers."}
+              {lt(tourPackage.brief) || "Explore our expertly balanced sanctuary itineraries crafted specifically for Muslim travelers."}
             </p>
           </div>
 
@@ -372,17 +375,17 @@ export default function PackageDetailPage({
             <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-xs sm:text-sm font-mono text-white/90">
               <span className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-slate-300" />
-                {tourPackage.duration}
+                {lt(tourPackage.duration)}
               </span>
               <span className="hidden sm:inline text-white/30">|</span>
               <span className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4 text-slate-300" />
-                From ${tourPackage.price.toLocaleString()} USD
+                {t.fromPrice} ${tourPackage.price.toLocaleString()} USD
               </span>
               <span className="hidden sm:inline text-white/30">|</span>
               <span className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-slate-300" />
-                <span><span className="text-white font-sans font-medium">{getPackageDestinations(tourPackage.id)}</span></span>
+                <span><span className="text-white font-sans font-medium">{lt(getPackageDestinations(tourPackage.id))}</span></span>
               </span>
             </div>
 
@@ -396,7 +399,7 @@ export default function PackageDetailPage({
                 }`}
               >
                 <Heart className={`w-4 h-4 ${isSaved ? "fill-brand-red text-brand-red" : ""}`} />
-                <span>{isSaved ? "Saved" : "Save Package"}</span>
+                <span>{isSaved ? t.saved : t.savePackage}</span>
               </button>
 
               <button
@@ -404,7 +407,7 @@ export default function PackageDetailPage({
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/25 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
               >
                 <Share2 className="w-4 h-4" />
-                <span>{copiedLink ? "Link Copied!" : "Share"}</span>
+                <span>{copiedLink ? t.linkCopied : t.share}</span>
               </button>
             </div>
           </div>
@@ -420,17 +423,17 @@ export default function PackageDetailPage({
               className="flex items-center gap-1.5 text-white/90 hover:text-brand-blue-accent font-mono text-[11px] uppercase tracking-wider font-bold transition-colors cursor-pointer shrink-0"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-brand-blue-accent" />
-              <span>BACK</span>
+              <span>{t.back.toUpperCase()}</span>
             </button>
             <div className="h-4 w-[1px] bg-white/20 hidden sm:block" />
             <h2 className="text-white font-serif font-bold text-xs sm:text-sm uppercase tracking-wider truncate m-0">
-              {tourPackage.name}
+              {lt(tourPackage.name)}
             </h2>
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4 shrink-0">
             <span className="text-white/90 font-mono text-xs sm:text-sm">
-              From <span className="text-white font-bold font-sans">${tourPackage.price.toLocaleString()}</span>
+              {t.fromPrice} <span className="text-white font-bold font-sans">${tourPackage.price.toLocaleString()}</span>
             </span>
             <button
               onClick={() => {
@@ -444,7 +447,7 @@ export default function PackageDetailPage({
               }}
               className="bg-white hover:bg-brand-blue-accent text-brand-blue hover:text-white font-mono border border-white hover:border-brand-blue-accent px-3.5 sm:px-5 h-9 sm:h-10 flex items-center justify-center rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all shadow-md cursor-pointer shrink-0"
             >
-              Inquire Now
+              {t.inquireNow}
             </button>
           </div>
         </div>
@@ -463,11 +466,11 @@ export default function PackageDetailPage({
             <div className="space-y-5">
               <div className="space-y-1">
                 <span className="text-[10px] font-mono text-brand-blue tracking-widest uppercase font-bold block">
-                  AT A GLANCE
+                  {t.atAGlance.toUpperCase()}
                 </span>
                 <h2 className="font-serif text-2xl font-bold text-brand-charcoal flex items-center gap-2.5">
                   <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
-                  Package Highlights
+                  {t.packageHighlights}
                 </h2>
               </div>
 
@@ -478,8 +481,8 @@ export default function PackageDetailPage({
                     <Clock className="w-5 h-5 text-brand-blue-accent" />
                   </div>
                   <div className="space-y-0.5 min-w-0">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Duration</span>
-                    <p className="font-serif font-semibold text-xs sm:text-sm text-brand-charcoal leading-snug">{tourPackage.duration}</p>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">{t.duration}</span>
+                    <p className="font-serif font-semibold text-xs sm:text-sm text-brand-charcoal leading-snug">{lt(tourPackage.duration)}</p>
                   </div>
                 </div>
 
@@ -489,8 +492,8 @@ export default function PackageDetailPage({
                     <MapPin className="w-5 h-5 text-brand-blue-accent" />
                   </div>
                   <div className="space-y-0.5 min-w-0">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Destinations</span>
-                    <p className="font-serif font-semibold text-xs sm:text-sm text-brand-charcoal leading-snug">{getPackageDestinations(tourPackage.id)}</p>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">{t.destinations}</span>
+                    <p className="font-serif font-semibold text-xs sm:text-sm text-brand-charcoal leading-snug">{lt(getPackageDestinations(tourPackage.id))}</p>
                   </div>
                 </div>
 
@@ -500,9 +503,9 @@ export default function PackageDetailPage({
                     <Building className="w-5 h-5 text-brand-blue-accent" />
                   </div>
                   <div className="space-y-0.5 min-w-0">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Accommodations</span>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">{t.hotels}</span>
                     <p className="font-serif font-semibold text-xs sm:text-sm text-brand-charcoal leading-snug">
-                      {packageHotels.length > 0 ? packageHotels.map(h => h.name).join(", ") : "5-Star Luxury Stays"}
+                      {packageHotels.length > 0 ? packageHotels.map(h => lt(h.name)).join(", ") : lt("5-Star Luxury Stays")}
                     </p>
                   </div>
                 </div>
@@ -514,8 +517,8 @@ export default function PackageDetailPage({
                       <Utensils className="w-5 h-5 text-brand-blue-accent" />
                     </div>
                     <div className="space-y-0.5 min-w-0">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Halal Dining</span>
-                      <p className="font-serif font-semibold text-xs sm:text-sm text-brand-charcoal leading-snug">Muslim Meals</p>
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">{t.halalDining}</span>
+                      <p className="font-serif font-semibold text-xs sm:text-sm text-brand-charcoal leading-snug">{lt("100% Halal Certified")}</p>
                     </div>
                   </div>
                 )}
@@ -555,7 +558,7 @@ export default function PackageDetailPage({
                 </span>
                 <h2 className="font-serif text-2xl font-bold text-brand-charcoal flex items-center gap-2.5">
                   <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
-                  Inclusions & Exclusions
+                  {t.inclusions} & {t.exclusions}
                 </h2>
               </div>
 
@@ -563,13 +566,13 @@ export default function PackageDetailPage({
                 {/* Inclusions */}
                 <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs space-y-4">
                   <div className="border-b border-slate-100 pb-3">
-                    <h3 className="font-serif text-lg font-bold text-brand-charcoal">Package Inclusions</h3>
+                    <h3 className="font-serif text-lg font-bold text-brand-charcoal">{t.inclusions}</h3>
                   </div>
                   <div className="space-y-2.5">
                     {tourPackage.features.map((feat, idx) => (
                       <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
                         <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                        <span>{feat}</span>
+                        <span>{lt(feat)}</span>
                       </div>
                     ))}
                   </div>
@@ -578,7 +581,7 @@ export default function PackageDetailPage({
                 {/* Exclusions */}
                 <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs space-y-4">
                   <div className="border-b border-slate-100 pb-3">
-                    <h3 className="font-serif text-lg font-bold text-brand-charcoal">Package Exclusions</h3>
+                    <h3 className="font-serif text-lg font-bold text-brand-charcoal">{t.exclusions}</h3>
                   </div>
                   <div className="space-y-2.5">
                     {(tourPackage.exclusions || [
@@ -590,7 +593,7 @@ export default function PackageDetailPage({
                     ]).map((excl, idx) => (
                       <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-600">
                         <X className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                        <span>{excl}</span>
+                        <span>{lt(excl)}</span>
                       </div>
                     ))}
                   </div>
@@ -606,15 +609,15 @@ export default function PackageDetailPage({
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <span className="text-[10px] font-mono text-brand-blue tracking-widest uppercase font-bold block">
-                    DAY-BY-DAY JOURNEY
+                    {lt("DAY-BY-DAY JOURNEY")}
                   </span>
                   <h2 className="font-serif text-2xl font-bold text-brand-charcoal flex items-center gap-2.5">
                     <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
-                    Detailed Itinerary
+                    {t.itinerary}
                   </h2>
                 </div>
                 <span className="text-xs font-mono font-bold text-slate-500 bg-white border border-slate-200/80 px-3 py-1.5 rounded-xl shadow-2xs">
-                  {tourPackage.itineraryDetails?.length || tourPackage.itineraryOverview.length} Days Fully Outlined
+                  {tourPackage.itineraryDetails?.length || tourPackage.itineraryOverview.length} {t.daysNights}
                 </span>
               </div>
 
@@ -673,10 +676,10 @@ export default function PackageDetailPage({
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3.5">
                           <div className="flex items-center gap-3">
                             <span className="bg-[#0056b3] text-white font-mono text-xs font-bold px-3 py-1 rounded-xl uppercase tracking-wider shrink-0 shadow-xs">
-                              Day {dayNum}
+                              {lt(`Day ${dayNum}`)}
                             </span>
                             <h3 className="font-serif font-bold text-lg text-brand-charcoal leading-snug">
-                              {cleanTitle}
+                              {lt(cleanTitle)}
                             </h3>
                           </div>
                         </div>
@@ -684,7 +687,7 @@ export default function PackageDetailPage({
                         {/* Multi-paragraph Writing */}
                         <div className="text-slate-700 text-sm sm:text-base leading-relaxed space-y-3 pt-1 font-light">
                           {paragraphs.map((p, pIdx) => (
-                            <p key={pIdx}>{p}</p>
+                            <p key={pIdx}>{lt(p)}</p>
                           ))}
                         </div>
 
@@ -692,7 +695,7 @@ export default function PackageDetailPage({
                         <div className="flex flex-wrap gap-2.5 pt-3 border-t border-slate-100/80">
                           <span className="bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-3 py-1.5 rounded-xl font-medium text-xs flex items-center gap-1.5 shadow-2xs">
                             <Utensils className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                            <span>{mealTag}</span>
+                            <span>{lt(mealTag)}</span>
                           </span>
 
                           <span className="bg-sky-50 text-sky-800 border border-sky-200/80 px-3 py-1.5 rounded-xl font-medium text-xs flex items-center gap-1.5 shadow-2xs">
@@ -719,13 +722,13 @@ export default function PackageDetailPage({
               {/* Big & Visible Package Price */}
               <div className="space-y-1 text-center bg-slate-50 border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
                 <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-slate-500 block">
-                  PACKAGE PRICE
+                  {lt("PACKAGE PRICE")}
                 </span>
                 <div className="font-serif text-3xl sm:text-4xl font-extrabold text-[#0056b3] tracking-tight">
                   ${tourPackage.price.toLocaleString()} <span className="text-xs font-sans font-semibold text-slate-500">USD</span>
                 </div>
                 <span className="inline-block bg-sky-100 text-sky-800 text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full tracking-wider mt-1">
-                  Price Per Person
+                  {t.perPerson}
                 </span>
               </div>
 
@@ -733,7 +736,7 @@ export default function PackageDetailPage({
               <div className="bg-[#0F1626] text-white p-3.5 rounded-2xl flex items-center justify-between shadow-2xs">
                 <div className="flex items-center gap-2">
                   <Tag className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span className="text-xs font-mono font-semibold text-slate-300">Tour Code:</span>
+                  <span className="text-xs font-mono font-semibold text-slate-300">{lt("Tour Code")}:</span>
                 </div>
                 <span className="text-sm font-mono font-extrabold text-amber-400 tracking-wider bg-white/10 px-3 py-1 rounded-lg border border-amber-400/30">
                   {getTourCode(tourPackage)}
@@ -754,7 +757,7 @@ export default function PackageDetailPage({
                   className="w-full bg-slate-50 hover:bg-slate-100 text-brand-charcoal border border-slate-200 hover:border-slate-300 font-sans font-bold text-xs sm:text-sm py-3 px-4 rounded-xl transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer group"
                 >
                   <FileText className="w-4 h-4 text-[#0056b3] group-hover:scale-110 transition-transform shrink-0" />
-                  <span>Download PDF Itinerary</span>
+                  <span>{t.downloadPdf}</span>
                 </button>
 
                 {/* Chat now through WhatsApp */}
@@ -765,7 +768,7 @@ export default function PackageDetailPage({
                   className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-sans font-bold text-xs sm:text-sm py-3 px-4 rounded-xl transition-all shadow-2xs hover:shadow-md flex items-center justify-center gap-2.5 cursor-pointer"
                 >
                   <MessageSquare className="w-4 h-4 text-white fill-white shrink-0" />
-                  <span>Chat Now via WhatsApp</span>
+                  <span>{lt("Chat Now via WhatsApp")}</span>
                 </a>
 
                 {/* Big & Visible MAKE INQUIRY Button */}
@@ -782,7 +785,7 @@ export default function PackageDetailPage({
                   }}
                   className="w-full bg-[#0056b3] hover:bg-[#004494] text-white font-serif font-extrabold text-base sm:text-lg py-4 px-4 rounded-2xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer border border-transparent uppercase tracking-wider mt-2 group"
                 >
-                  <span>MAKE INQUIRY</span>
+                  <span>{t.inquireNow.toUpperCase()}</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
 
@@ -795,7 +798,7 @@ export default function PackageDetailPage({
               
               <div className="flex items-center gap-2.5">
                 <Award className="w-5 h-5 text-brand-blue-accent" />
-                <h4 className="font-mono text-xs font-bold uppercase tracking-widest text-brand-blue-accent">Key Highlights</h4>
+                <h4 className="font-mono text-xs font-bold uppercase tracking-widest text-brand-blue-accent">{t.highlights}</h4>
               </div>
               <ul className="space-y-2 text-xs text-white/85 list-none pl-0">
                 {(tourPackage.keyHighlights && tourPackage.keyHighlights.length > 0
@@ -808,7 +811,7 @@ export default function PackageDetailPage({
                 ).map((highlight, idx) => (
                   <li key={idx} className="flex items-start gap-1.5">
                     <CheckCircle className="w-3.5 h-3.5 text-white/80 shrink-0 mt-0.5" />
-                    <span>{highlight}</span>
+                    <span>{lt(highlight)}</span>
                   </li>
                 ))}
               </ul>
@@ -825,10 +828,10 @@ export default function PackageDetailPage({
         {packageHotels.length > 0 && (
           <div className="border-t border-slate-200/80 pt-10 mt-10 space-y-6">
             <div className="text-center sm:text-left space-y-1">
-              <span className="text-[10px] font-mono text-brand-blue font-bold uppercase tracking-widest block">LUXURY SANCTUARY</span>
+              <span className="text-[10px] font-mono text-brand-blue font-bold uppercase tracking-widest block">{lt("LUXURY SANCTUARY")}</span>
               <h3 className="font-serif text-2xl font-bold text-brand-charcoal flex items-center gap-2.5">
                 <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
-                Accommodations & Partner Hotels
+                {t.featuredHotels}
               </h3>
               <p className="text-xs text-slate-500 font-light italic">
                 Note: Confirmed partner stays or equivalent 5-star similar luxury hotels of equal standard may be assigned based on seasonal availability.
