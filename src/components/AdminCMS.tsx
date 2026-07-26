@@ -6,7 +6,7 @@ import {
   Bell, MessageSquare, Search, ChevronRight, User, Users, Briefcase, Building, 
   HelpCircle, ArrowRight, BookOpen, ShieldCheck, Mail, Phone, ExternalLink,
   Calendar, RefreshCw, Layers, CheckSquare, X, DollarSign, Clock, HelpCircle as MosqueIcon, Globe, Utensils, FolderOpen,
-  Lock, Unlock, Key, LogOut, UserPlus, Shield, Edit2, EyeOff
+  Lock, Unlock, Key, LogOut, UserPlus, Shield, Edit2, EyeOff, Loader2
 } from "lucide-react";
 import { Destination, Experience, TourPackage, Hotel, Restaurant, Mosque, TravelGuide } from "../types";
 import { tourPackages, hotels, restaurants, mosques, travelGuides } from "../data";
@@ -1421,6 +1421,128 @@ export default function AdminCMS({
   const [isSearchingGp, setIsSearchingGp] = useState(false);
   const [isImportingGpId, setIsImportingGpId] = useState<string | null>(null);
   const [refreshingHotelId, setRefreshingHotelId] = useState<string | null>(null);
+
+  // --- Slot-specific Google Places Search States & Handlers for Package Editor ---
+  const [slotSearchIndex, setSlotSearchIndex] = useState<number | null>(null);
+  const [slotSearchQuery, setSlotSearchQuery] = useState("");
+  const [slotSearchResults, setSlotSearchResults] = useState<any[]>([]);
+  const [isSlotSearchingGp, setIsSlotSearchingGp] = useState(false);
+  const [isSlotImportingPlaceId, setIsSlotImportingPlaceId] = useState<string | null>(null);
+
+  const handleSlotGooglePlacesSearch = async (sIdx: number, e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!slotSearchQuery.trim()) return;
+    setIsSlotSearchingGp(true);
+    try {
+      const res = await fetch(`/api/google-places/search-hotels?q=${encodeURIComponent(slotSearchQuery)}`);
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch { data = { success: false, error: text || "Rate limit or invalid response." }; }
+      if (data.success && Array.isArray(data.hotels)) {
+        setSlotSearchResults(data.hotels);
+        if (data.hotels.length === 0) {
+          triggerToast("No matching hotels found on Google Places.", "info");
+        }
+      } else {
+        triggerToast(data.error || "Search failed.", "error");
+      }
+    } catch (err) {
+      console.error("Slot GP Search error:", err);
+      triggerToast("Error searching Google Places.", "error");
+    } finally {
+      setIsSlotSearchingGp(false);
+    }
+  };
+
+  const handleSlotImportGooglePlacesHotel = async (sIdx: number, placeId: string) => {
+    setIsSlotImportingPlaceId(placeId);
+    try {
+      const res = await fetch(`/api/google-places/hotel-details?placeId=${encodeURIComponent(placeId)}`);
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch { data = { success: false, error: text || "Failed to parse response." }; }
+      if (!data.success) {
+        alert(data.error || "Failed to import hotel.");
+        return;
+      }
+      const h = data.hotel;
+      const { primaryImage, validPhotos } = sanitizeHotelPhotoGallery(h.photoUrls, h.image);
+      const effectiveTiers = (h.roomTiers && h.roomTiers.length > 0) ? h.roomTiers : getEffectiveRoomTiers(h);
+
+      const newHotel: Hotel = {
+        id: `gp-${Date.now()}`,
+        name: h.name,
+        location: h.address || h.destination || "Cambodia",
+        destination: h.destination || "Phnom Penh",
+        rating: h.rating || 4.8,
+        price: h.lowestPrice || 350,
+        lowestPrice: h.lowestPrice || 350,
+        stars: 5,
+        image: primaryImage,
+        photoUrls: validPhotos,
+        galleryImages: validPhotos,
+        description: h.editorialDescription || `${h.name} is a luxury estate in ${h.destination || "Cambodia"}.`,
+        extendedDescription: h.editorialDescription,
+        prayerFacilities: "In-room prayer mats and Qibla direction",
+        halalBreakfast: "Certified Halal breakfast options",
+        nearbyMosque: `Grand Mosque in ${h.destination || "Cambodia"} (10 mins)`,
+        amenities: h.amenities || ["Swimming Pool", "Spa", "Free WiFi", "Halal Options"],
+        roomTiers: effectiveTiers,
+        highlights: [
+          `Located in ${h.destination || "Cambodia"}`,
+          `Rated ${h.rating || 4.8} on Google Places`,
+          "Luxury Partner Stay"
+        ],
+        guestReviews: h.guestReviews || [],
+        placeId: h.placeId,
+        address: h.address,
+        latitude: h.latitude,
+        longitude: h.longitude,
+        reviewCount: h.reviewCount,
+        website: h.website,
+        phoneNumber: h.phoneNumber,
+        lastUpdated: new Date().toISOString(),
+        layoutVersion: "v2",
+        isGoogleImport: true,
+        muslimFriendly: false,
+        priceCategory: h.priceCategory || "$$$$ Luxury",
+        propertyType: h.propertyType || "5-Star Luxury Resort",
+        checkIn: h.checkIn || "14:00",
+        checkOut: h.checkOut || "12:00"
+      };
+
+      if (onAddHotel) {
+        await onAddHotel(newHotel);
+      } else {
+        await saveDocInCollection("hotels", newHotel);
+      }
+
+      setLocalHotels(prev => {
+        const exists = prev.some(x => x.id === newHotel.id);
+        return exists ? prev : [newHotel, ...prev];
+      });
+
+      // Update current package slot with the newly added hotel
+      setPackageHotelSlots(prev => {
+        const updated = [...prev];
+        if (updated[sIdx]) {
+          updated[sIdx] = { type: "predefined", hotelId: newHotel.id };
+        }
+        return updated;
+      });
+
+      triggerToast(`Added "${newHotel.name}" to Hotels register & assigned to Slot #${sIdx + 1}!`, "success");
+
+      setSlotSearchIndex(null);
+      setSlotSearchQuery("");
+      setSlotSearchResults([]);
+    } catch (err) {
+      console.error("Slot import error:", err);
+      alert("Failed to import hotel.");
+    } finally {
+      setIsSlotImportingPlaceId(null);
+    }
+  };
 
   const handleSearchGooglePlaces = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -5319,7 +5441,7 @@ export default function AdminCMS({
                                 Stay Accommodations (1 to 4 Hotels Max)
                               </h4>
                               <p className="text-[11px] text-slate-500 leading-relaxed font-sans">
-                                Select or custom-define up to 4 hotels for this package. You can mix and match predefined database stay partners and bespoke custom hotels.
+                                Select registered stay partners for this package (up to 4 hotels). If a hotel is not in the list, search and add it directly via Google Places.
                               </p>
                             </div>
                           </div>
@@ -5361,63 +5483,18 @@ export default function AdminCMS({
                                 )}
                               </div>
 
-                              {/* Slot Type Toggle */}
-                              <div className="flex gap-3">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const updated = [...packageHotelSlots];
-                                    updated[sIdx].type = "predefined";
-                                    if (!updated[sIdx].hotelId) {
-                                      updated[sIdx].hotelId = localHotels[0]?.id || "";
-                                    }
-                                    setPackageHotelSlots(updated);
-                                  }}
-                                  className={`flex-1 py-2.5 px-3 rounded-xl border text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
-                                    slot.type === "predefined"
-                                      ? "bg-[#0F1626] border-brand-blue-accent text-white shadow-sm"
-                                      : "bg-white hover:bg-slate-100 border-slate-200 text-slate-600"
-                                  }`}
-                                >
-                                  Predefined Partner Stay
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const updated = [...packageHotelSlots];
-                                    updated[sIdx].type = "custom";
-                                    if (!updated[sIdx].customHotel) {
-                                      updated[sIdx].customHotel = {
-                                        name: "",
-                                        location: "Cambodia",
-                                        image: "",
-                                        description: "",
-                                        highlights: ["", "", ""]
-                                      };
-                                    }
-                                    setPackageHotelSlots(updated);
-                                  }}
-                                  className={`flex-1 py-2.5 px-3 rounded-xl border text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
-                                    slot.type === "custom"
-                                      ? "bg-[#0F1626] border-brand-blue-accent text-white shadow-sm"
-                                      : "bg-white hover:bg-slate-100 border-slate-200 text-slate-600"
-                                  }`}
-                                >
-                                  Bespoke Custom Hotel
-                                </button>
-                              </div>
-
-                              {/* Predefined Selection */}
-                              {slot.type === "predefined" && (
-                                <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200/80">
+                              {/* Hotel Selection & Google Places Add Option */}
+                              <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-200/80">
+                                <div className="space-y-2">
                                   <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
-                                    Select Registered Stay Partner
+                                    Select Hotel from Database
                                   </label>
                                   <select
                                     value={slot.hotelId || ""}
                                     onChange={(e) => {
                                       const updated = [...packageHotelSlots];
                                       updated[sIdx].hotelId = e.target.value;
+                                      updated[sIdx].type = "predefined";
                                       setPackageHotelSlots(updated);
                                     }}
                                     className="w-full bg-slate-50 border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none"
@@ -5429,121 +5506,131 @@ export default function AdminCMS({
                                       </option>
                                     ))}
                                   </select>
+                                </div>
 
-                                  {/* Preview Selected Hotel */}
-                                  {slot.hotelId && (() => {
-                                    const h = localHotels.find(x => x.id === slot.hotelId);
-                                    if (!h) return null;
-                                    return (
-                                      <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200/60 mt-2">
-                                        <img src={h.image} alt={h.name} className="w-12 h-12 rounded-lg object-cover" />
-                                        <div className="space-y-0.5 min-w-0">
-                                          <h6 className="text-xs font-bold text-slate-800 truncate">{h.name}</h6>
-                                          <p className="text-[10px] text-slate-400 font-light truncate">{h.location}</p>
-                                        </div>
+                                {/* Preview Selected Hotel */}
+                                {slot.hotelId && (() => {
+                                  const h = localHotels.find(x => x.id === slot.hotelId);
+                                  if (!h) return null;
+                                  return (
+                                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                                      <img src={h.image} alt={h.name} className="w-12 h-12 rounded-lg object-cover" />
+                                      <div className="space-y-0.5 min-w-0">
+                                        <h6 className="text-xs font-bold text-slate-800 truncate">{h.name}</h6>
+                                        <p className="text-[10px] text-slate-400 font-light truncate">{h.location}</p>
                                       </div>
-                                    );
-                                  })()}
-                                </div>
-                              )}
-
-                              {/* Custom Hotel Fields */}
-                              {slot.type === "custom" && (
-                                <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-200/80">
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                      <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">Hotel Name *</label>
-                                      <input
-                                        type="text"
-                                        value={slot.customHotel?.name || ""}
-                                        onChange={(e) => {
-                                          const updated = [...packageHotelSlots];
-                                          const ch = updated[sIdx].customHotel || { name: "", location: "", image: "", description: "", highlights: ["", "", ""] };
-                                          ch.name = e.target.value;
-                                          updated[sIdx].customHotel = ch;
-                                          setPackageHotelSlots(updated);
-                                        }}
-                                        placeholder="e.g., Song Saa Private Island Overwater Retreat"
-                                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-slate-700"
-                                      />
                                     </div>
+                                  );
+                                })()}
 
-                                    <div className="space-y-1">
-                                      <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">Location *</label>
-                                      <input
-                                        type="text"
-                                        value={slot.customHotel?.location || ""}
-                                        onChange={(e) => {
-                                          const updated = [...packageHotelSlots];
-                                          const ch = updated[sIdx].customHotel || { name: "", location: "", image: "", description: "", highlights: ["", "", ""] };
-                                          ch.location = e.target.value;
-                                          updated[sIdx].customHotel = ch;
-                                          setPackageHotelSlots(updated);
-                                        }}
-                                        placeholder="e.g., Koh Rong Archipelago, Cambodia"
-                                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-slate-700"
-                                      />
-                                    </div>
-
-                                    <div className="space-y-1 sm:col-span-2">
-                                      <ImageUploadZone
-                                        imageSrc={slot.customHotel?.image || ""}
-                                        onChange={(val) => {
-                                          const updated = [...packageHotelSlots];
-                                          const ch = updated[sIdx].customHotel || { name: "", location: "", image: "", description: "", highlights: ["", "", ""] };
-                                          ch.image = val;
-                                          updated[sIdx].customHotel = ch;
-                                          setPackageHotelSlots(updated);
-                                        }}
-                                        label="Hotel Image *"
-                                        description="Upload cover image for this hotel."
-                                      />
-                                    </div>
-
-                                    <div className="space-y-1 sm:col-span-2">
-                                      <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">Hotel Overview Description *</label>
-                                      <input
-                                        type="text"
-                                        value={slot.customHotel?.description || ""}
-                                        onChange={(e) => {
-                                          const updated = [...packageHotelSlots];
-                                          const ch = updated[sIdx].customHotel || { name: "", location: "", image: "", description: "", highlights: ["", "", ""] };
-                                          ch.description = e.target.value;
-                                          updated[sIdx].customHotel = ch;
-                                          setPackageHotelSlots(updated);
-                                        }}
-                                        placeholder="Short accommodation overview..."
-                                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-slate-700"
-                                      />
-                                    </div>
+                                {/* Option to Search & Add via Google Places */}
+                                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+                                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-light">
+                                    <span>Can't find your hotel in the list?</span>
                                   </div>
-
-                                  {/* Highlights */}
-                                  <div className="space-y-2 pt-2 border-t border-slate-100">
-                                    <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">3 Highlights of the Hotel</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                      {[0, 1, 2].map(hlIdx => (
-                                        <input
-                                          key={hlIdx}
-                                          type="text"
-                                          value={slot.customHotel?.highlights?.[hlIdx] || ""}
-                                          onChange={(e) => {
-                                            const updated = [...packageHotelSlots];
-                                            const ch = updated[sIdx].customHotel || { name: "", location: "", image: "", description: "", highlights: ["", "", ""] };
-                                            const hls = [...(ch.highlights || ["", "", ""])];
-                                            hls[hlIdx] = e.target.value;
-                                            ch.highlights = hls;
-                                            updated[sIdx].customHotel = ch;
-                                            setPackageHotelSlots(updated);
-                                          }}
-                                          placeholder={`Highlight ${hlIdx + 1}...`}
-                                          className="bg-slate-50 border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-slate-700"
-                                        />
-                                      ))}
-                                    </div>
-                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (slotSearchIndex === sIdx) {
+                                        setSlotSearchIndex(null);
+                                        setSlotSearchResults([]);
+                                        setSlotSearchQuery("");
+                                      } else {
+                                        setSlotSearchIndex(sIdx);
+                                        setSlotSearchResults([]);
+                                        setSlotSearchQuery("");
+                                      }
+                                    }}
+                                    className="bg-brand-blue-accent/10 hover:bg-brand-blue-accent/20 text-brand-blue-accent border border-brand-blue-accent/30 px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase flex items-center gap-1.5 transition-colors cursor-pointer"
+                                  >
+                                    <Search className="w-3.5 h-3.5" />
+                                    <span>{slotSearchIndex === sIdx ? "Close Search" : "Search & Add via Google Places"}</span>
+                                  </button>
                                 </div>
-                              )}
+
+                                {/* Expanded Google Places Search Widget for this Slot */}
+                                {slotSearchIndex === sIdx && (
+                                  <div className="mt-3 p-4 bg-slate-50 rounded-xl border border-brand-blue-accent/30 space-y-3 animate-fade-in">
+                                    <div className="flex items-center justify-between">
+                                      <h6 className="text-xs font-mono font-bold text-brand-blue-accent uppercase tracking-wider flex items-center gap-1.5">
+                                        <Search className="w-3.5 h-3.5" />
+                                        <span>Search & Add Hotel via Google Places</span>
+                                      </h6>
+                                      <span className="text-[10px] text-slate-400 font-mono">Will save to database & sync automatically</span>
+                                    </div>
+
+                                    <form onSubmit={(e) => handleSlotGooglePlacesSearch(sIdx, e)} className="flex gap-2">
+                                      <input
+                                        type="text"
+                                        value={slotSearchQuery}
+                                        onChange={(e) => setSlotSearchQuery(e.target.value)}
+                                        placeholder="Type hotel name (e.g., Rosewood Phnom Penh, Raffles Grand Hotel)..."
+                                        className="flex-1 bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-slate-800"
+                                      />
+                                      <button
+                                        type="submit"
+                                        disabled={isSlotSearchingGp}
+                                        className="bg-[#0F1626] hover:bg-brand-blue-accent hover:text-[#0F1626] text-white px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shrink-0"
+                                      >
+                                        {isSlotSearchingGp ? (
+                                          <>
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            <span>Searching...</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Search className="w-3.5 h-3.5" />
+                                            <span>Search</span>
+                                          </>
+                                        )}
+                                      </button>
+                                    </form>
+
+                                    {/* Search Results */}
+                                    {slotSearchResults.length > 0 && (
+                                      <div className="space-y-2 pt-2 border-t border-slate-200/60 max-h-60 overflow-y-auto">
+                                        {slotSearchResults.map((item: any) => (
+                                          <div key={item.placeId} className="bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3 shadow-2xs">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                              <img
+                                                src={item.image || NO_PHOTO_AVAILABLE_PLACEHOLDER}
+                                                alt={item.name}
+                                                className="w-12 h-12 rounded-lg object-cover shrink-0"
+                                              />
+                                              <div className="min-w-0 space-y-0.5">
+                                                <h6 className="text-xs font-bold text-slate-800 truncate">{item.name}</h6>
+                                                <p className="text-[10px] text-slate-500 truncate">{item.address || item.destination}</p>
+                                                {item.rating && (
+                                                  <span className="text-[10px] text-amber-600 font-bold">★ {item.rating}</span>
+                                                )}
+                                              </div>
+                                            </div>
+
+                                            <button
+                                              type="button"
+                                              disabled={isSlotImportingPlaceId === item.placeId}
+                                              onClick={() => handleSlotImportGooglePlacesHotel(sIdx, item.placeId)}
+                                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold uppercase tracking-wider transition-colors disabled:opacity-50 shrink-0 flex items-center gap-1 cursor-pointer"
+                                            >
+                                              {isSlotImportingPlaceId === item.placeId ? (
+                                                <>
+                                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                                  <span>Adding...</span>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <Plus className="w-3 h-3" />
+                                                  <span>Add & Select</span>
+                                                </>
+                                              )}
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>

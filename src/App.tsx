@@ -934,8 +934,8 @@ export default function App() {
 
   const getItemUrl = (type: string, data: any) => {
     if (!data) return "/";
-    const nameOrId = data.name || data.title || data.id;
-    const cleanSlug = nameOrId.replace(/\s+/g, "-");
+    const rawStr = (data.slug || data.name || data.title || data.id || "").toString().toLowerCase().trim();
+    const cleanSlug = rawStr.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     if (type === "destination") {
       return `/destinations/${cleanSlug}`;
     }
@@ -955,8 +955,7 @@ export default function App() {
       return `/mosques/${cleanSlug}`;
     }
     if (type === "guide" || type === "blog") {
-      const slug = data.slug || (data.title ? data.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : data.id);
-      return `/inspiration/${slug}`;
+      return `/inspiration/${cleanSlug}`;
     }
     return "/";
   };
@@ -2186,9 +2185,11 @@ export default function App() {
                       </div>
                       
                       <div className="flex flex-wrap gap-1.5">
-                        {(hotel.keyHighlights && hotel.keyHighlights.length > 0
-                          ? hotel.keyHighlights
-                          : [hotel.prayerFacilities || "Qibla & Prayer Mat", hotel.halalBreakfast || "Halal Breakfast", "Luxury Rooms"]
+                        {((hotel.amenities && hotel.amenities.length > 0)
+                          ? hotel.amenities
+                          : (hotel.highlights && hotel.highlights.length > 0)
+                          ? hotel.highlights
+                          : ["Luxury Swimming Pool & Deck", "Free High-Speed Wi-Fi", "Full Service Spa & Wellness"]
                         ).slice(0, 3).map((feat, idx) => (
                           <div 
                             key={idx} 
@@ -2866,6 +2867,18 @@ export default function App() {
             navigateToSection("quote-builder-section");
           }}
           allPackages={allPackages}
+          allHotels={allHotels}
+          onSelectHotel={(hotel) => {
+            setActiveHotel(hotel);
+            setCurrentView("hotel-detail");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            addToRecentlyViewed({
+              id: hotel.id,
+              name: hotel.name,
+              category: "hotel",
+              image: hotel.image
+            });
+          }}
           onSelectPackage={(pkg) => {
             setActivePackage(pkg);
             window.scrollTo({ top: 0, behavior: "smooth" });

@@ -20,6 +20,7 @@ interface PackageDetailPageProps {
   onOpenInquiry?: (pkg: TourPackage) => void;
   allPackages?: TourPackage[];
   allHotels?: Hotel[];
+  onSelectHotel?: (hotel: Hotel) => void;
   onSelectPackage?: (pkg: TourPackage) => void;
   onNavigateView?: (view: string) => void;
 }
@@ -33,6 +34,7 @@ export default function PackageDetailPage({
   onOpenInquiry,
   allPackages = [],
   allHotels = [],
+  onSelectHotel,
   onSelectPackage,
   onNavigateView
 }: PackageDetailPageProps) {
@@ -171,23 +173,71 @@ export default function PackageDetailPage({
     setFormSubmitted(true);
   };
 
-  const availableHotels = allHotels || [];
+  const availableHotels = (allHotels && allHotels.length > 0) ? allHotels : hotels;
 
   const packageHotels = (() => {
+    const list: Hotel[] = [];
+
+    const isRawIdKey = (str: string): boolean => {
+      if (!str) return true;
+      const clean = str.trim();
+      if (/^gp\d+/i.test(clean)) return true;
+      if (!clean.includes(" ") && /\d/.test(clean)) return true;
+      return false;
+    };
+
+    const findHotel = (hotelIdStr: string): Hotel | undefined => {
+      if (!hotelIdStr) return undefined;
+      const cleanId = hotelIdStr.trim().toLowerCase();
+      const slugId = cleanId.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      return availableHotels.find(h => {
+        const hId = (h.id || "").toLowerCase();
+        const hName = (h.name || "").toLowerCase();
+        const hSlug = hName.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+        return hId === cleanId || hName === cleanId || hSlug === slugId || hId.replace(/-/g, " ") === cleanId.replace(/-/g, " ");
+      });
+    };
+
+    const makeFallbackHotel = (idOrName: string, idx: number): Hotel => {
+      const formattedName = idOrName
+        .replace(/-/g, " ")
+        .split(" ")
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+      return {
+        id: `fallback-hotel-${idx}-${idOrName}`,
+        name: formattedName,
+        location: "Cambodia",
+        image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+        description: "Selected luxury partner stay offering verified Muslim-friendly amenities and seamless proximity.",
+        rating: 5.0,
+        stars: 5,
+        priceRange: "$$$$",
+        price: 180,
+        prayerFacilities: "Prayer mats & Qibla direction available in-room",
+        halalBreakfast: "Certified Muslim-friendly or fully Halal options",
+        nearbyMosque: "Mosque in local vicinity",
+        amenities: ["Free Wifi", "Halal Dining", "Swimming Pool"]
+      };
+    };
+
     // Priority 1: packageHotelsList (supports mix & match of up to 4 predefined / custom hotels)
     if (tourPackage.packageHotelsList && tourPackage.packageHotelsList.length > 0) {
-      const list: Hotel[] = [];
       tourPackage.packageHotelsList.forEach((slot, idx) => {
         if (slot.type === "predefined" && slot.hotelId) {
-          const found = availableHotels.find(h => h.id === slot.hotelId);
-          if (found) list.push(found);
-        } else if (slot.type === "custom" && slot.customHotel) {
+          const found = findHotel(slot.hotelId);
+          if (found) {
+            if (!list.some(h => h.id === found.id)) list.push(found);
+          } else if (!isRawIdKey(slot.hotelId)) {
+            list.push(makeFallbackHotel(slot.hotelId, idx));
+          }
+        } else if (slot.type === "custom" && slot.customHotel && slot.customHotel.name) {
           list.push({
             id: `custom-hotel-${idx}-${tourPackage.id}`,
             name: slot.customHotel.name,
-            location: slot.customHotel.location,
+            location: slot.customHotel.location || "Cambodia",
             image: slot.customHotel.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
-            description: slot.customHotel.description,
+            description: slot.customHotel.description || "Bespoke custom luxury hotel.",
             rating: 5.0,
             stars: 5,
             priceRange: "$$$$",
@@ -203,33 +253,39 @@ export default function PackageDetailPage({
       if (list.length > 0) return list;
     }
 
-    // Priority 2: Combine hotelIds and customHotels / customHotel
-    const list: Hotel[] = [];
+    // Priority 2: hotelIds array
     if (tourPackage.hotelIds && tourPackage.hotelIds.length > 0) {
-      tourPackage.hotelIds.forEach(hid => {
-        const found = availableHotels.find(h => h.id === hid);
-        if (found) list.push(found);
+      tourPackage.hotelIds.forEach((hid, idx) => {
+        const found = findHotel(hid);
+        if (found) {
+          if (!list.some(h => h.id === found.id)) list.push(found);
+        } else if (!isRawIdKey(hid)) {
+          list.push(makeFallbackHotel(hid, idx));
+        }
       });
     }
 
+    // Priority 3: customHotels / customHotel
     const cHotels = tourPackage.customHotels || (tourPackage.customHotel ? [tourPackage.customHotel] : []);
     cHotels.forEach((ch, idx) => {
-      list.push({
-        id: `custom-hotel-${idx}-${tourPackage.id}`,
-        name: ch.name,
-        location: ch.location,
-        image: ch.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
-        description: ch.description,
-        rating: 5.0,
-        stars: 5,
-        priceRange: "$$$$",
-        price: 150,
-        prayerFacilities: "Prayer mats & Qibla signs provided in-room or on demand",
-        halalBreakfast: "Certified Muslim-friendly or fully Halal kitchen on-site",
-        nearbyMosque: "Local mosque access coordinates provided",
-        highlights: ch.highlights || [],
-        amenities: ["Free Wifi", "Halal Dining", "Pool"]
-      });
+      if (ch && ch.name) {
+        list.push({
+          id: `custom-hotel-${idx}-${tourPackage.id}`,
+          name: ch.name,
+          location: ch.location || "Cambodia",
+          image: ch.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+          description: ch.description || "Bespoke custom luxury hotel.",
+          rating: 5.0,
+          stars: 5,
+          priceRange: "$$$$",
+          price: 150,
+          prayerFacilities: "Prayer mats & Qibla signs provided in-room or on demand",
+          halalBreakfast: "Certified Muslim-friendly or fully Halal kitchen on-site",
+          nearbyMosque: "Local mosque access coordinates provided",
+          highlights: ch.highlights || [],
+          amenities: ["Free Wifi", "Halal Dining", "Pool"]
+        });
+      }
     });
 
     return list;
@@ -804,61 +860,89 @@ export default function PackageDetailPage({
                 <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
                 Accommodations & Partner Hotels
               </h3>
+              <p className="text-xs text-slate-500 font-light italic">
+                Note: Confirmed partner stays or equivalent 5-star similar luxury hotels of equal standard may be assigned based on seasonal availability.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {packageHotels.map((hotel) => (
-                <div 
-                  key={hotel.id}
-                  className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs hover:shadow-xs transition-all flex flex-col sm:flex-row group"
-                >
-                  {/* Hotel Thumbnail */}
-                  <div className="relative w-full sm:w-48 h-40 sm:h-auto overflow-hidden bg-slate-100 shrink-0">
-                    <img 
-                      src={hotel.image} 
-                      alt={hotel.name} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
-                    />
-                    <div className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded-md flex items-center gap-1">
-                      <div className="flex items-center text-amber-400">
-                        {Array.from({ length: hotel.stars }).map((_, i) => (
-                          <Star key={i} className="w-2.5 h-2.5 fill-current stroke-[1.5]" />
+              {packageHotels.map((hotel) => {
+                const hotelSlug = (hotel.name || hotel.id).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+                const features = (hotel.amenities && hotel.amenities.length > 0)
+                  ? hotel.amenities.slice(0, 3)
+                  : (hotel.highlights && hotel.highlights.length > 0)
+                  ? hotel.highlights.slice(0, 3)
+                  : ["Luxury Swimming Pool", "Free High-Speed Wi-Fi", "Full Service Spa"];
+
+                return (
+                  <a 
+                    key={hotel.id}
+                    href={`/hotels/${hotelSlug}`}
+                    onClick={(e) => {
+                      if (!e.ctrlKey && !e.metaKey && e.button !== 1 && !e.shiftKey) {
+                        e.preventDefault();
+                        if (onSelectHotel) {
+                          onSelectHotel(hotel);
+                        } else if (onNavigateView) {
+                          onNavigateView("hotels");
+                        }
+                      }
+                    }}
+                    className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs hover:shadow-md hover:border-brand-blue-accent/50 transition-all flex flex-col sm:flex-row group cursor-pointer block"
+                  >
+                    {/* Hotel Thumbnail */}
+                    <div className="relative w-full sm:w-48 h-40 sm:h-auto overflow-hidden bg-slate-100 shrink-0">
+                      <img 
+                        src={hotel.image} 
+                        alt={hotel.name} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
+                      />
+                      <div className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <div className="flex items-center text-amber-400">
+                          {Array.from({ length: hotel.stars || 5 }).map((_, i) => (
+                            <Star key={i} className="w-2.5 h-2.5 fill-current stroke-[1.5]" />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Compact Info Area */}
+                    <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h4 className="font-serif font-bold text-base text-brand-charcoal group-hover:text-brand-blue transition-colors">
+                              {hotel.name}
+                            </h4>
+                            <span className="inline-block text-[10px] font-mono font-semibold text-brand-blue-accent bg-blue-50 border border-blue-200/80 px-2.5 py-0.5 rounded-md mt-1.5 mb-0.5">
+                              Or Similar Hotel
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono text-amber-600 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded uppercase shrink-0 font-medium">
+                            {hotel.stars ? `${hotel.stars}-Star` : "5-Star"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-2.5 font-light">
+                          <MapPin className="w-3 h-3 text-brand-blue-accent shrink-0" />
+                          {hotel.location}
+                        </p>
+                        <p className="text-xs text-slate-600 line-clamp-2 mt-2 font-light leading-relaxed">
+                          {hotel.description}
+                        </p>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1.5 text-[11px] text-slate-700 font-medium">
+                        {features.map((feat, idx) => (
+                          <span key={idx} className="bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-[11px]">
+                            <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" />
+                            <span className="truncate">{feat.replace("Luxury ", "").replace("Full Service ", "").replace("Free High-Speed ", "Free ")}</span>
+                          </span>
                         ))}
                       </div>
                     </div>
-                  </div>
-
-                  {/* Compact Info Area */}
-                  <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
-                    <div>
-                      <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-serif font-bold text-base text-brand-charcoal group-hover:text-brand-blue transition-colors">
-                          {hotel.name}
-                        </h4>
-                        <span className="text-[10px] font-mono text-amber-600 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded uppercase shrink-0 font-medium">
-                          5-Star
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-1 font-light">
-                        <MapPin className="w-3 h-3 text-brand-blue-accent shrink-0" />
-                        {hotel.location}
-                      </p>
-                      <p className="text-xs text-slate-600 line-clamp-2 mt-2 font-light leading-relaxed">
-                        {hotel.description}
-                      </p>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-2 text-[11px] text-slate-700 font-medium">
-                      <span className="bg-slate-50 border border-slate-200/60 px-2 py-0.5 rounded flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" /> Halal Breakfast
-                      </span>
-                      <span className="bg-slate-50 border border-slate-200/60 px-2 py-0.5 rounded flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" /> Prayer Facilities
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  </a>
+                );
+              })}
             </div>
           </div>
         )}

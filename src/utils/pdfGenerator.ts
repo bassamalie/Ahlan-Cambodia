@@ -143,14 +143,36 @@ export function generatePackagePdf(pkg: TourPackage, tourCode: string, destinati
   const specDuration = (pkg.duration || "5 DAYS / 4 NIGHTS").toUpperCase();
   const specDestinations = (destinationsStr || pkg.destinations?.join(", ") || "PHNOM PENH, SIEM REAP").toUpperCase();
   
-  let specHotel = "KHEMARA ANGKOR HOTEL";
-  if (pkg.customHotel?.name) {
-    specHotel = pkg.customHotel.name.toUpperCase();
-  } else if (pkg.packageHotelsList && pkg.packageHotelsList.length > 0) {
-    const item = pkg.packageHotelsList[0];
-    if (item.customHotel?.name) {
-      specHotel = item.customHotel.name.toUpperCase();
-    }
+  let specHotel = "KHEMARA ANGKOR HOTEL & SPA";
+  const hotelNames: string[] = [];
+
+  if (pkg.packageHotelsList && pkg.packageHotelsList.length > 0) {
+    pkg.packageHotelsList.forEach(item => {
+      if (item.customHotel?.name) {
+        hotelNames.push(item.customHotel.name.toUpperCase());
+      } else if (item.hotelId) {
+        const formatted = item.hotelId.replace(/-/g, " ").toUpperCase();
+        hotelNames.push(formatted);
+      }
+    });
+  } else if (pkg.hotelIds && pkg.hotelIds.length > 0) {
+    pkg.hotelIds.forEach(hid => {
+      hotelNames.push(hid.replace(/-/g, " ").toUpperCase());
+    });
+  }
+
+  if (pkg.customHotels && pkg.customHotels.length > 0) {
+    pkg.customHotels.forEach(ch => {
+      if (ch.name && !hotelNames.includes(ch.name.toUpperCase())) {
+        hotelNames.push(ch.name.toUpperCase());
+      }
+    });
+  } else if (pkg.customHotel?.name && !hotelNames.includes(pkg.customHotel.name.toUpperCase())) {
+    hotelNames.push(pkg.customHotel.name.toUpperCase());
+  }
+
+  if (hotelNames.length > 0) {
+    specHotel = hotelNames.join(" • ");
   }
 
   const specDining = "MUSLIM MEALS";
