@@ -1665,16 +1665,149 @@ function escapeMetaAttr(str: string): string {
     .replace(/>/g, "&gt;");
 }
 
-function resolveRequestMeta(req: express.Request) {
+// In-memory cache for Firestore collection data with 2-minute TTL
+const metaCache: Record<string, { timestamp: number; data: any[] }> = {};
+
+function parseFirestoreValue(v: any): any {
+  if (!v) return null;
+  if (v.stringValue !== undefined) return v.stringValue;
+  if (v.integerValue !== undefined) return Number(v.integerValue);
+  if (v.doubleValue !== undefined) return Number(v.doubleValue);
+  if (v.booleanValue !== undefined) return v.booleanValue;
+  if (v.timestampValue !== undefined) return v.timestampValue;
+  if (v.nullValue !== undefined) return null;
+  if (v.arrayValue) {
+    const vals = v.arrayValue.values || [];
+    return vals.map((item: any) => parseFirestoreValue(item)).filter((x: any) => x !== null && x !== undefined);
+  }
+  if (v.mapValue) {
+    const fields = v.mapValue.fields || {};
+    const res: any = {};
+    for (const [k, val] of Object.entries(fields)) {
+      res[k] = parseFirestoreValue(val);
+    }
+    return res;
+  }
+  return null;
+}
+
+async function getFirestoreDocumentMeta(collectionName: string, docId: string): Promise<any> {
+  const cacheKey = `${collectionName}/${docId}`;
+  const now = Date.now();
+  if (metaCache[cacheKey] && now - metaCache[cacheKey].timestamp < 120000) {
+    return metaCache[cacheKey].data[0] || null;
+  }
+  try {
+    const res = await fetch(`https://firestore.googleapis.com/v1/projects/ahlan-cambodia/databases/(default)/documents/${collectionName}/${docId}`, {
+      signal: AbortSignal.timeout(3000)
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (!json.fields) return null;
+    const item: any = {};
+    for (const [k, v] of Object.entries(json.fields)) {
+      item[k] = parseFirestoreValue(v);
+    }
+    item.id = docId;
+    metaCache[cacheKey] = { timestamp: now, data: [item] };
+    return item;
+  } catch (err) {
+    return null;
+  }
+}
+
+async function getFirestoreCollectionMeta(collectionName: string): Promise<any[]> {
+  const now = Date.now();
+  if (metaCache[collectionName] && now - metaCache[collectionName].timestamp < 120000) {
+    return metaCache[collectionName].data;
+  }
+  try {
+    const res = await fetch(`https://firestore.googleapis.com/v1/projects/ahlan-cambodia/databases/(default)/documents/${collectionName}?pageSize=100`, {
+      signal: AbortSignal.timeout(3000)
+    });
+    if (!res.ok) return metaCache[collectionName]?.data || [];
+    const json = await res.json();
+    const docs = json.documents || [];
+    const parsed = docs.map((d: any) => {
+      const fields = d.fields || {};
+      const item: any = {};
+      for (const [k, v] of Object.entries(fields)) {
+        item[k] = parseFirestoreValue(v);
+      }
+      const pathParts = (d.name || "").split("/");
+      item.id = pathParts[pathParts.length - 1];
+      return item;
+    });
+    metaCache[collectionName] = { timestamp: now, data: parsed };
+    return parsed;
+  } catch (err) {
+    return metaCache[collectionName]?.data || [];
+  }
+}
+
+function getItemHeroImage(item: any): string | null {
+  if (!item) return null;
+  const candidateKeys = ["image", "heroImage", "coverImage", "photo", "imageUrl", "heroImageUrl", "bannerImage"];
+  for (const key of candidateKeys) {
+    if (typeof item[key] === "string" && item[key].trim().length > 0) {
+      return item[key].trim();
+    }
+  }
+  const arrayKeys = ["heroImages", "photoUrls", "images", "photos", "gallery"];
+  for (const key of arrayKeys) {
+    if (Array.isArray(item[key]) && item[key].length > 0) {
+      const first = item[key][0];
+      if (typeof first === "string" && first.trim().length > 0) {
+        return first.trim();
+      }
+    }
+  }
+  return null;
+}
+
+async function getSiteDefaultHeroImage(): Promise<string> {
+  const homepageSettings = await getFirestoreDocumentMeta("settings", "homepage");
+  if (homepageSettings) {
+    const img = getItemHeroImage(homepageSettings);
+    if (img) return img;
+  }
+
+  const generalConfig = await getFirestoreDocumentMeta("settings", "general");
+  if (generalConfig) {
+    if (typeof generalConfig.websiteLogo === "string" && generalConfig.websiteLogo.trim()) return generalConfig.websiteLogo.trim();
+    if (typeof generalConfig.footerLogo === "string" && generalConfig.footerLogo.trim()) return generalConfig.footerLogo.trim();
+  }
+
+  const collectionsToTry = ["packages", "destinations", "experiences", "hotels", "restaurants", "mosques", "travel_guides"];
+  for (const col of collectionsToTry) {
+    const items = await getFirestoreCollectionMeta(col);
+    if (items && items.length > 0) {
+      for (const it of items) {
+        const img = getItemHeroImage(it);
+        if (img) return img;
+      }
+    }
+  }
+
+  return "";
+}
+
+async function resolveRequestMeta(req: express.Request) {
   const protocol = req.headers["x-forwarded-proto"] || req.protocol || "https";
   const host = req.headers.host || "ahlancambodia.com";
   const rawUrl = req.originalUrl || req.url || "/";
   const fullUrl = `${protocol}://${host}${rawUrl}`;
 
+  const siteDefaultImage = await getSiteDefaultHeroImage();
+
+  const homepageSettings = await getFirestoreDocumentMeta("settings", "homepage");
+  const homeTitle = homepageSettings?.heroTitle ? `${homepageSettings.heroTitle} | Ahlan Cambodia` : "Ahlan Cambodia | Muslim Friendly Travel";
+  const homeDesc = homepageSettings?.heroSubtitle || "Ahlan Cambodia - Your premier gateway to Muslim-friendly travel in Cambodia. Discover authentic experiences, trusted local experts, 100% halal-friendly stays, and bespoke luxury journeys.";
+
   const defaultMeta = {
-    title: "Ahlan Cambodia | Muslim Friendly Travel",
-    description: "Ahlan Cambodia - Your premier gateway to Muslim-friendly travel in Cambodia. Discover authentic experiences, trusted local experts, 100% halal-friendly stays, and bespoke luxury journeys.",
-    image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200",
+    title: homeTitle,
+    description: homeDesc,
+    image: siteDefaultImage,
     url: fullUrl
   };
 
@@ -1683,189 +1816,292 @@ function resolveRequestMeta(req: express.Request) {
   if (parts.length === 0) return defaultMeta;
 
   const first = parts[0].toLowerCase();
-  const slug = parts.length > 1 ? decodeURIComponent(parts[1]).toLowerCase().replace(/-/g, " ").trim() : "";
+  const slugRaw = parts.length > 1 ? decodeURIComponent(parts[1]).toLowerCase().trim() : "";
+  const slugClean = slugRaw.replace(/-/g, " ").trim();
+
+  const normalizeStr = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const toSlug = (s: string) => (s || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+  const matchItem = (items: any[]) => {
+    if (!slugRaw) return null;
+    const normSlug = normalizeStr(slugRaw);
+    const slugifiedTarget = toSlug(slugRaw);
+
+    return items.find((it) => {
+      const title = it.title || it.name || "";
+      const id = it.id || "";
+      const itemSlug = it.slug || "";
+
+      if (id && normalizeStr(id) === normSlug) return true;
+      if (itemSlug && normalizeStr(itemSlug) === normSlug) return true;
+
+      const titleSlug = toSlug(title);
+      if (titleSlug && titleSlug === slugifiedTarget) return true;
+
+      const normTitle = normalizeStr(title);
+      if (normTitle && normSlug && (normTitle === normSlug || normTitle.includes(normSlug) || normSlug.includes(normTitle))) {
+        return true;
+      }
+      return false;
+    });
+  };
+
+  const resolveImage = (item: any, collectionItems: any[]): string => {
+    const itemImg = getItemHeroImage(item);
+    if (itemImg) return itemImg;
+
+    if (collectionItems && collectionItems.length > 0) {
+      for (const colItem of collectionItems) {
+        const colImg = getItemHeroImage(colItem);
+        if (colImg) return colImg;
+      }
+    }
+    return siteDefaultImage;
+  };
 
   if (first === "packages" || first === "package") {
-    if (!slug) {
+    const items = await getFirestoreCollectionMeta("packages");
+    if (!slugRaw) {
       return {
-        ...defaultMeta,
         title: "Halal Tour Packages | Ahlan Cambodia",
         description: "Explore our curated selection of Muslim-friendly luxury tour packages across Siem Reap, Phnom Penh, Koh Rong, and Kampot.",
-        image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200"
+        image: resolveImage(null, items),
+        url: fullUrl
       };
     }
-    const isCham = slug.includes("cham") || slug.includes("heritage");
-    const isFamily = slug.includes("family") || slug.includes("escape");
 
-    let pTitle = slug.replace(/\b\w/g, c => c.toUpperCase()) + " Tour Package | Ahlan Cambodia";
-    let pDesc = "An extraordinary Muslim-friendly tour package in Cambodia featuring luxury accommodations, certified Halal dining, and private transfers.";
-    let pImg = "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200";
-
-    if (isCham) {
-      pTitle = "Sacred Cham Muslim Heritage Journey | Ahlan Cambodia";
-      pDesc = "Immerse in centuries of authentic Cham Muslim history, historic riverfront mosques, floating villages, and community culinary traditions.";
-      pImg = "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=1200";
-    } else if (isFamily) {
-      pTitle = "Halal-Friendly Family Island Escape | Ahlan Cambodia";
-      pDesc = "A serene family getaway featuring private beachfront pool villas, certified Halal dining, and child-friendly coastal activities.";
-      pImg = "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200";
+    const matched = matchItem(items);
+    if (matched) {
+      const pTitle = `${matched.title || matched.name} | Ahlan Cambodia`;
+      const pDesc = matched.shortDescription || matched.description || defaultMeta.description;
+      const pImg = resolveImage(matched, items);
+      return { title: pTitle, description: pDesc, image: pImg, url: fullUrl };
     }
 
-    return { title: pTitle, description: pDesc, image: pImg, url: fullUrl };
+    let pTitle = slugClean.replace(/\b\w/g, c => c.toUpperCase()) + " Tour Package | Ahlan Cambodia";
+    let pDesc = "An extraordinary Muslim-friendly tour package in Cambodia featuring luxury accommodations, certified Halal dining, and private transfers.";
+    return { title: pTitle, description: pDesc, image: resolveImage(null, items), url: fullUrl };
   }
 
   if (first === "hotels" || first === "hotel") {
-    if (!slug) {
+    const items = await getFirestoreCollectionMeta("hotels");
+    if (!slugRaw) {
       return {
-        ...defaultMeta,
         title: "Halal Friendly Hotels & Luxury Resorts | Ahlan Cambodia",
         description: "Discover Cambodia's finest luxury hotels and private villa resorts with pre-marked Qibla directions, private pool suites, and certified Halal dining.",
-        image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200"
+        image: resolveImage(null, items),
+        url: fullUrl
       };
     }
-    const hName = slug.replace(/\b\w/g, c => c.toUpperCase());
+
+    const matched = matchItem(items);
+    if (matched) {
+      const hTitle = `${matched.name || matched.title} - Halal Friendly Luxury Stay | Ahlan Cambodia`;
+      const hDesc = matched.editorialDescription || matched.description || defaultMeta.description;
+      const hImg = resolveImage(matched, items);
+      return { title: hTitle, description: hDesc, image: hImg, url: fullUrl };
+    }
+
+    const hName = slugClean.replace(/\b\w/g, c => c.toUpperCase());
     return {
       title: `${hName} - Halal Friendly Luxury Stay | Ahlan Cambodia`,
       description: `Stay at ${hName} in Cambodia. 5-Star luxury accommodation featuring pre-marked Qibla directions, certified Halal dining, and private pool suites.`,
-      image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+      image: resolveImage(null, items),
       url: fullUrl
     };
   }
 
   if (first === "dining" || first === "restaurants" || first === "restaurant") {
-    if (!slug) {
+    const items = await getFirestoreCollectionMeta("restaurants");
+    if (!slugRaw) {
       return {
-        ...defaultMeta,
         title: "Verified Halal Dining & Culinary Guide | Ahlan Cambodia",
         description: "Savor authentic Khmer Halal cuisine, Cham traditional seafood, and certified fine dining options in Phnom Penh and Siem Reap.",
-        image: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=1200"
+        image: resolveImage(null, items),
+        url: fullUrl
       };
     }
-    const rName = slug.replace(/\b\w/g, c => c.toUpperCase());
+
+    const matched = matchItem(items);
+    if (matched) {
+      const rTitle = `${matched.name || matched.title} - Verified Halal Dining | Ahlan Cambodia`;
+      const rDesc = matched.description || defaultMeta.description;
+      const rImg = resolveImage(matched, items);
+      return { title: rTitle, description: rDesc, image: rImg, url: fullUrl };
+    }
+
+    const rName = slugClean.replace(/\b\w/g, c => c.toUpperCase());
     return {
       title: `${rName} - Verified Halal Dining | Ahlan Cambodia`,
       description: `Enjoy delicious verified Halal cuisine at ${rName} in Cambodia. Authentic Khmer delicacies, Cham seafood, and dedicated Muslim-friendly kitchens.`,
-      image: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=1200",
+      image: resolveImage(null, items),
       url: fullUrl
     };
   }
 
   if (first === "experiences" || first === "experience") {
-    if (!slug) {
+    const items = await getFirestoreCollectionMeta("experiences");
+    if (!slugRaw) {
       return {
-        ...defaultMeta,
         title: "Curated Halal Experiences & Excursions | Ahlan Cambodia",
         description: "Bespoke Muslim-friendly tours, private VIP temple viewings, floating village cruises, and hands-on culinary masterclasses in Cambodia.",
-        image: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&q=80&w=1200"
+        image: resolveImage(null, items),
+        url: fullUrl
       };
     }
-    const eName = slug.replace(/\b\w/g, c => c.toUpperCase());
+
+    const matched = matchItem(items);
+    if (matched) {
+      const eTitle = `${matched.name || matched.title} | Ahlan Cambodia`;
+      const eDesc = matched.description || defaultMeta.description;
+      const eImg = resolveImage(matched, items);
+      return { title: eTitle, description: eDesc, image: eImg, url: fullUrl };
+    }
+
+    const eName = slugClean.replace(/\b\w/g, c => c.toUpperCase());
     return {
       title: `${eName} | Ahlan Cambodia`,
       description: `Experience ${eName} with Ahlan Cambodia. Private VIP arrangements, expert local guides, and 100% Halal-friendly itineraries.`,
-      image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200",
+      image: resolveImage(null, items),
       url: fullUrl
     };
   }
 
   if (first === "destination" || first === "destinations") {
-    if (!slug) {
+    const items = await getFirestoreCollectionMeta("destinations");
+    if (!slugRaw) {
       return {
-        ...defaultMeta,
         title: "Cambodia Travel Destinations | Ahlan Cambodia",
         description: "Explore Cambodia's premier destinations: Siem Reap, Phnom Penh, Koh Rong islands, Kampot, and Kep with full Halal travel infrastructure.",
-        image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200"
+        image: resolveImage(null, items),
+        url: fullUrl
       };
     }
-    const dName = slug.replace(/\b\w/g, c => c.toUpperCase());
+
+    const matched = matchItem(items);
+    if (matched) {
+      const dTitle = `${matched.name || matched.title} Halal Travel Guide | Ahlan Cambodia`;
+      const dDesc = matched.description || defaultMeta.description;
+      const dImg = resolveImage(matched, items);
+      return { title: dTitle, description: dDesc, image: dImg, url: fullUrl };
+    }
+
+    const dName = slugClean.replace(/\b\w/g, c => c.toUpperCase());
     return {
       title: `${dName} Halal Travel Guide | Ahlan Cambodia`,
       description: `Complete Muslim-friendly guide to ${dName}, Cambodia. Discover heritage sights, local mosques, Halal restaurants, and luxury stays.`,
-      image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200",
+      image: resolveImage(null, items),
       url: fullUrl
     };
   }
 
   if (first === "mosques" || first === "mosque") {
-    const mName = slug ? slug.replace(/\b\w/g, c => c.toUpperCase()) : "Mosques & Prayer Spaces";
+    const items = await getFirestoreCollectionMeta("mosques");
+    if (slugRaw) {
+      const matched = matchItem(items);
+      if (matched) {
+        return {
+          title: `${matched.name || matched.title} | Ahlan Cambodia`,
+          description: matched.description || "Find local mosques, historic prayer halls, and Jumu'ah prayer times in Cambodia.",
+          image: resolveImage(matched, items),
+          url: fullUrl
+        };
+      }
+    }
+    const mName = slugClean ? slugClean.replace(/\b\w/g, c => c.toUpperCase()) : "Mosques & Prayer Spaces";
     return {
       title: `${mName} | Ahlan Cambodia`,
       description: "Find local mosques, historic prayer halls, and Jumu'ah prayer times across Phnom Penh, Siem Reap, and Cham Muslim villages.",
-      image: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=1200",
+      image: resolveImage(null, items),
       url: fullUrl
     };
   }
 
   if (first === "inspiration" || first === "blog") {
-    const gName = slug ? slug.replace(/\b\w/g, c => c.toUpperCase()) : "Travel Inspiration & Guides";
+    const items = await getFirestoreCollectionMeta("travel_guides");
+    if (slugRaw) {
+      const matched = matchItem(items);
+      if (matched) {
+        return {
+          title: `${matched.title || matched.name} | Ahlan Cambodia`,
+          description: matched.excerpt || matched.description || "Insider tips, itineraries, and cultural guides for Muslim travelers exploring Cambodia.",
+          image: resolveImage(matched, items),
+          url: fullUrl
+        };
+      }
+    }
+    const gName = slugClean ? slugClean.replace(/\b\w/g, c => c.toUpperCase()) : "Travel Inspiration & Guides";
     return {
       title: `${gName} | Ahlan Cambodia`,
       description: "Insider tips, itineraries, and cultural guides for Muslim travelers exploring Cambodia.",
-      image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200",
+      image: resolveImage(null, items),
       url: fullUrl
     };
+  }
+
+  if (first === "enquiry" || first === "inquiry" || first === "package-inquiry") {
+    const items = await getFirestoreCollectionMeta("packages");
+    const matched = matchItem(items);
+    if (matched) {
+      return {
+        title: `Package Inquiry: ${matched.title || matched.name} | Ahlan Cambodia`,
+        description: matched.shortDescription || matched.description || defaultMeta.description,
+        image: resolveImage(matched, items),
+        url: fullUrl
+      };
+    }
   }
 
   return defaultMeta;
 }
 
-function injectMetaTags(htmlTemplate: string, req: express.Request): string {
-  const meta = resolveRequestMeta(req);
+function injectMetaTags(htmlTemplate: string, meta: { title: string; description: string; image: string; url: string }): string {
   const cleanTitle = escapeMetaAttr(meta.title);
-  const cleanDesc = escapeMetaAttr(meta.description.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200));
+  const cleanDesc = escapeMetaAttr((meta.description || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200));
   const fullUrl = meta.url;
   let fullImg = meta.image;
 
-  if (fullImg.startsWith("/")) {
-    const protocol = req.headers["x-forwarded-proto"] || req.protocol || "https";
-    const host = req.headers.host || "ahlancambodia.com";
-    fullImg = `${protocol}://${host}${fullImg}`;
+  if (!fullImg || fullImg.includes("undefined") || fullImg.includes("null")) {
+    fullImg = "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200";
   }
 
-  let html = htmlTemplate;
-
-  if (/<title>.*?<\/title>/i.test(html)) {
-    html = html.replace(/<title>.*?<\/title>/i, `<title>${cleanTitle}</title>`);
+  if (fullImg.startsWith("//")) {
+    fullImg = "https:" + fullImg;
+  } else if (fullImg.startsWith("/")) {
+    fullImg = `https://ahlancambodia.com${fullImg}`;
   }
 
-  const tags: Record<string, string> = {
-    'description': cleanDesc,
-    'og:title': cleanTitle,
-    'og:description': cleanDesc,
-    'og:image': fullImg,
-    'og:image:secure_url': fullImg,
-    'og:image:width': '1200',
-    'og:image:height': '630',
-    'og:image:type': 'image/jpeg',
-    'og:url': fullUrl,
-    'og:type': 'website',
-    'og:site_name': 'Ahlan Cambodia',
-    'twitter:card': 'summary_large_image',
-    'twitter:site': '@ahlancambodia',
-    'twitter:title': cleanTitle,
-    'twitter:description': cleanDesc,
-    'twitter:image': fullImg,
-  };
+  // Completely strip out existing title, description, og:*, and twitter:* tags
+  let html = htmlTemplate
+    .replace(/<title>.*?<\/title>/gi, "")
+    .replace(/<meta\s+(name|property)=["'](description|og:.*?|twitter:.*?)["'].*?>/gi, "");
 
-  for (const [key, val] of Object.entries(tags)) {
-    const isOg = key.startsWith("og:");
-    const isTwitter = key.startsWith("twitter:");
-    const attrKey = (isOg || isTwitter) ? "property" : "name";
-    const escKey = key.replace(":", "\\:");
-    
-    const tagRegex = new RegExp(`<meta\\s+${attrKey}=["']${escKey}["'].*?>`, "gi");
-    const replacement = isOg
-      ? `<meta property="${key}" content="${val}" />`
-      : `<meta name="${key}" content="${val}" />`;
+  const metaBlock = `
+    <title>${cleanTitle}</title>
+    <meta name="description" content="${cleanDesc}" />
 
-    if (tagRegex.test(html)) {
-      html = html.replace(tagRegex, replacement);
-    } else {
-      html = html.replace("</head>", `  ${replacement}\n</head>`);
-    }
-  }
+    <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Ahlan Cambodia" />
+    <meta property="og:title" content="${cleanTitle}" />
+    <meta property="og:description" content="${cleanDesc}" />
+    <meta property="og:image" content="${fullImg}" />
+    <meta property="og:image:secure_url" content="${fullImg}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:alt" content="${cleanTitle}" />
+    <meta property="og:url" content="${fullUrl}" />
 
-  return html;
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@ahlancambodia" />
+    <meta name="twitter:title" content="${cleanTitle}" />
+    <meta name="twitter:description" content="${cleanDesc}" />
+    <meta name="twitter:image" content="${fullImg}" />
+  `;
+
+  return html.replace("</head>", `${metaBlock}\n</head>`);
 }
 
 // Configure Vite integration or static file serving
@@ -1884,7 +2120,8 @@ async function setupViteAndListen() {
           const indexHtmlPath = path.join(process.cwd(), "index.html");
           let html = fs.readFileSync(indexHtmlPath, "utf-8");
           html = await vite.transformIndexHtml(req.originalUrl, html);
-          html = injectMetaTags(html, req);
+          const meta = await resolveRequestMeta(req);
+          html = injectMetaTags(html, meta);
           return res.status(200).set({ "Content-Type": "text/html" }).end(html);
         } catch (e) {
           return next(e);
@@ -1900,11 +2137,12 @@ async function setupViteAndListen() {
 
     app.use(express.static(distPath, { index: false }));
 
-    app.get('*', (req, res) => {
+    app.get('*', async (req, res) => {
       try {
         const fs = require('fs');
         let html = fs.readFileSync(indexHtmlPath, 'utf-8');
-        html = injectMetaTags(html, req);
+        const meta = await resolveRequestMeta(req);
+        html = injectMetaTags(html, meta);
         return res.status(200).set({ 'Content-Type': 'text/html' }).send(html);
       } catch (err) {
         return res.sendFile(indexHtmlPath);
