@@ -1623,9 +1623,12 @@ export default function DestinationDetailPage({
             {/* Left Column: Video Simulated Viewport (Spans 6 cols) */}
             <div className="md:col-span-6 bg-black relative flex flex-col justify-center overflow-hidden h-64 md:h-full group">
               <img
-                src={selectedSocialCard.thumbnail}
+                src={selectedSocialCard.thumbnailUrl || selectedSocialCard.thumbnail || destination.image}
                 alt="Video Frame"
                 className="w-full h-full object-cover opacity-90 scale-105"
+                onError={(e) => {
+                  e.currentTarget.src = destination.image;
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 

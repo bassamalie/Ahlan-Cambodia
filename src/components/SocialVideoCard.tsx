@@ -8,6 +8,7 @@ export interface SocialVideo {
   url: string;
   title?: string;
   thumbnailUrl?: string;
+  thumbnail?: string;
   creatorName?: string;
   creatorHandle?: string;
   creatorAvatar?: string;
@@ -30,7 +31,7 @@ export function getAutoThumbnail(url: string): string | null {
   const trimmed = url.trim();
 
   // 1. Check if the URL is actually a direct image
-  if (/\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(trimmed) || trimmed.includes("images.unsplash.com")) {
+  if (/\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(trimmed) || trimmed.includes("images.unsplash.com") || trimmed.includes("firebasestorage.googleapis.com")) {
     return trimmed;
   }
 
@@ -84,10 +85,13 @@ export function SocialVideoCard({ video, fallbackName, restaurantName, restauran
   const [avatarSrc, setAvatarSrc] = useState<string>("");
   const [avatarErrorCount, setAvatarErrorCount] = useState<number>(0);
 
+  const userExplicitThumb = (video.thumbnailUrl && video.thumbnailUrl.trim()) ? video.thumbnailUrl.trim() : (video.thumbnail && video.thumbnail.trim() ? video.thumbnail.trim() : null);
+
   useEffect(() => {
     const staticThumb = getAutoThumbnail(video.url);
-    if (video.thumbnailUrl && video.thumbnailUrl.trim()) {
-      let thumb = video.thumbnailUrl.trim();
+
+    if (userExplicitThumb) {
+      let thumb = userExplicitThumb;
       if (thumb.includes("tiktokcdn.com") || thumb.includes("byteoversea.com") || thumb.includes("cdninstagram.com")) {
         thumb = `/api/proxy-image?url=${encodeURIComponent(thumb)}`;
       }
@@ -105,7 +109,8 @@ export function SocialVideoCard({ video, fallbackName, restaurantName, restauran
         .then(res => res.json())
         .then(data => {
           if (data) {
-            if (data.thumbnailUrl) {
+            // ONLY update thumbnail if user DID NOT manually provide a custom cover image!
+            if (!userExplicitThumb && data.thumbnailUrl) {
               let thumb = data.thumbnailUrl;
               if (thumb.includes("tiktokcdn.com") || thumb.includes("byteoversea.com") || thumb.includes("cdninstagram.com")) {
                 thumb = `/api/proxy-image?url=${encodeURIComponent(thumb)}`;
@@ -117,7 +122,7 @@ export function SocialVideoCard({ video, fallbackName, restaurantName, restauran
         })
         .catch(() => {/* Fallback to static props */});
     }
-  }, [video.url, video.thumbnailUrl, restaurantImage]);
+  }, [video.url, userExplicitThumb, restaurantImage]);
 
   const isTikTok = video.platform === "tiktok";
   const isInsta = video.platform === "instagram";

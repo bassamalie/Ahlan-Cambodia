@@ -1138,16 +1138,17 @@ export default function AdminCMS({
       if (data.success) {
         setDiningSocialVideos(prev => {
           const copy = [...prev];
+          const existingThumb = copy[index]?.thumbnailUrl;
           copy[index] = {
             ...copy[index],
             platform: data.platform || "tiktok",
             url: data.url || item.url.trim(),
-            title: data.title || "",
-            thumbnailUrl: data.thumbnailUrl || "",
-            creatorName: data.creatorName || "",
-            creatorHandle: data.creatorHandle || "",
-            creatorAvatar: data.creatorAvatar || "",
-            duration: data.duration || "0:45",
+            title: data.title || copy[index]?.title || "",
+            thumbnailUrl: (data.thumbnailUrl && data.thumbnailUrl.trim()) ? data.thumbnailUrl : (existingThumb || ""),
+            creatorName: data.creatorName || copy[index]?.creatorName || "",
+            creatorHandle: data.creatorHandle || copy[index]?.creatorHandle || "",
+            creatorAvatar: data.creatorAvatar || copy[index]?.creatorAvatar || "",
+            duration: data.duration || copy[index]?.duration || "0:45",
             isFetching: false,
             fetchError: null,
             fetchSuccess: true
@@ -8217,6 +8218,7 @@ export default function AdminCMS({
                                         }}
                                         fallbackName={diningName || "Restaurant"}
                                         restaurantName={diningName || "Restaurant"}
+                                        restaurantImage={diningImages && diningImages.length > 0 ? diningImages[0] : ""}
                                       />
                                     </div>
                                   </div>
