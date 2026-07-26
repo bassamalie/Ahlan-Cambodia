@@ -1656,6 +1656,218 @@ app.get("/api/google-places/hotel-details", async (req, res) => {
   }
 });
 
+function escapeMetaAttr(str: string): string {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function resolveRequestMeta(req: express.Request) {
+  const protocol = req.headers["x-forwarded-proto"] || req.protocol || "https";
+  const host = req.headers.host || "ahlancambodia.com";
+  const rawUrl = req.originalUrl || req.url || "/";
+  const fullUrl = `${protocol}://${host}${rawUrl}`;
+
+  const defaultMeta = {
+    title: "Ahlan Cambodia | Muslim Friendly Travel",
+    description: "Ahlan Cambodia - Your premier gateway to Muslim-friendly travel in Cambodia. Discover authentic experiences, trusted local experts, 100% halal-friendly stays, and bespoke luxury journeys.",
+    image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200",
+    url: fullUrl
+  };
+
+  const urlPath = req.path || "/";
+  const parts = urlPath.split("/").filter(Boolean);
+  if (parts.length === 0) return defaultMeta;
+
+  const first = parts[0].toLowerCase();
+  const slug = parts.length > 1 ? decodeURIComponent(parts[1]).toLowerCase().replace(/-/g, " ").trim() : "";
+
+  if (first === "packages" || first === "package") {
+    if (!slug) {
+      return {
+        ...defaultMeta,
+        title: "Halal Tour Packages | Ahlan Cambodia",
+        description: "Explore our curated selection of Muslim-friendly luxury tour packages across Siem Reap, Phnom Penh, Koh Rong, and Kampot.",
+        image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200"
+      };
+    }
+    const isCham = slug.includes("cham") || slug.includes("heritage");
+    const isFamily = slug.includes("family") || slug.includes("escape");
+
+    let pTitle = slug.replace(/\b\w/g, c => c.toUpperCase()) + " Tour Package | Ahlan Cambodia";
+    let pDesc = "An extraordinary Muslim-friendly tour package in Cambodia featuring luxury accommodations, certified Halal dining, and private transfers.";
+    let pImg = "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200";
+
+    if (isCham) {
+      pTitle = "Sacred Cham Muslim Heritage Journey | Ahlan Cambodia";
+      pDesc = "Immerse in centuries of authentic Cham Muslim history, historic riverfront mosques, floating villages, and community culinary traditions.";
+      pImg = "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=1200";
+    } else if (isFamily) {
+      pTitle = "Halal-Friendly Family Island Escape | Ahlan Cambodia";
+      pDesc = "A serene family getaway featuring private beachfront pool villas, certified Halal dining, and child-friendly coastal activities.";
+      pImg = "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200";
+    }
+
+    return { title: pTitle, description: pDesc, image: pImg, url: fullUrl };
+  }
+
+  if (first === "hotels" || first === "hotel") {
+    if (!slug) {
+      return {
+        ...defaultMeta,
+        title: "Halal Friendly Hotels & Luxury Resorts | Ahlan Cambodia",
+        description: "Discover Cambodia's finest luxury hotels and private villa resorts with pre-marked Qibla directions, private pool suites, and certified Halal dining.",
+        image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200"
+      };
+    }
+    const hName = slug.replace(/\b\w/g, c => c.toUpperCase());
+    return {
+      title: `${hName} - Halal Friendly Luxury Stay | Ahlan Cambodia`,
+      description: `Stay at ${hName} in Cambodia. 5-Star luxury accommodation featuring pre-marked Qibla directions, certified Halal dining, and private pool suites.`,
+      image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+      url: fullUrl
+    };
+  }
+
+  if (first === "dining" || first === "restaurants" || first === "restaurant") {
+    if (!slug) {
+      return {
+        ...defaultMeta,
+        title: "Verified Halal Dining & Culinary Guide | Ahlan Cambodia",
+        description: "Savor authentic Khmer Halal cuisine, Cham traditional seafood, and certified fine dining options in Phnom Penh and Siem Reap.",
+        image: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=1200"
+      };
+    }
+    const rName = slug.replace(/\b\w/g, c => c.toUpperCase());
+    return {
+      title: `${rName} - Verified Halal Dining | Ahlan Cambodia`,
+      description: `Enjoy delicious verified Halal cuisine at ${rName} in Cambodia. Authentic Khmer delicacies, Cham seafood, and dedicated Muslim-friendly kitchens.`,
+      image: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=1200",
+      url: fullUrl
+    };
+  }
+
+  if (first === "experiences" || first === "experience") {
+    if (!slug) {
+      return {
+        ...defaultMeta,
+        title: "Curated Halal Experiences & Excursions | Ahlan Cambodia",
+        description: "Bespoke Muslim-friendly tours, private VIP temple viewings, floating village cruises, and hands-on culinary masterclasses in Cambodia.",
+        image: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&q=80&w=1200"
+      };
+    }
+    const eName = slug.replace(/\b\w/g, c => c.toUpperCase());
+    return {
+      title: `${eName} | Ahlan Cambodia`,
+      description: `Experience ${eName} with Ahlan Cambodia. Private VIP arrangements, expert local guides, and 100% Halal-friendly itineraries.`,
+      image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200",
+      url: fullUrl
+    };
+  }
+
+  if (first === "destination" || first === "destinations") {
+    if (!slug) {
+      return {
+        ...defaultMeta,
+        title: "Cambodia Travel Destinations | Ahlan Cambodia",
+        description: "Explore Cambodia's premier destinations: Siem Reap, Phnom Penh, Koh Rong islands, Kampot, and Kep with full Halal travel infrastructure.",
+        image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200"
+      };
+    }
+    const dName = slug.replace(/\b\w/g, c => c.toUpperCase());
+    return {
+      title: `${dName} Halal Travel Guide | Ahlan Cambodia`,
+      description: `Complete Muslim-friendly guide to ${dName}, Cambodia. Discover heritage sights, local mosques, Halal restaurants, and luxury stays.`,
+      image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200",
+      url: fullUrl
+    };
+  }
+
+  if (first === "mosques" || first === "mosque") {
+    const mName = slug ? slug.replace(/\b\w/g, c => c.toUpperCase()) : "Mosques & Prayer Spaces";
+    return {
+      title: `${mName} | Ahlan Cambodia`,
+      description: "Find local mosques, historic prayer halls, and Jumu'ah prayer times across Phnom Penh, Siem Reap, and Cham Muslim villages.",
+      image: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=1200",
+      url: fullUrl
+    };
+  }
+
+  if (first === "inspiration" || first === "blog") {
+    const gName = slug ? slug.replace(/\b\w/g, c => c.toUpperCase()) : "Travel Inspiration & Guides";
+    return {
+      title: `${gName} | Ahlan Cambodia`,
+      description: "Insider tips, itineraries, and cultural guides for Muslim travelers exploring Cambodia.",
+      image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200",
+      url: fullUrl
+    };
+  }
+
+  return defaultMeta;
+}
+
+function injectMetaTags(htmlTemplate: string, req: express.Request): string {
+  const meta = resolveRequestMeta(req);
+  const cleanTitle = escapeMetaAttr(meta.title);
+  const cleanDesc = escapeMetaAttr(meta.description.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200));
+  const fullUrl = meta.url;
+  let fullImg = meta.image;
+
+  if (fullImg.startsWith("/")) {
+    const protocol = req.headers["x-forwarded-proto"] || req.protocol || "https";
+    const host = req.headers.host || "ahlancambodia.com";
+    fullImg = `${protocol}://${host}${fullImg}`;
+  }
+
+  let html = htmlTemplate;
+
+  if (/<title>.*?<\/title>/i.test(html)) {
+    html = html.replace(/<title>.*?<\/title>/i, `<title>${cleanTitle}</title>`);
+  }
+
+  const tags: Record<string, string> = {
+    'description': cleanDesc,
+    'og:title': cleanTitle,
+    'og:description': cleanDesc,
+    'og:image': fullImg,
+    'og:image:secure_url': fullImg,
+    'og:image:width': '1200',
+    'og:image:height': '630',
+    'og:image:type': 'image/jpeg',
+    'og:url': fullUrl,
+    'og:type': 'website',
+    'og:site_name': 'Ahlan Cambodia',
+    'twitter:card': 'summary_large_image',
+    'twitter:site': '@ahlancambodia',
+    'twitter:title': cleanTitle,
+    'twitter:description': cleanDesc,
+    'twitter:image': fullImg,
+  };
+
+  for (const [key, val] of Object.entries(tags)) {
+    const isOg = key.startsWith("og:");
+    const isTwitter = key.startsWith("twitter:");
+    const attrKey = (isOg || isTwitter) ? "property" : "name";
+    const escKey = key.replace(":", "\\:");
+    
+    const tagRegex = new RegExp(`<meta\\s+${attrKey}=["']${escKey}["'].*?>`, "gi");
+    const replacement = isOg
+      ? `<meta property="${key}" content="${val}" />`
+      : `<meta name="${key}" content="${val}" />`;
+
+    if (tagRegex.test(html)) {
+      html = html.replace(tagRegex, replacement);
+    } else {
+      html = html.replace("</head>", `  ${replacement}\n</head>`);
+    }
+  }
+
+  return html;
+}
+
 // Configure Vite integration or static file serving
 async function setupViteAndListen() {
   if (process.env.NODE_ENV !== "production") {
@@ -1663,12 +1875,40 @@ async function setupViteAndListen() {
       server: { middlewareMode: true },
       appType: "spa",
     });
+
+    // Intercept HTML requests in dev mode to inject dynamic meta tags
+    app.use(async (req, res, next) => {
+      if (req.method === "GET" && !req.path.startsWith("/api") && !req.path.includes(".")) {
+        try {
+          const fs = await import("fs");
+          const indexHtmlPath = path.join(process.cwd(), "index.html");
+          let html = fs.readFileSync(indexHtmlPath, "utf-8");
+          html = await vite.transformIndexHtml(req.originalUrl, html);
+          html = injectMetaTags(html, req);
+          return res.status(200).set({ "Content-Type": "text/html" }).end(html);
+        } catch (e) {
+          return next(e);
+        }
+      }
+      next();
+    });
+
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    const indexHtmlPath = path.join(distPath, 'index.html');
+
+    app.use(express.static(distPath, { index: false }));
+
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      try {
+        const fs = require('fs');
+        let html = fs.readFileSync(indexHtmlPath, 'utf-8');
+        html = injectMetaTags(html, req);
+        return res.status(200).set({ 'Content-Type': 'text/html' }).send(html);
+      } catch (err) {
+        return res.sendFile(indexHtmlPath);
+      }
     });
   }
 

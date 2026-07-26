@@ -841,42 +841,109 @@ export default function App() {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, [currentView, activeDestination, activeExperience, activePackage, activeHotel, activeRestaurant, activeMosque, activeGuide]);
 
-  // Dynamic Document Title Sync
+  // Dynamic Meta Tags & Document Title Sync (Client-Side)
   useEffect(() => {
     let pageTitle = "Muslim Friendly Travel";
+    let pageDescription = "Ahlan Cambodia - Your premier gateway to Muslim-friendly travel in Cambodia. Discover authentic experiences, trusted local experts, 100% halal-friendly stays, and bespoke luxury journeys.";
+    let pageImage = "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200";
+
     if (currentView === "destinations") {
       pageTitle = "Destinations";
+      pageDescription = "Explore Cambodia's premier destinations: Siem Reap, Phnom Penh, Koh Rong islands, Kampot, and Kep with full Halal travel infrastructure.";
+      pageImage = "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200";
     } else if (currentView === "destination-detail" && activeDestination) {
-      pageTitle = activeDestination.name;
+      pageTitle = `${activeDestination.name} Halal Travel Guide`;
+      pageDescription = activeDestination.description || pageDescription;
+      pageImage = activeDestination.image || pageImage;
     } else if (currentView === "experiences") {
       pageTitle = "Curated Experiences";
+      pageDescription = "Bespoke Muslim-friendly tours, private VIP temple viewings, floating village cruises, and hands-on culinary masterclasses in Cambodia.";
+      pageImage = "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&q=80&w=1200";
     } else if (currentView === "experience-detail" && activeExperience) {
       pageTitle = activeExperience.title || activeExperience.name || "Experience";
+      pageDescription = activeExperience.description || pageDescription;
+      pageImage = activeExperience.image || pageImage;
     } else if (currentView === "packages") {
       pageTitle = "Tour Packages";
+      pageDescription = "Explore our curated selection of Muslim-friendly luxury tour packages across Siem Reap, Phnom Penh, Koh Rong, and Kampot.";
+      pageImage = "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200";
     } else if (currentView === "package-detail" && activePackage) {
       pageTitle = activePackage.title || activePackage.name || "Tour Package";
+      pageDescription = activePackage.shortDescription || activePackage.description || pageDescription;
+      pageImage = activePackage.image || pageImage;
     } else if (currentView === "hotels") {
       pageTitle = "Halal-Friendly Luxury Hotels";
+      pageDescription = "Discover Cambodia's finest luxury hotels and private villa resorts with pre-marked Qibla directions, private pool suites, and certified Halal dining.";
+      pageImage = "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200";
     } else if (currentView === "hotel-detail" && activeHotel) {
-      pageTitle = activeHotel.name;
+      pageTitle = `${activeHotel.name} - Halal Friendly Luxury Stay`;
+      pageDescription = activeHotel.editorialDescription || activeHotel.description || pageDescription;
+      pageImage = activeHotel.photoUrls?.[0] || activeHotel.image || pageImage;
     } else if (currentView === "restaurants") {
       pageTitle = "Halal Dining & Restaurants";
+      pageDescription = "Savor authentic Khmer Halal cuisine, Cham traditional seafood, and certified fine dining options in Phnom Penh and Siem Reap.";
+      pageImage = "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=1200";
     } else if (currentView === "dining-detail" && activeRestaurant) {
-      pageTitle = activeRestaurant.name;
+      pageTitle = `${activeRestaurant.name} - Verified Halal Dining`;
+      pageDescription = activeRestaurant.description || pageDescription;
+      pageImage = activeRestaurant.photoUrls?.[0] || activeRestaurant.image || pageImage;
     } else if (currentView === "mosques") {
       pageTitle = "Mosques & Prayer Spaces";
+      pageDescription = "Find local mosques, historic prayer halls, and Jumu'ah prayer times across Phnom Penh, Siem Reap, and Cham Muslim villages.";
+      pageImage = "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=1200";
     } else if (currentView === "mosque-detail" && activeMosque) {
       pageTitle = activeMosque.name;
+      pageDescription = activeMosque.description || pageDescription;
+      pageImage = activeMosque.image || pageImage;
     } else if (currentView === "inspiration") {
       pageTitle = "Inspiration & Travel Guides";
+      pageDescription = "Insider tips, itineraries, and cultural guides for Muslim travelers exploring Cambodia.";
+      pageImage = "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200";
     } else if (currentView === "blog-detail" && activeGuide) {
       pageTitle = activeGuide.title;
+      pageDescription = activeGuide.excerpt || activeGuide.description || pageDescription;
+      pageImage = activeGuide.image || pageImage;
     } else if (currentView === "admin-cms") {
       pageTitle = "Admin Login";
     }
 
-    document.title = `Ahlan Cambodia | ${pageTitle}`;
+    const fullTitle = `Ahlan Cambodia | ${pageTitle}`;
+    document.title = fullTitle;
+
+    // Helper to sync meta tags in document.head
+    const setHeadMeta = (selector: string, attrName: string, attrVal: string, content: string) => {
+      let el = document.querySelector(selector) as HTMLMetaElement;
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute(attrName, attrVal);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", content);
+    };
+
+    const cleanDesc = pageDescription.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200);
+    const fullUrl = window.location.href;
+    let fullImg = pageImage || "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200";
+    if (fullImg.startsWith("/")) {
+      fullImg = window.location.origin + fullImg;
+    }
+
+    setHeadMeta('meta[name="description"]', 'name', 'description', cleanDesc);
+    setHeadMeta('meta[property="og:title"]', 'property', 'og:title', fullTitle);
+    setHeadMeta('meta[property="og:description"]', 'property', 'og:description', cleanDesc);
+    setHeadMeta('meta[property="og:image"]', 'property', 'og:image', fullImg);
+    setHeadMeta('meta[property="og:image:secure_url"]', 'property', 'og:image:secure_url', fullImg);
+    setHeadMeta('meta[property="og:image:width"]', 'property', 'og:image:width', '1200');
+    setHeadMeta('meta[property="og:image:height"]', 'property', 'og:image:height', '630');
+    setHeadMeta('meta[property="og:url"]', 'property', 'og:url', fullUrl);
+    setHeadMeta('meta[property="og:type"]', 'property', 'og:type', 'website');
+    setHeadMeta('meta[property="og:site_name"]', 'property', 'og:site_name', 'Ahlan Cambodia');
+
+    setHeadMeta('meta[name="twitter:card"]', 'name', 'twitter:card', 'summary_large_image');
+    setHeadMeta('meta[name="twitter:site"]', 'name', 'twitter:site', '@ahlancambodia');
+    setHeadMeta('meta[name="twitter:title"]', 'name', 'twitter:title', fullTitle);
+    setHeadMeta('meta[name="twitter:description"]', 'name', 'twitter:description', cleanDesc);
+    setHeadMeta('meta[name="twitter:image"]', 'name', 'twitter:image', fullImg);
   }, [currentView, activeDestination, activeExperience, activePackage, activeHotel, activeRestaurant, activeMosque, activeGuide]);
 
   const navigateToSection = (sectionId: string) => {
