@@ -204,6 +204,8 @@ export function SocialVideoCard({ video, fallbackName, restaurantName, restauran
             onError={() => {
               if (restaurantImage && resolvedThumb !== restaurantImage) {
                 setResolvedThumb(restaurantImage);
+              } else {
+                setResolvedThumb(null);
               }
             }}
           />

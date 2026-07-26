@@ -8307,7 +8307,7 @@ export default function AdminCMS({
                                         }}
                                         fallbackName={diningName || "Restaurant"}
                                         restaurantName={diningName || "Restaurant"}
-                                        restaurantImage={diningImages && diningImages.length > 0 ? diningImages[0] : ""}
+                                        restaurantImage={diningHeroImage || ""}
                                       />
                                     </div>
                                   </div>
