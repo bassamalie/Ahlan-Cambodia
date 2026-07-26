@@ -319,7 +319,7 @@ const collageImages = [
     location: "Koh Rong Islands"
   },
   {
-    url: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&q=80&w=1200",
+    url: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200",
     title: "Majestic Angkor Sunrise",
     location: "Siem Reap Heritage Site"
   },

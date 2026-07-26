@@ -72,10 +72,10 @@ export default function App() {
 
   // Dynamic Homepage Settings & General Config States
   const defaultHeroImages = [
-    "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&q=80&w=2000",
+    "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=2000",
     "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=2000",
-    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&q=80&w=2000",
-    "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&q=80&w=2000"
+    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=2000",
+    "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&q=80&w=2000"
   ];
 
   const defaultWhyChooseCards = [
@@ -533,43 +533,43 @@ export default function App() {
           if (!dbGuides.some((g) => g.id === item.id)) dbGuides.push(item);
         });
 
-        // Helper to merge local state with Firestore, giving priority to Firestore as source of truth
-        const safeMerge = <T extends { id: string }>(prevItems: T[], fetchedItems: T[]): T[] => {
-          if (!fetchedItems || fetchedItems.length === 0) return prevItems;
-          const map = new Map<string, T>();
-          // 1. Primary source of truth: fetched items from Firestore
-          fetchedItems.forEach((item) => map.set(item.id, item));
-          // 2. Retain any un-persisted items created locally in this session if not yet in Firestore
-          prevItems.forEach((item) => {
-            if (!map.has(item.id)) {
-              map.set(item.id, item);
-            }
-          });
-          return Array.from(map.values());
-        };
+        // Set Firestore source of truth directly to prevent resurrection of deleted items
+        if (dbDestinations.length > 0) {
+          setAllDestinations(dbDestinations);
+          try { localStorage.setItem("ahlan_cache_destinations", JSON.stringify(dbDestinations)); } catch (e) {}
+        }
+        if (dbExperiences.length > 0) {
+          setAllExperiences(dbExperiences);
+          try { localStorage.setItem("ahlan_cache_experiences", JSON.stringify(dbExperiences)); } catch (e) {}
+        }
+        if (dbPackages.length > 0) {
+          setAllPackages(dbPackages);
+          try { localStorage.setItem("ahlan_cache_packages", JSON.stringify(dbPackages)); } catch (e) {}
+        }
+        if (dbHotels.length > 0) {
+          setAllHotels(dbHotels);
+          try { localStorage.setItem("ahlan_cache_hotels", JSON.stringify(dbHotels)); } catch (e) {}
+        }
+        if (dbRestaurants.length > 0) {
+          setAllRestaurants(dbRestaurants);
+          try { localStorage.setItem("ahlan_cache_restaurants", JSON.stringify(dbRestaurants)); } catch (e) {}
+        }
+        if (dbMosques.length > 0) {
+          setAllMosques(dbMosques);
+          try { localStorage.setItem("ahlan_cache_mosques", JSON.stringify(dbMosques)); } catch (e) {}
+        }
+        if (dbGuides.length > 0) {
+          setAllGuides(dbGuides);
+          try { localStorage.setItem("ahlan_cache_travelGuides", JSON.stringify(dbGuides)); } catch (e) {}
+        }
 
-        setAllDestinations((prev) => safeMerge(prev, dbDestinations));
-        setAllExperiences((prev) => safeMerge(prev, dbExperiences));
-        setAllPackages((prev) => safeMerge(prev, dbPackages));
-        setAllHotels((prev) => safeMerge(prev, dbHotels));
-        setAllRestaurants((prev) => safeMerge(prev, dbRestaurants));
-        setAllMosques((prev) => safeMerge(prev, dbMosques));
-        setAllGuides((prev) => safeMerge(prev, dbGuides));
-
-        setHomepageSettings(dbHomepageSettings);
-        setGeneralConfig(dbGeneralConfig);
-
-        // Update localStorage cache with non-empty results
-        try {
-          if (dbDestinations.length > 0) localStorage.setItem("ahlan_cache_destinations", JSON.stringify(dbDestinations));
-          if (dbExperiences.length > 0) localStorage.setItem("ahlan_cache_experiences", JSON.stringify(dbExperiences));
-          if (dbPackages.length > 0) localStorage.setItem("ahlan_cache_packages", JSON.stringify(dbPackages));
-          if (dbHotels.length > 0) localStorage.setItem("ahlan_cache_hotels", JSON.stringify(dbHotels));
-          if (dbRestaurants.length > 0) localStorage.setItem("ahlan_cache_restaurants", JSON.stringify(dbRestaurants));
-          if (dbMosques.length > 0) localStorage.setItem("ahlan_cache_mosques", JSON.stringify(dbMosques));
-          if (dbGuides.length > 0) localStorage.setItem("ahlan_cache_travelGuides", JSON.stringify(dbGuides));
-        } catch (e) {
-          // localStorage full or unavailable
+        if (dbHomepageSettings && dbHomepageSettings.heroImages && dbHomepageSettings.heroImages.length > 0) {
+          setHomepageSettings(dbHomepageSettings);
+          try { localStorage.setItem("ahlan_homepage_settings", JSON.stringify(dbHomepageSettings)); } catch (e) {}
+        }
+        if (dbGeneralConfig) {
+          setGeneralConfig(dbGeneralConfig);
+          try { localStorage.setItem("ahlan_general_config", JSON.stringify(dbGeneralConfig)); } catch (e) {}
         }
 
         isInitialLoadFinishedRef.current = true;
@@ -579,6 +579,35 @@ export default function App() {
     }
     loadAllDBData();
   }, []);
+
+  // Preload primary hero image & top card images instantly into memory
+  useEffect(() => {
+    const heroList = (homepageSettings.heroImages && homepageSettings.heroImages.length > 0)
+      ? homepageSettings.heroImages
+      : defaultHeroImages;
+    if (heroList && heroList[0]) {
+      const img = new Image();
+      img.src = heroList[0];
+    }
+    allDestinations.slice(0, 4).forEach((d) => {
+      if (d.image) {
+        const img = new Image();
+        img.src = optimizeCardImageUrl(d.image, 800);
+      }
+    });
+    allPackages.slice(0, 3).forEach((p) => {
+      if (p.image) {
+        const img = new Image();
+        img.src = optimizeCardImageUrl(p.image, 800);
+      }
+    });
+    allExperiences.slice(0, 3).forEach((e) => {
+      if (e.image) {
+        const img = new Image();
+        img.src = optimizeCardImageUrl(e.image, 800);
+      }
+    });
+  }, [homepageSettings.heroImages, allDestinations, allPackages, allExperiences]);
 
   // Synchronize current view and active items to URL path (History API)
   useEffect(() => {
@@ -1859,7 +1888,15 @@ export default function App() {
                 className="bg-white rounded-3xl border border-brand-blue-accent/15 overflow-hidden shadow-sm group hover:scale-[1.02] hover:shadow-lg transition-luxury flex flex-col justify-between"
               >
                 <div className="relative overflow-hidden h-52">
-                  <img src={dest.image} alt={dest.name} className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" />
+                  <img 
+                    src={optimizeCardImageUrl(dest.image, 800) || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
+                    alt={dest.name} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" 
+                    loading="eager"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                   <div className="absolute bottom-4 left-4 text-white">
                     <span className="inline-block bg-white/95 text-brand-blue-accent border border-brand-blue-accent/20 font-mono text-[9px] font-extrabold px-2.5 py-0.5 rounded-md shadow-sm tracking-widest uppercase mb-1">
@@ -2074,7 +2111,15 @@ export default function App() {
               return (
                 <div key={exp.id} className="bg-white rounded-3xl border border-brand-blue-accent/15 overflow-hidden shadow-sm group hover:shadow-md transition-all flex flex-col justify-between">
                   <div className="relative overflow-hidden h-40">
-                    <img src={exp.image} alt={exp.name} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" />
+                    <img 
+                      src={optimizeCardImageUrl(exp.image, 800) || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
+                      alt={exp.name} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" 
+                      loading="eager"
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
+                    />
                     <span className={`absolute top-3 left-3 text-white text-[9px] font-mono font-bold uppercase px-2.5 py-1 rounded-lg shadow-sm border border-white/10 ${
                       exp.category.toLowerCase() === "heritage" || exp.category.toLowerCase() === "nature"
                         ? "bg-brand-blue-accent"
@@ -2296,9 +2341,13 @@ export default function App() {
                   {/* Cover image with tags */}
                   <div className="relative h-52 overflow-hidden">
                     <img 
-                      src={rest.image} 
+                      src={optimizeCardImageUrl(rest.image, 800) || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
                       alt={rest.name} 
                       className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
+                      loading="eager"
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
                     
@@ -2402,7 +2451,15 @@ export default function App() {
             {allMosques.slice(0, 3).map((mosque) => (
               <div key={mosque.id} className="bg-white rounded-3xl border border-brand-blue-accent/15 overflow-hidden shadow-sm flex flex-col justify-between hover:border-brand-blue-accent transition-all group">
                 <div className="relative overflow-hidden h-48">
-                  <img src={mosque.image} alt={mosque.name} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" />
+                  <img 
+                    src={optimizeCardImageUrl(mosque.image, 800) || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
+                    alt={mosque.name} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
+                    loading="eager"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
                   <div className="absolute bottom-4 left-4 text-white">
                     <span className="inline-flex items-center gap-1 bg-white/95 text-brand-blue-accent border border-brand-blue-accent/20 font-mono text-[9px] font-extrabold px-2 py-0.5 rounded-md shadow-sm tracking-widest uppercase mb-1.5">
@@ -2507,7 +2564,15 @@ export default function App() {
                   <div className="lg:col-span-7 bg-white rounded-3xl border border-brand-blue-accent/15 overflow-hidden shadow-sm flex flex-col justify-between group hover:border-brand-green/30 transition-all">
                     <div className="flex flex-col flex-1">
                       <div className="relative flex-1 min-h-[360px] sm:min-h-[420px] lg:min-h-[460px] overflow-hidden rounded-t-3xl">
-                        <img src={featuredGuide.image} alt={featuredGuide.title} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" />
+                        <img 
+                          src={optimizeCardImageUrl(featuredGuide.image, 800) || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
+                          alt={featuredGuide.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
+                          loading="eager"
+                          decoding="async"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
+                        />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
                         <div className="absolute bottom-5 left-5 right-5 sm:bottom-6 sm:left-6 sm:right-6 text-white space-y-2">
                           <span className="bg-cambodia-red text-white text-[9px] font-mono font-bold uppercase px-3 py-1 rounded-md shadow-sm border border-white/10 inline-block">
@@ -2542,7 +2607,15 @@ export default function App() {
                   {sideGuides.map((guide) => (
                     <div key={guide.id} className="bg-white rounded-3xl border border-brand-blue-accent/15 p-4 sm:p-5 flex gap-4 sm:gap-5 items-center hover:border-brand-blue-accent transition-all shadow-sm flex-1">
                       <div className="w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 shrink-0 rounded-2xl overflow-hidden border border-brand-blue-accent/10">
-                        <img src={guide.image} className="w-full h-full object-cover" alt={guide.title} />
+                        <img 
+                          src={optimizeCardImageUrl(guide.image, 800) || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
+                          className="w-full h-full object-cover" 
+                          alt={guide.title} 
+                          loading="eager"
+                          decoding="async"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}
+                        />
                       </div>
                       <div className="flex flex-col justify-between flex-1 min-w-0 h-full py-0.5">
                         <div className="space-y-1">

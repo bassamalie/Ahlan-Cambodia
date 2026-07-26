@@ -182,7 +182,7 @@ const experienceDetailsData: {
 const galleryImages: { [id: string]: { url: string; caption: string }[] } = {
   "angkor-sunrise": [
     { url: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=800", caption: "Sunrise over Angkor Wat Towers" },
-    { url: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&q=80&w=800", caption: "Ancient Stone Corridor Detail" },
+    { url: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=800", caption: "Ancient Stone Corridor Detail" },
     { url: "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=80&w=800", caption: "Theravada Monk Walking in Ancient Temple" },
     { url: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&q=80&w=800", caption: "Freshly Prepared Halal Pastries" },
     { url: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=800", caption: "Premium Private Tour Vehicle" }
@@ -202,7 +202,7 @@ const galleryImages: { [id: string]: { url: string; caption: string }[] } = {
     { url: "https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&q=80&w=800", caption: "Fresh Organic Garden Herbs & Chillies" }
   ],
   "silk-island": [
-    { url: "https://images.unsplash.com/photo-1559592443-7f8d37496b82?auto=format&fit=crop&q=80&w=800", caption: "Mekong River Sunset Sailing" },
+    { url: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&q=80&w=800", caption: "Mekong River Sunset Sailing" },
     { url: "https://images.unsplash.com/photo-1508962914676-134849a727f0?auto=format&fit=crop&q=80&w=800", caption: "Artisan Loom Hand Weaving" },
     { url: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&q=80&w=800", caption: "Koh Dach Island Cycling Road" },
     { url: "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&q=80&w=800", caption: "Koh Dach Mosque & Local Gathering" },

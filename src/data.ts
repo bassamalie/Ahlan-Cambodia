@@ -6,7 +6,7 @@ export const destinations: Destination[] = [
     name: "Phnom Penh",
     region: "Central Cambodia",
     description: "The sophisticated capital city where the Mekong and Tonlé Sap rivers converge. Boasts spectacular royal palaces, modern skylines, historical landmarks, and the grand Al-Serkal Mosque.",
-    image: "https://images.unsplash.com/photo-1559592443-7f8d37496b82?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=1200",
     rating: 4.8,
     highlights: ["Al-Serkal Mosque", "Royal Palace", "Mekong Sunset Cruise", "Central Market"]
   },
@@ -15,7 +15,7 @@ export const destinations: Destination[] = [
     name: "Siem Reap",
     region: "Northwestern Cambodia",
     description: "The crown jewel of Cambodia's heritage, home to the majestic Angkor Wat temple complex, vibrant cultural villages, and a growing Muslim community with dedicated Halal facilities.",
-    image: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200",
     rating: 4.9,
     highlights: ["Angkor Wat Sunrise", "Siem Reap Neak Pean Mosque", "Floating Village of Tonlé Sap", "Phare Circus"]
   },
@@ -106,7 +106,7 @@ export const experiences: Experience[] = [
     duration: "5 Hours",
     rating: 4.8,
     price: "$135 per guest",
-    image: "https://images.unsplash.com/photo-1559592443-7f8d37496b82?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=800",
     description: "Scenic Mekong River boat trip to Koh Dach (Silk Island). Cycle through serene Cham villages, witness traditional loom weaving, and visit the historic island mosque.",
     highlights: ["Mekong Morning Boat Cruise", "Traditional Handloom Weaving Workshop", "Koh Dach Mosque Visit", "Cham Snacks & Coconut Picnic"],
     isFamilyFriendly: true
