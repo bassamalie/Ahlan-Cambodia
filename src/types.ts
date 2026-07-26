@@ -76,13 +76,15 @@ export interface TourPackage {
 export interface Experience {
   id: string;
   name: string;
-  category: "Heritage" | "Nature" | "Culture" | "Adventure";
+  category: "Heritage" | "Nature" | "Culture" | "Adventure" | string;
   description: string;
   shortDescription?: string;
   image: string;
   location: string;
   duration: string;
   highlights: string[];
+  rating?: number;
+  price?: string;
   
   // Custom optional fields for Admin CMS multi-step adding/editing
   isFamilyFriendly?: boolean;

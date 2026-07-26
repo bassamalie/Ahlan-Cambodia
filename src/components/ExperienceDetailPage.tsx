@@ -681,91 +681,101 @@ export default function ExperienceDetailPage({
         </section>
 
         {/* --- 5. Similar Experiences (3 in a row) --- */}
-        <section id="similar-experiences" className="space-y-8 border-t border-brand-blue-accent/25 pt-12">
-          <div className="space-y-1">
-            <span className="text-xs font-mono text-brand-blue-accent tracking-widest uppercase font-bold block">
-              Related Pursuits
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-serif text-brand-charcoal font-bold">
-              Similar Experiences
-            </h2>
-          </div>
+        {similarExperiences.length > 0 && (
+          <section id="similar-experiences" className="space-y-8 border-t border-brand-blue-accent/25 pt-12">
+            <div className="space-y-1">
+              <span className="text-xs font-mono text-brand-blue-accent tracking-widest uppercase font-bold block">
+                Related Pursuits
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-serif text-brand-charcoal font-bold">
+                Similar Experiences
+              </h2>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {similarExperiences.map((exp) => {
-              const saved = wishlist.includes(exp.id);
-              return (
-                <div 
-                  key={exp.id}
-                  className="bg-white rounded-3xl overflow-hidden border border-brand-blue-accent/15 shadow-sm hover:scale-[1.01] hover:border-brand-blue-accent/30 hover:shadow-lg transition-luxury flex flex-col justify-between h-full"
-                >
-                  {/* Image Header */}
-                  <div className="h-48 sm:h-52 relative overflow-hidden">
-                    <img 
-                      src={exp.image} 
-                      alt={exp.name} 
-                      className="w-full h-full object-cover transform hover:scale-[1.03] transition-transform duration-700"
-                    />
-                    <span className="absolute top-4 left-4 text-[9px] font-mono font-bold uppercase tracking-widest text-white shadow-md border border-white/10 px-3.5 py-1.5 rounded-lg bg-brand-blue-accent">
-                      {exp.category}
-                    </span>
-                  </div>
-
-                  {/* Card Body */}
-                  <div className="p-6 flex flex-col justify-between flex-1 space-y-4">
-                    <div className="space-y-3">
-                      {/* Dynamic Regional Upper Label */}
-                      <span className="text-[10px] font-mono text-brand-blue-accent tracking-widest uppercase font-bold block">
-                        {exp.location.split(",")[0].toUpperCase()} EXCURSION
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {similarExperiences.map((exp) => {
+                const saved = wishlist.includes(exp.id);
+                return (
+                  <div 
+                    key={exp.id}
+                    onClick={() => {
+                      if (onSelectExperience) {
+                        onSelectExperience(exp);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
+                    }}
+                    className="bg-white rounded-3xl overflow-hidden border border-brand-blue-accent/15 shadow-sm hover:scale-[1.01] hover:border-brand-blue-accent/30 hover:shadow-lg transition-luxury flex flex-col justify-between h-full cursor-pointer group"
+                  >
+                    {/* Image Header */}
+                    <div className="h-48 sm:h-52 relative overflow-hidden">
+                      <img 
+                        src={exp.image} 
+                        alt={exp.name} 
+                        className="w-full h-full object-cover transform group-hover:scale-[1.03] transition-transform duration-700"
+                      />
+                      <span className="absolute top-4 left-4 text-[9px] font-mono font-bold uppercase tracking-widest text-white shadow-md border border-white/10 px-3.5 py-1.5 rounded-lg bg-brand-blue-accent">
+                        {exp.category}
                       </span>
-
-                      <h3 className="font-serif font-bold text-sm sm:text-base text-brand-charcoal tracking-wide leading-relaxed">
-                        {exp.name}
-                      </h3>
-
-                      <p className="text-xs text-brand-charcoal/70 leading-relaxed font-sans line-clamp-3">
-                        {exp.shortDescription || exp.description}
-                      </p>
-                      
-                      {/* Meta duration info */}
-                      <div className="flex items-center gap-2 text-[10px] font-mono text-brand-charcoal/60 bg-brand-lightbg px-2.5 py-1.5 rounded-lg border border-brand-blue-accent/10 w-fit">
-                        <Clock className="w-3.5 h-3.5 text-brand-blue-accent" />
-                        <span>{exp.duration}</span>
-                      </div>
                     </div>
 
-                    {/* Bottom Link Action exactly as per image details */}
-                    <div className="pt-4 border-t border-brand-blue-accent/10 flex items-center justify-between">
-                      <button
-                        onClick={() => onToggleWishlist(exp.id)}
-                        className="text-[11px] font-mono text-brand-charcoal/50 hover:text-brand-red flex items-center gap-1 transition-colors cursor-pointer"
-                      >
-                        <Heart className={`w-3.5 h-3.5 ${saved ? "text-brand-red fill-brand-red" : ""}`} />
-                        <span>Save</span>
-                      </button>
-                      
-                      <a 
-                        href={`/experiences/${(exp.title || exp.name || exp.id).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
-                        onClick={(e) => {
-                          if (!e.ctrlKey && !e.metaKey && e.button !== 1 && !e.shiftKey) {
+                    {/* Card Body */}
+                    <div className="p-6 flex flex-col justify-between flex-1 space-y-4">
+                      <div className="space-y-3">
+                        {/* Dynamic Regional Upper Label */}
+                        <span className="text-[10px] font-mono text-brand-blue-accent tracking-widest uppercase font-bold block">
+                          {(exp.location || "CAMBODIA").split(",")[0].toUpperCase()} EXCURSION
+                        </span>
+
+                        <h3 className="font-serif font-bold text-sm sm:text-base text-brand-charcoal tracking-wide leading-relaxed group-hover:text-brand-blue transition-colors">
+                          {exp.name}
+                        </h3>
+
+                        <p className="text-xs text-brand-charcoal/70 leading-relaxed font-sans line-clamp-3">
+                          {exp.shortDescription || exp.description}
+                        </p>
+                        
+                        {/* Meta duration info */}
+                        <div className="flex items-center gap-2 text-[10px] font-mono text-brand-charcoal/60 bg-brand-lightbg px-2.5 py-1.5 rounded-lg border border-brand-blue-accent/10 w-fit">
+                          <Clock className="w-3.5 h-3.5 text-brand-blue-accent" />
+                          <span>{exp.duration}</span>
+                        </div>
+                      </div>
+
+                      {/* Bottom Link Action */}
+                      <div className="pt-4 border-t border-brand-blue-accent/10 flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleWishlist(exp.id);
+                          }}
+                          className="text-[11px] font-mono text-brand-charcoal/50 hover:text-brand-red flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${saved ? "text-brand-red fill-brand-red" : ""}`} />
+                          <span>Save</span>
+                        </button>
+                        
+                        <a 
+                          href={`/experiences/${(exp.title || exp.name || exp.id).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
+                          onClick={(e) => {
                             e.preventDefault();
                             if (onSelectExperience) {
                               onSelectExperience(exp);
                               window.scrollTo({ top: 0, behavior: "smooth" });
                             }
-                          }
-                        }}
-                        className="text-[10px] sm:text-xs font-mono bg-brand-blue hover:bg-brand-blue-accent text-white px-4 py-2 rounded-xl border border-brand-blue-accent/20 font-bold transition-all uppercase tracking-wider shadow-sm cursor-pointer inline-block text-center"
-                      >
-                        Explore →
-                      </a>
+                          }}
+                          className="text-[10px] sm:text-xs font-mono bg-brand-blue group-hover:bg-brand-blue-accent text-white px-4 py-2 rounded-xl border border-brand-blue-accent/20 font-bold transition-all uppercase tracking-wider shadow-sm cursor-pointer inline-block text-center"
+                        >
+                          Explore →
+                        </a>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* --- 6. Custom Help Inquiry Banner --- */}
         <section id="planning-help" className="bg-brand-blue text-white border border-brand-blue-accent/25 p-8 sm:p-10 rounded-3xl shadow-lg relative overflow-hidden">

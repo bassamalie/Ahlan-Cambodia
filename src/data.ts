@@ -58,7 +58,60 @@ export const destinations: Destination[] = [
 ];
 
 export const tourPackages: TourPackage[] = [];
-export const experiences: Experience[] = [];
+export const experiences: Experience[] = [
+  {
+    id: "angkor-sunrise",
+    name: "Angkor Wat Sunrise & VIP Scholar Tour",
+    category: "Heritage & Culture",
+    location: "Siem Reap, Cambodia",
+    duration: "6 Hours",
+    rating: 4.9,
+    price: "$180 per guest",
+    image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=800",
+    description: "Experience the majestic dawn at Angkor Wat from a private VIP vantage point, followed by an expert scholar-guided walk through ancient galleries and a gourmet Halal breakfast.",
+    highlights: ["Private VIP Sunrise Vantage Point", "Scholar Historian Guided Walk", "Gourmet Halal Breakfast Picnic", "Luxury Air-Conditioned Transport"],
+    isFamilyFriendly: true
+  },
+  {
+    id: "tonle-sap",
+    name: "Tonlé Sap Floating Village & Sunset Boat Excursion",
+    category: "Eco & Wildlife",
+    location: "Siem Reap, Cambodia",
+    duration: "5 Hours",
+    rating: 4.8,
+    price: "$145 per guest",
+    image: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&q=80&w=800",
+    description: "Private canopy boat journey along the great Tonlé Sap lake, visiting authentic Cham floating villages, mangrove forests, and enjoying fresh Halal seafood at sunset.",
+    highlights: ["Private Wooden Canopy Boat", "Authentic Cham Muslim Village Visit", "Mangrove Flooded Forest Cruise", "Halal Seafood Sunset Refreshments"],
+    isFamilyFriendly: true
+  },
+  {
+    id: "halal-cooking",
+    name: "Khmer Halal Culinary Masterclass",
+    category: "Gastronomy",
+    location: "Phnom Penh, Cambodia",
+    duration: "4 Hours",
+    rating: 4.9,
+    price: "$120 per guest",
+    image: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=800",
+    description: "Hands-on cooking class led by a master Cham Muslim chef. Visit local organic herb markets and prepare authentic Fish Amok and Khmer Halal delicacies.",
+    highlights: ["Organic Spice Market Guided Walk", "Master Chef Guided Workshop", "Certified Halal Dedicated Kitchen", "3-Course Organic Gourmet Lunch"],
+    isFamilyFriendly: true
+  },
+  {
+    id: "silk-island",
+    name: "Mekong River Cruise & Silk Island Bike Tour",
+    category: "Cultural Excursion",
+    location: "Phnom Penh, Cambodia",
+    duration: "5 Hours",
+    rating: 4.8,
+    price: "$135 per guest",
+    image: "https://images.unsplash.com/photo-1559592443-7f8d37496b82?auto=format&fit=crop&q=80&w=800",
+    description: "Scenic Mekong River boat trip to Koh Dach (Silk Island). Cycle through serene Cham villages, witness traditional loom weaving, and visit the historic island mosque.",
+    highlights: ["Mekong Morning Boat Cruise", "Traditional Handloom Weaving Workshop", "Koh Dach Mosque Visit", "Cham Snacks & Coconut Picnic"],
+    isFamilyFriendly: true
+  }
+];
 export const hotels: Hotel[] = [];
 export const restaurants: Restaurant[] = [];
 export const mosques: Mosque[] = [];

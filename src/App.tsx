@@ -278,7 +278,7 @@ export default function App() {
   };
 
   // Dynamic experiences state
-  const [allExperiences, setAllExperiences] = useState<Experience[]>(() => loadCache("experiences", []));
+  const [allExperiences, setAllExperiences] = useState<Experience[]>(() => loadCache("experiences", experiences));
 
   const handleAddExperience = (newExp: Experience) => {
     setAllExperiences((prev) => {
@@ -483,7 +483,7 @@ export default function App() {
           dbGeneralConfig
         ] = await Promise.all([
           fetchCollection("destinations", destinations),
-          fetchCollection("experiences"),
+          fetchCollection("experiences", experiences),
           fetchCollection("packages"),
           fetchCollection("tours"),
           fetchCollection("hotels"),
@@ -2859,6 +2859,7 @@ export default function App() {
       ) : currentView === "experience-detail" && activeExperience ? (
         <ExperienceDetailPage 
           experience={activeExperience}
+          allExperiences={allExperiences.length > 0 ? allExperiences : experiences}
           onBack={() => {
             if (activeDestination) {
               setCurrentView("destination-detail");
