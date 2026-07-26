@@ -1581,12 +1581,8 @@ export default function App() {
         {/* Cinematic Backdrop Images representing premium tourism */}
         <div className="absolute inset-0 z-0 bg-slate-900">
           {(
-            (homepageSettings.heroImages && homepageSettings.heroImages.some(i => i && i.trim() && !i.includes("unsplash.com")))
-              ? homepageSettings.heroImages.filter(i => i && i.trim() && !i.includes("unsplash.com"))
-              : (allDestinations.map(d => d.image).filter(i => i && i.trim()).length > 0)
-              ? allDestinations.map(d => d.image).filter(i => i && i.trim())
-              : (homepageSettings.heroImages && homepageSettings.heroImages.length > 0)
-              ? homepageSettings.heroImages
+            (homepageSettings.heroImages && homepageSettings.heroImages.filter(i => i && i.trim()).length > 0)
+              ? homepageSettings.heroImages.filter(i => i && i.trim())
               : defaultHeroImages
           ).map((img: string, index: number) => (
             <div
