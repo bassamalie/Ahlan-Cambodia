@@ -16,7 +16,7 @@ import TransparentLogo from "./TransparentLogo";
 import RichTextEditor from "./RichTextEditor";
 import { SocialVideoCard } from "./SocialVideoCard";
 import { uploadToFirebaseStorage, listAllUploadedFiles, deleteFromFirebaseStorage } from "../firebase";
-import { saveDocInCollection } from "../dbService";
+import { saveDocInCollection, fetchDocument, saveDocument } from "../dbService";
 import { sanitizeHotelPhotoGallery, NO_PHOTO_AVAILABLE_PLACEHOLDER, isValidPhotoUrl } from "../googlePlacesPhotoService";
 import { getEffectiveRoomTiers } from "./HotelDetailV2";
 
@@ -542,6 +542,17 @@ export default function AdminCMS({
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
+  // Forgot Password Modal State
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [resetStep, setResetStep] = useState<1 | 2>(1);
+  const [resetEmailInput, setResetEmailInput] = useState("");
+  const [foundResetUser, setFoundResetUser] = useState<CmsUser | null>(null);
+  const [resetNewPassword, setResetNewPassword] = useState("");
+  const [resetConfirmPassword, setResetConfirmPassword] = useState("");
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetSuccessMsg, setResetSuccessMsg] = useState<string | null>(null);
+  const [showResetPasswordToggle, setShowResetPasswordToggle] = useState(false);
+
   // New Curator Account Form state (Super User only)
   const [newCuratorEmail, setNewCuratorEmail] = useState("");
   const [newCuratorName, setNewCuratorName] = useState("");
@@ -555,12 +566,40 @@ export default function AdminCMS({
   const [superOldPassword, setSuperOldPassword] = useState("");
   const [superNewPassword, setSuperNewPassword] = useState("");
 
-  // Sync users list to localStorage
-  useEffect(() => {
+  // Helper to persist cmsUsers to state, localStorage, AND Firestore permanently
+  const syncUsers = async (newUsers: CmsUser[]) => {
+    setCmsUsers(newUsers);
     try {
-      localStorage.setItem("ahlan_cms_users_v3", JSON.stringify(cmsUsers));
+      localStorage.setItem("ahlan_cms_users_v3", JSON.stringify(newUsers));
     } catch (e) {}
-  }, [cmsUsers]);
+    try {
+      await saveDocument("settings", "cms_users", { users: newUsers });
+    } catch (e) {
+      console.error("Error persisting cms_users to Firestore:", e);
+    }
+  };
+
+  // On initial mount, fetch stored cmsUsers from Firestore
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCmsUsersFromFirestore() {
+      try {
+        const data = await fetchDocument<{ users: CmsUser[] }>("settings", "cms_users", { users: [DEFAULT_SUPER_USER] });
+        if (isMounted && data && Array.isArray(data.users) && data.users.length > 0) {
+          setCmsUsers(data.users);
+          try {
+            localStorage.setItem("ahlan_cms_users_v3", JSON.stringify(data.users));
+          } catch (e) {}
+        }
+      } catch (err) {
+        console.error("Error fetching cms_users from Firestore:", err);
+      }
+    }
+    loadCmsUsersFromFirestore();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Sync current user session to localStorage
   useEffect(() => {
@@ -610,6 +649,82 @@ export default function AdminCMS({
     triggerToast("Logged out of Admin Portal.", "info");
   };
 
+  const handleStartForgotPassword = () => {
+    setResetStep(1);
+    setResetEmailInput(loginEmail || "bassamalie@gmail.com");
+    setFoundResetUser(null);
+    setResetNewPassword("");
+    setResetConfirmPassword("");
+    setResetError(null);
+    setResetSuccessMsg(null);
+    setShowForgotPasswordModal(true);
+  };
+
+  const handleVerifyResetEmail = (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError(null);
+    const emailTrim = resetEmailInput.trim().toLowerCase();
+    if (!emailTrim || !emailTrim.includes("@")) {
+      setResetError("Please enter a valid Gmail address.");
+      return;
+    }
+
+    const matched = cmsUsers.find(u => u.email.toLowerCase() === emailTrim);
+    if (matched) {
+      setFoundResetUser(matched);
+      setResetStep(2);
+      setResetError(null);
+    } else if (emailTrim === "bassamalie@gmail.com") {
+      const superUser = cmsUsers.find(u => u.role === "SUPER_ADMIN") || DEFAULT_SUPER_USER;
+      setFoundResetUser(superUser);
+      setResetStep(2);
+      setResetError(null);
+    } else {
+      setResetError(`No admin or curator account found for ${emailTrim}. Please verify your Gmail address.`);
+    }
+  };
+
+  const handleCompletePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError(null);
+    if (!foundResetUser) return;
+
+    const newPass = resetNewPassword.trim();
+    const confirmPass = resetConfirmPassword.trim();
+
+    if (!newPass || newPass.length < 4) {
+      setResetError("New password must be at least 4 characters long.");
+      return;
+    }
+
+    if (newPass !== confirmPass) {
+      setResetError("Passwords do not match. Please ensure both fields are identical.");
+      return;
+    }
+
+    const updatedUsers = cmsUsers.map(u => 
+      u.id === foundResetUser.id || (u.role === "SUPER_ADMIN" && foundResetUser.role === "SUPER_ADMIN")
+        ? { ...u, password: newPass } 
+        : u
+    );
+
+    await syncUsers(updatedUsers);
+
+    if (currentUser && currentUser.id === foundResetUser.id) {
+      setCurrentUser({ ...currentUser, password: newPass });
+    }
+
+    setLoginEmail(foundResetUser.email);
+    setLoginPassword(newPass);
+
+    setResetSuccessMsg("Password successfully reset and saved permanently! You can now log in.");
+    triggerToast("Password reset successfully!", "success");
+
+    setTimeout(() => {
+      setShowForgotPasswordModal(false);
+    }, 2000);
+  };
+
   const handleCreateCuratorUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser || currentUser.role !== "SUPER_ADMIN") return;
@@ -631,7 +746,7 @@ export default function AdminCMS({
     }
 
     if (editingUserId) {
-      setCmsUsers(prev => prev.map(u => {
+      const updated = cmsUsers.map(u => {
         if (u.id === editingUserId) {
           return {
             ...u,
@@ -642,7 +757,8 @@ export default function AdminCMS({
           };
         }
         return u;
-      }));
+      });
+      syncUsers(updated);
       triggerToast(`Updated curator account permissions for ${newCuratorName}`, "success");
       setEditingUserId(null);
     } else {
@@ -661,7 +777,8 @@ export default function AdminCMS({
         allowedTabs: newCuratorPermissions
       };
 
-      setCmsUsers(prev => [...prev, newUser]);
+      const updated = [...cmsUsers, newUser];
+      syncUsers(updated);
       triggerToast(`Successfully created curator account for ${newUser.name} (${newUser.email})`, "success");
     }
 
@@ -2813,10 +2930,19 @@ export default function AdminCMS({
 
               {/* Password Entry */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block flex items-center justify-between">
-                  <span>Portal Password</span>
-                  <Lock className="w-3.5 h-3.5 text-brand-blue-accent/80" />
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <span>Portal Password</span>
+                    <Lock className="w-3.5 h-3.5 text-brand-blue-accent/80" />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleStartForgotPassword}
+                    className="text-[10px] font-mono text-brand-blue-accent hover:text-white transition-colors underline cursor-pointer font-bold"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
                 <div className="relative">
                   <input
                     type={showLoginPassword ? "text" : "password"}
@@ -2846,14 +2972,24 @@ export default function AdminCMS({
 
             </form>
 
-            {/* Default Credentials Badge */}
-            <div className="pt-4 border-t border-white/5 text-center text-[10px] font-mono text-slate-400 space-y-1 bg-[#070A11]/60 p-3.5 rounded-2xl border border-white/5">
+            {/* Account Recovery Helper Badge */}
+            <div className="pt-4 border-t border-white/5 text-center text-[10px] font-mono text-slate-400 space-y-1.5 bg-[#070A11]/60 p-3.5 rounded-2xl border border-white/5">
               <p className="font-bold text-brand-blue-accent uppercase tracking-wider flex items-center justify-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Super User Credentials</span>
+                <span>Super User Account & Recovery</span>
               </p>
-              <p>Gmail: <span className="text-white font-bold">bassamalie@gmail.com</span></p>
-              <p>Default Password: <span className="text-white font-bold">password123</span></p>
+              <p>Registered Gmail: <span className="text-white font-bold">bassamalie@gmail.com</span></p>
+              <p className="text-slate-400 leading-normal">
+                Forgotten your password? Click{" "}
+                <button
+                  type="button"
+                  onClick={handleStartForgotPassword}
+                  className="text-brand-blue-accent hover:text-white underline font-bold cursor-pointer"
+                >
+                  Forgot Password?
+                </button>{" "}
+                to reset it securely anytime.
+              </p>
             </div>
 
           </div>
@@ -2870,6 +3006,178 @@ export default function AdminCMS({
           </div>
 
         </div>
+
+        {/* Forgot Password Reset Modal */}
+        {showForgotPasswordModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
+            <div className="relative max-w-md w-full bg-[#0F1626] rounded-3xl overflow-hidden border border-white/10 shadow-2xl p-6 sm:p-8 space-y-6">
+              
+              {/* Modal Header */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-brand-blue-accent/15 border border-brand-blue-accent/30 text-brand-blue-accent flex items-center justify-center">
+                    <Key className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif font-bold text-white text-base tracking-wide uppercase">Reset Admin Password</h3>
+                    <p className="text-[10px] font-mono text-brand-blue-accent font-bold uppercase tracking-wider">
+                      Step {resetStep} of 2: {resetStep === 1 ? "Verify Gmail Account" : "Set New Password"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowForgotPasswordModal(false)}
+                  className="text-slate-400 hover:text-white p-1.5 rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {resetError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-start gap-2.5 text-red-400 text-xs font-sans leading-relaxed">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{resetError}</span>
+                </div>
+              )}
+
+              {resetSuccessMsg && (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-start gap-2.5 text-emerald-400 text-xs font-sans font-bold leading-relaxed">
+                  <CheckCircle className="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
+                  <span>{resetSuccessMsg}</span>
+                </div>
+              )}
+
+              {/* Step 1: Verify Email */}
+              {resetStep === 1 && (
+                <form onSubmit={handleVerifyResetEmail} className="space-y-4">
+                  <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                    Select a user account or enter a registered Gmail email address to reset the password.
+                  </p>
+                  
+                  {cmsUsers.length > 0 && (
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+                        Select Account to Reset *
+                      </label>
+                      <select
+                        value={resetEmailInput}
+                        onChange={(e) => setResetEmailInput(e.target.value)}
+                        className="w-full bg-[#070A11] border border-white/10 focus:border-brand-blue-accent rounded-xl px-4 py-3 text-xs text-white outline-none font-mono"
+                      >
+                        {cmsUsers.map(u => (
+                          <option key={u.id} value={u.email} className="bg-[#0F1626] text-white">
+                            {u.role === "SUPER_ADMIN" ? "Super Admin" : "Curator"}: {u.name} ({u.email})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+                      Or Type Registered Gmail Address
+                    </label>
+                    <input
+                      type="email"
+                      value={resetEmailInput}
+                      onChange={(e) => setResetEmailInput(e.target.value)}
+                      placeholder="e.g. bassamalie@gmail.com"
+                      required
+                      className="w-full bg-[#070A11] border border-white/10 focus:border-brand-blue-accent rounded-xl px-4 py-3 text-xs text-white outline-none font-mono"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPasswordModal(false)}
+                      className="bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-brand-blue-accent hover:bg-white text-[#0B0F19] px-5 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                    >
+                      <span>Verify & Proceed</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Step 2: Enter New Password */}
+              {resetStep === 2 && foundResetUser && (
+                <form onSubmit={handleCompletePasswordReset} className="space-y-4">
+                  <div className="bg-slate-900 border border-brand-blue-accent/30 rounded-2xl p-3 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-brand-blue-accent text-[#0F1626] font-bold font-serif flex items-center justify-center text-xs uppercase">
+                      {foundResetUser.name.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-white font-bold truncate">{foundResetUser.name}</p>
+                      <p className="text-[10px] font-mono text-slate-400 truncate">{foundResetUser.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+                      New Password *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showResetPasswordToggle ? "text" : "password"}
+                        value={resetNewPassword}
+                        onChange={(e) => setResetNewPassword(e.target.value)}
+                        placeholder="Enter new password (min 4 characters)"
+                        required
+                        className="w-full bg-[#070A11] border border-white/10 focus:border-brand-blue-accent rounded-xl pl-4 pr-10 py-3 text-xs text-white outline-none font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowResetPasswordToggle(!showResetPasswordToggle)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        {showResetPasswordToggle ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+                      Confirm New Password *
+                    </label>
+                    <input
+                      type={showResetPasswordToggle ? "text" : "password"}
+                      value={resetConfirmPassword}
+                      onChange={(e) => setResetConfirmPassword(e.target.value)}
+                      placeholder="Re-enter new password"
+                      required
+                      className="w-full bg-[#070A11] border border-white/10 focus:border-brand-blue-accent rounded-xl px-4 py-3 text-xs text-white outline-none font-mono"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setResetStep(1)}
+                      className="bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-brand-blue-accent hover:bg-white text-[#0B0F19] px-5 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>Save New Password</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -8931,12 +9239,13 @@ export default function AdminCMS({
                         triggerToast("New password must be at least 4 characters.", "error");
                         return;
                       }
-                      setCmsUsers(prev => prev.map(u => u.role === "SUPER_ADMIN" ? { ...u, password: superNewPassword } : u));
+                      const updated = cmsUsers.map(u => u.role === "SUPER_ADMIN" ? { ...u, password: superNewPassword } : u);
+                      syncUsers(updated);
                       if (currentUser?.role === "SUPER_ADMIN") {
                         setCurrentUser({ ...currentUser, password: superNewPassword });
                       }
                       setSuperNewPassword("");
-                      triggerToast("Super User password updated successfully!", "success");
+                      triggerToast("Super User password updated and saved permanently!", "success");
                     }} 
                     className="space-y-2 bg-slate-50 border border-slate-200 p-4 rounded-2xl"
                   >
@@ -9159,39 +9468,64 @@ export default function AdminCMS({
                           </div>
                         </div>
 
-                        {!isSuper && (
-                          <div className="flex items-center gap-2 self-end sm:self-center">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingUserId(usr.id);
-                                setNewCuratorEmail(usr.email);
-                                setNewCuratorName(usr.name);
-                                setNewCuratorPassword(usr.password);
-                                setNewCuratorPermissions(usr.allowedTabs || []);
-                                window.scrollTo({ top: 400, behavior: "smooth" });
-                              }}
-                              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider bg-white border border-slate-200 hover:border-brand-blue-accent text-slate-700 hover:text-brand-blue-accent transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                              <span>Edit Permissions</span>
-                            </button>
+                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFoundResetUser(usr);
+                              setResetStep(2);
+                              setResetNewPassword("");
+                              setResetConfirmPassword("");
+                              setResetError(null);
+                              setResetSuccessMsg(null);
+                              setShowForgotPasswordModal(true);
+                            }}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 shadow-sm ${
+                              isSuper
+                                ? "bg-brand-blue-accent text-[#0F1626] hover:bg-white"
+                                : "bg-slate-100 hover:bg-brand-blue-accent text-slate-700 hover:text-[#0F1626] border border-slate-200"
+                            }`}
+                            title={`Reset password for ${usr.name}`}
+                          >
+                            <Key className="w-3.5 h-3.5" />
+                            <span>Reset Password</span>
+                          </button>
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (window.confirm(`Are you sure you want to remove curator account ${usr.name} (${usr.email})?`)) {
-                                  setCmsUsers(prev => prev.filter(u => u.id !== usr.id));
-                                  triggerToast(`Removed curator account: ${usr.name}`, "info");
-                                }
-                              }}
-                              className="p-2 rounded-xl text-red-500 hover:bg-red-50 border border-slate-200 transition-colors cursor-pointer"
-                              title="Delete User"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
+                          {!isSuper && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingUserId(usr.id);
+                                  setNewCuratorEmail(usr.email);
+                                  setNewCuratorName(usr.name);
+                                  setNewCuratorPassword(usr.password);
+                                  setNewCuratorPermissions(usr.allowedTabs || []);
+                                  window.scrollTo({ top: 400, behavior: "smooth" });
+                                }}
+                                className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider bg-white border border-slate-200 hover:border-brand-blue-accent text-slate-700 hover:text-brand-blue-accent transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                                <span>Edit Permissions</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (window.confirm(`Are you sure you want to remove curator account ${usr.name} (${usr.email})?`)) {
+                                    const updated = cmsUsers.filter(u => u.id !== usr.id);
+                                    syncUsers(updated);
+                                    triggerToast(`Removed curator account: ${usr.name}`, "info");
+                                  }
+                                }}
+                                className="p-1.5 rounded-xl text-red-500 hover:bg-red-50 border border-slate-200 transition-colors cursor-pointer"
+                                title="Delete User"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
