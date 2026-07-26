@@ -4,11 +4,12 @@ import {
   X, Calendar, Users, Award, ShieldCheck, 
   Utensils, Share2, DollarSign, ChevronDown, ChevronUp, MessageSquare,
   Check, ArrowRight, Star, Building, Maximize2, ChevronLeft, ChevronRight,
-  CreditCard, ExternalLink, Sparkles
+  CreditCard, ExternalLink, Sparkles, Tag, FileText
 } from "lucide-react";
 import { TourPackage, Hotel } from "../types";
 import { hotels } from "../data";
 import WiseTravelCard from "./WiseTravelCard";
+import { getTourCode, generatePackagePdf } from "../utils/pdfGenerator";
 
 interface PackageDetailPageProps {
   tourPackage: TourPackage;
@@ -16,6 +17,7 @@ interface PackageDetailPageProps {
   wishlist: string[];
   onToggleWishlist: (id: string) => void;
   onInquire: (customDetails?: any) => void;
+  onOpenInquiry?: (pkg: TourPackage) => void;
   allPackages?: TourPackage[];
   allHotels?: Hotel[];
   onSelectPackage?: (pkg: TourPackage) => void;
@@ -28,6 +30,7 @@ export default function PackageDetailPage({
   wishlist,
   onToggleWishlist,
   onInquire,
+  onOpenInquiry,
   allPackages = [],
   allHotels = [],
   onSelectPackage,
@@ -405,11 +408,12 @@ export default function PackageDetailPage({
             </span>
             <button
               onClick={() => {
-                const el = document.getElementById("inquiry-sidebar-card");
-                if (el) {
-                  el.scrollIntoView({ behavior: "smooth", block: "center" });
+                if (onOpenInquiry) {
+                  onOpenInquiry(tourPackage);
+                } else if (onNavigateView) {
+                  onNavigateView("package-inquiry");
                 } else {
-                  onInquire();
+                  onInquire(tourPackage);
                 }
               }}
               className="bg-white hover:bg-brand-blue-accent text-brand-blue hover:text-white font-mono border border-white hover:border-brand-blue-accent px-3.5 sm:px-5 h-9 sm:h-10 flex items-center justify-center rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all shadow-md cursor-pointer shrink-0"
@@ -679,137 +683,84 @@ export default function PackageDetailPage({
 
           </div>
 
-          {/* RIGHT SIDEBAR / RESERVATION & CUSTOMIZER */}
+          {/* RIGHT SIDEBAR / RESERVATION & PACKAGE ACTION ENGINE */}
           <div className="lg:col-span-4 space-y-6">
             
-            {/* INQUIRY ENGINE CARD */}
-            <div id="inquiry-sidebar-card" className="bg-white rounded-3xl border border-slate-200 p-6 shadow-md relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-brand-blue" />
-              
-              {formSubmitted ? (
-                <div className="space-y-5 py-6 text-center animate-scale-in">
-                  <div className="bg-brand-green/10 text-brand-green w-14 h-14 rounded-full flex items-center justify-center mx-auto border border-brand-green/20">
-                    <CheckCircle className="w-8 h-8" />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h3 className="font-serif text-xl font-bold text-brand-charcoal">Inquiry Transmitted</h3>
-                    <p className="text-xs font-mono text-brand-blue font-bold uppercase tracking-wider">JazakAllah Khair</p>
-                  </div>
+            {/* PACKAGE PRICE & ACTIONS CARD */}
+            <div id="inquiry-sidebar-card" className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-lg relative overflow-hidden space-y-6">
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#0056b3]" />
 
-                  <p className="text-xs text-brand-charcoal/70 leading-relaxed">
-                    Dear <strong>{contactName}</strong>, your private sanctuary itinerary has been logged. Our elite concierge team will draft a personalized proposal and contact you at <strong>{contactEmail}</strong> within 12 hours.
-                  </p>
-
-                  <button
-                    onClick={() => {
-                      setFormSubmitted(false);
-                      setContactName("");
-                      setContactEmail("");
-                    }}
-                    className="w-full bg-brand-charcoal hover:bg-brand-charcoal/90 text-white font-mono text-xs font-bold py-3 rounded-xl uppercase tracking-wider transition-all cursor-pointer"
-                  >
-                    Send Another Request
-                  </button>
+              {/* Big & Visible Package Price */}
+              <div className="space-y-1 text-center bg-slate-50 border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
+                <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-slate-500 block">
+                  PACKAGE PRICE
+                </span>
+                <div className="font-serif text-3xl sm:text-4xl font-extrabold text-[#0056b3] tracking-tight">
+                  ${tourPackage.price.toLocaleString()} <span className="text-xs font-sans font-semibold text-slate-500">USD</span>
                 </div>
-              ) : (
-                <form onSubmit={handleInquirySubmit} className="space-y-4">
-                  <div className="space-y-1">
-                    <span className="text-[9px] font-mono text-brand-blue font-bold uppercase tracking-widest block">SANCTUARY BUILDER</span>
-                    <h3 className="font-serif text-lg sm:text-xl font-bold text-brand-charcoal flex items-center gap-2.5">
-                      <span className="w-2.5 h-6 bg-brand-blue-accent rounded-full inline-block shrink-0"></span>
-                      Tailor This Journey
-                    </h3>
-                    <p className="text-xs text-brand-charcoal/50">Submit dates and traveler specifications for a customized digital draft.</p>
-                  </div>
+                <span className="inline-block bg-sky-100 text-sky-800 text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full tracking-wider mt-1">
+                  Price Per Person
+                </span>
+              </div>
 
-                  {/* Date Picker */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono text-brand-charcoal/60 uppercase font-bold flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-brand-blue" />
-                      Preferred Date
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={travelDate}
-                      onChange={(e) => setTravelDate(e.target.value)}
-                      className="w-full bg-brand-lightbg border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-brand-blue text-brand-charcoal"
-                    />
-                  </div>
+              {/* Unique System-Generated Tour Code */}
+              <div className="bg-[#0F1626] text-white p-3.5 rounded-2xl flex items-center justify-between shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span className="text-xs font-mono font-semibold text-slate-300">Tour Code:</span>
+                </div>
+                <span className="text-sm font-mono font-extrabold text-amber-400 tracking-wider bg-white/10 px-3 py-1 rounded-lg border border-amber-400/30">
+                  {getTourCode(tourPackage)}
+                </span>
+              </div>
 
-                  {/* Travelers Counter */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono text-brand-charcoal/60 uppercase font-bold flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-brand-blue" />
-                      Number of Guests
-                    </label>
-                    <div className="flex items-center justify-between bg-brand-lightbg border border-slate-200 rounded-xl p-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setTravelers(Math.max(1, travelers - 1))}
-                        className="bg-white hover:bg-slate-100 text-brand-charcoal w-8 h-8 rounded-lg font-mono text-xs font-bold flex items-center justify-center shadow-sm select-none"
-                      >
-                        -
-                      </button>
-                      <span className="font-mono text-xs font-bold text-brand-charcoal">
-                        {travelers} {travelers === 1 ? "Guest" : "Guests"}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setTravelers(travelers + 1)}
-                        className="bg-white hover:bg-slate-100 text-brand-charcoal w-8 h-8 rounded-lg font-mono text-xs font-bold flex items-center justify-center shadow-sm select-none"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
+              {/* Action Buttons Stack */}
+              <div className="space-y-3 pt-1">
+                
+                {/* Download PDF Itinerary */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const tourCode = getTourCode(tourPackage);
+                    const destStr = getPackageDestinations(tourPackage.id);
+                    generatePackagePdf(tourPackage, tourCode, destStr);
+                  }}
+                  className="w-full bg-slate-50 hover:bg-slate-100 text-brand-charcoal border border-slate-200 hover:border-slate-300 font-sans font-bold text-xs sm:text-sm py-3 px-4 rounded-xl transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer group"
+                >
+                  <FileText className="w-4 h-4 text-[#0056b3] group-hover:scale-110 transition-transform shrink-0" />
+                  <span>Download PDF Itinerary</span>
+                </button>
 
-                  {/* Name */}
-                  <div className="space-y-1">
-                    <input
-                      type="text"
-                      required
-                      placeholder="Your Respected Name..."
-                      value={contactName}
-                      onChange={(e) => setContactName(e.target.value)}
-                      className="w-full bg-brand-lightbg border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-brand-blue text-brand-charcoal"
-                    />
-                  </div>
+                {/* Chat now through WhatsApp */}
+                <a
+                  href={`https://wa.me/85523999888?text=${encodeURIComponent(`Salam Alaikum! I am interested in inquiring about the tour package: ${tourPackage.name} (Tour Code: ${getTourCode(tourPackage)}).`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-sans font-bold text-xs sm:text-sm py-3 px-4 rounded-xl transition-all shadow-2xs hover:shadow-md flex items-center justify-center gap-2.5 cursor-pointer"
+                >
+                  <MessageSquare className="w-4 h-4 text-white fill-white shrink-0" />
+                  <span>Chat Now via WhatsApp</span>
+                </a>
 
-                  {/* Email */}
-                  <div className="space-y-1">
-                    <input
-                      type="email"
-                      required
-                      placeholder="Your Email Address..."
-                      value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)}
-                      className="w-full bg-brand-lightbg border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-brand-blue text-brand-charcoal"
-                    />
-                  </div>
+                {/* Big & Visible MAKE INQUIRY Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onOpenInquiry) {
+                      onOpenInquiry(tourPackage);
+                    } else if (onNavigateView) {
+                      onNavigateView("package-inquiry");
+                    } else {
+                      onInquire(tourPackage);
+                    }
+                  }}
+                  className="w-full bg-[#0056b3] hover:bg-[#004494] text-white font-serif font-extrabold text-base sm:text-lg py-4 px-4 rounded-2xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer border border-transparent uppercase tracking-wider mt-2 group"
+                >
+                  <span>MAKE INQUIRY</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
 
-                  {/* Special spiritual notes */}
-                  <div className="space-y-1">
-                    <textarea
-                      placeholder="Special dietary/spiritual/mobility requests (optional)..."
-                      value={specialNote}
-                      onChange={(e) => setSpecialNote(e.target.value)}
-                      rows={2}
-                      className="w-full bg-brand-lightbg border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-brand-blue text-brand-charcoal resize-none"
-                    />
-                  </div>
-
-                  {/* CTA */}
-                  <button
-                    type="submit"
-                    className="w-full bg-brand-blue hover:bg-brand-blue-accent text-white font-serif font-bold py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer border border-transparent"
-                  >
-                    <MessageSquare className="w-4 h-4 text-white/80" />
-                    <span>Inquire Custom Draft</span>
-                  </button>
-                </form>
-              )}
+              </div>
             </div>
 
             {/* TRUST PLEDGE BANNER */}

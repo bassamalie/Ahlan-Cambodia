@@ -46,6 +46,7 @@ export interface ItineraryDayItem {
 
 export interface TourPackage {
   id: string;
+  code?: string;
   name: string;
   duration: string;
   description: string;

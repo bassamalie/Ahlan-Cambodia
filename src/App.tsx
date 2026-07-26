@@ -53,13 +53,15 @@ import BlogDetailPage from "./components/BlogDetailPage";
 import AdminCMS from "./components/AdminCMS";
 import InspirationPage from "./components/InspirationPage";
 import { SocialVideoCard } from "./components/SocialVideoCard";
+import PackageInquiryPage from "./components/PackageInquiryPage";
+import { getPackageSlug } from "./utils/pdfGenerator";
 
 export default function App() {
   // Navigation & Scroll states
   const [scrolled, setScrolled] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [language, setLanguage] = useState<string>("EN");
-  const [currentView, setCurrentView] = useState<"home" | "destinations" | "experiences" | "packages" | "hotels" | "restaurants" | "mosques" | "destination-detail" | "experience-detail" | "package-detail" | "hotel-detail" | "dining-detail" | "mosque-detail" | "blog-detail" | "admin-cms" | "inspiration">("home");
+  const [currentView, setCurrentView] = useState<"home" | "destinations" | "experiences" | "packages" | "hotels" | "restaurants" | "mosques" | "destination-detail" | "experience-detail" | "package-detail" | "hotel-detail" | "dining-detail" | "mosque-detail" | "blog-detail" | "admin-cms" | "inspiration" | "package-inquiry">("home");
   const [activeDestination, setActiveDestination] = useState<Destination | null>(null);
   const [activeExperience, setActiveExperience] = useState<Experience | null>(null);
   const [activePackage, setActivePackage] = useState<TourPackage | null>(null);
@@ -627,6 +629,28 @@ export default function App() {
         } else {
           setCurrentView("inspiration");
         }
+      } else if (first === "enquiry" || first === "inquiry" || first === "package-inquiry") {
+        if (parts.length > 1) {
+          const rawSegment = decodeURIComponent(parts[1]).trim();
+          const cleanTarget = rawSegment.toLowerCase().replace(/-/g, " ").trim();
+          const slugTarget = rawSegment.toUpperCase().replace(/[^A-Z0-9]+/g, "-");
+          const found = allPackages.find(p => 
+            (p.name && getPackageSlug(p) === slugTarget) ||
+            (p.name && p.name.toLowerCase().replace(/-/g, " ").trim() === cleanTarget) ||
+            (p.id && p.id.toLowerCase().replace(/-/g, " ").trim() === cleanTarget)
+          );
+          if (found) {
+            setActivePackage(found);
+            setCurrentView("package-inquiry");
+          } else if (allPackages.length > 0) {
+            setActivePackage(allPackages[0]);
+            setCurrentView("package-inquiry");
+          } else {
+            setCurrentView("packages");
+          }
+        } else {
+          setCurrentView("packages");
+        }
       } else if (first === "admin-cms") {
         setCurrentView("admin-cms");
       } else {
@@ -680,6 +704,8 @@ export default function App() {
       path = `/inspiration/${guideSlug}`;
     } else if (currentView === "admin-cms") {
       path = "/admin-cms";
+    } else if (currentView === "package-inquiry" && activePackage) {
+      path = `/enquiry/${getPackageSlug(activePackage)}`;
     }
 
     if (window.location.pathname !== path || window.location.hash) {
@@ -2649,6 +2675,19 @@ export default function App() {
               category: "package",
               image: pkg.image
             });
+          }}
+          onOpenInquiry={(pkg) => {
+            setActivePackage(pkg);
+            setCurrentView("package-inquiry");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
+      ) : currentView === "package-inquiry" && activePackage ? (
+        <PackageInquiryPage
+          tourPackage={activePackage}
+          onBack={() => {
+            setCurrentView("package-detail");
+            window.scrollTo({ top: 0, behavior: "smooth" });
           }}
         />
       ) : currentView === "hotel-detail" && (activeHotel || allHotels[0]) ? (
