@@ -504,7 +504,7 @@ export default function ExperiencesPage({
                           )}
                         </div>
                         <a 
-                          href={(exp as any).productUrl || `/experiences/${(exp.title || exp.name || exp.id).replace(/\s+/g, "-")}`}
+                          href={(exp as any).productUrl || `/experiences/${(exp.title || exp.name || exp.id).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
                           target={(exp as any).productUrl ? "_blank" : "_self"}
                           rel={(exp as any).productUrl ? "noopener noreferrer" : undefined}
                           onClick={(e) => {

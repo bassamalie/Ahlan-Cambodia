@@ -1499,7 +1499,6 @@ export default function AdminCMS({
         lastUpdated: new Date().toISOString(),
         layoutVersion: "v2",
         isGoogleImport: true,
-        muslimFriendlyBadge: undefined,
         muslimFriendly: false,
         priceCategory: h.priceCategory || "$$$$ Luxury",
         propertyType: h.propertyType || "5-Star Luxury Resort",
@@ -2185,15 +2184,16 @@ export default function AdminCMS({
       nearbyAttractions: hotelNearbyAttractions.filter(a => a.name.trim() !== ""),
       address: hotelAddress,
       mapUrl: hotelMapUrl,
-      stay22Url: hotelStay22Url.trim() || undefined,
-      stay22HotelId: hotelStay22HotelId.trim() || undefined,
-      stay22Aid: hotelStay22Aid.trim() || undefined
+      stay22Url: hotelStay22Url.trim() || "",
+      stay22HotelId: hotelStay22HotelId.trim() || "",
+      stay22Aid: hotelStay22Aid.trim() || ""
     };
 
     if (editingHotelId) {
       if (onUpdateHotel) {
         onUpdateHotel(preparedHotel);
       } else {
+        saveDocInCollection("hotels", preparedHotel);
         setLocalHotels(prev => prev.map(h => h.id === editingHotelId ? preparedHotel : h));
       }
       triggerToast(`Successfully saved amendments for: ${hotelName}`, "success");
@@ -2201,6 +2201,7 @@ export default function AdminCMS({
       if (onAddHotel) {
         onAddHotel(preparedHotel);
       } else {
+        saveDocInCollection("hotels", preparedHotel);
         setLocalHotels(prev => [preparedHotel, ...prev]);
       }
       triggerToast(`Successfully deployed hotel: ${hotelName}`, "success");

@@ -14,9 +14,9 @@ export function getTourCode(pkg: TourPackage): string {
 export function getPackageSlug(pkg: TourPackage): string {
   if (!pkg || !pkg.name) return "package";
   return pkg.name
-    .toUpperCase()
+    .toLowerCase()
     .trim()
-    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
 

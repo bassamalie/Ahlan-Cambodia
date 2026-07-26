@@ -901,7 +901,7 @@ export default function HotelDetailPage({
                             </div>
                             <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
                               <a 
-                                href={`/experiences/${(exp.name || exp.id).replace(/\s+/g, "-")}`}
+                                href={`/experiences/${(exp.name || exp.id).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
                                 onClick={(e) => {
                                   if (!e.ctrlKey && !e.metaKey && e.button !== 1 && !e.shiftKey) {
                                     e.preventDefault();

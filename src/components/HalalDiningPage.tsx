@@ -235,7 +235,7 @@ export default function HalalDiningPage({
                       {/* Footer action */}
                       <div className="pt-4 border-t border-brand-blue-accent/10 flex items-center justify-end text-xs">
                         <a 
-                          href={`/dining/${(rest.name || rest.id).replace(/\s+/g, "-")}`}
+                          href={`/dining/${(rest.name || rest.id).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
                           onClick={(e) => {
                             if (!e.ctrlKey && !e.metaKey && e.button !== 1 && !e.shiftKey) {
                               e.preventDefault();

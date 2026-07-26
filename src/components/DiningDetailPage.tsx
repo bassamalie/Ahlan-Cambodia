@@ -372,7 +372,8 @@ export default function DiningDetailPage({
   const isSaved = wishlist.includes(restaurant.id);
 
   const handleShare = () => {
-    const url = `${window.location.origin}/dining/${restaurant.name.replace(/\s+/g, "-")}`;
+    const slug = (restaurant.name || restaurant.id).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const url = `${window.location.origin}/dining/${slug}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);

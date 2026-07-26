@@ -160,7 +160,8 @@ export default function MosqueDetailPage({
   const isSaved = wishlist.includes(mosque.id);
 
   const handleShare = () => {
-    const url = `${window.location.origin}/mosque/${mosque.name.replace(/\s+/g, "-")}`;
+    const slug = (mosque.name || mosque.id).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const url = `${window.location.origin}/mosques/${slug}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);

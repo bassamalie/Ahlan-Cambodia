@@ -257,7 +257,7 @@ export default function DestinationsPage({
                       {/* Card Footer action button */}
                       <div className="pt-5 border-t border-brand-blue-accent/10 flex items-center justify-end">
                         <a 
-                          href={`/destinations/${dest.name.replace(/\s+/g, "-")}`}
+                          href={`/destinations/${dest.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
                           onClick={(e) => {
                             if (!e.ctrlKey && !e.metaKey && e.button !== 1 && !e.shiftKey) {
                               e.preventDefault();

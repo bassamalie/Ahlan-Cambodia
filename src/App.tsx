@@ -237,21 +237,42 @@ export default function App() {
     return fallback;
   };
 
+  // Helper for updating cache along with state
+  const updateCache = (key: string, data: any[]) => {
+    try {
+      localStorage.setItem(`ahlan_cache_${key}`, JSON.stringify(data));
+    } catch (e) {
+      // cache full or disabled
+    }
+  };
+
   // Dynamic destinations state with instant cache hydration
   const [allDestinations, setAllDestinations] = useState<Destination[]>(() => loadCache("destinations", destinations));
 
   const handleAddDestination = (newDest: Destination) => {
-    setAllDestinations((prev) => [newDest, ...prev]);
+    setAllDestinations((prev) => {
+      const updated = [newDest, ...prev.filter(d => d.id !== newDest.id)];
+      updateCache("destinations", updated);
+      return updated;
+    });
     saveDocInCollection("destinations", newDest);
   };
 
   const handleUpdateDestination = (updatedDest: Destination) => {
-    setAllDestinations((prev) => prev.map((d) => d.id === updatedDest.id ? updatedDest : d));
+    setAllDestinations((prev) => {
+      const updated = prev.map((d) => d.id === updatedDest.id ? updatedDest : d);
+      updateCache("destinations", updated);
+      return updated;
+    });
     saveDocInCollection("destinations", updatedDest);
   };
 
   const handleDeleteDestination = (id: string) => {
-    setAllDestinations((prev) => prev.filter((d) => d.id !== id));
+    setAllDestinations((prev) => {
+      const updated = prev.filter((d) => d.id !== id);
+      updateCache("destinations", updated);
+      return updated;
+    });
     deleteDocFromCollection("destinations", id);
   };
 
@@ -259,17 +280,29 @@ export default function App() {
   const [allExperiences, setAllExperiences] = useState<Experience[]>(() => loadCache("experiences", []));
 
   const handleAddExperience = (newExp: Experience) => {
-    setAllExperiences((prev) => [newExp, ...prev]);
+    setAllExperiences((prev) => {
+      const updated = [newExp, ...prev.filter(e => e.id !== newExp.id)];
+      updateCache("experiences", updated);
+      return updated;
+    });
     saveDocInCollection("experiences", newExp);
   };
 
   const handleUpdateExperience = (updatedExp: Experience) => {
-    setAllExperiences((prev) => prev.map((e) => e.id === updatedExp.id ? updatedExp : e));
+    setAllExperiences((prev) => {
+      const updated = prev.map((e) => e.id === updatedExp.id ? updatedExp : e);
+      updateCache("experiences", updated);
+      return updated;
+    });
     saveDocInCollection("experiences", updatedExp);
   };
 
   const handleDeleteExperience = (id: string) => {
-    setAllExperiences((prev) => prev.filter((e) => e.id !== id));
+    setAllExperiences((prev) => {
+      const updated = prev.filter((e) => e.id !== id);
+      updateCache("experiences", updated);
+      return updated;
+    });
     deleteDocFromCollection("experiences", id);
   };
 
@@ -277,17 +310,29 @@ export default function App() {
   const [allPackages, setAllPackages] = useState<TourPackage[]>(() => loadCache("packages", []));
 
   const handleAddPackage = (newPkg: TourPackage) => {
-    setAllPackages((prev) => [newPkg, ...prev]);
+    setAllPackages((prev) => {
+      const updated = [newPkg, ...prev.filter(p => p.id !== newPkg.id)];
+      updateCache("packages", updated);
+      return updated;
+    });
     saveDocInCollection("packages", newPkg);
   };
 
   const handleUpdatePackage = (updatedPkg: TourPackage) => {
-    setAllPackages((prev) => prev.map((p) => p.id === updatedPkg.id ? updatedPkg : p));
+    setAllPackages((prev) => {
+      const updated = prev.map((p) => p.id === updatedPkg.id ? updatedPkg : p);
+      updateCache("packages", updated);
+      return updated;
+    });
     saveDocInCollection("packages", updatedPkg);
   };
 
   const handleDeletePackage = (id: string) => {
-    setAllPackages((prev) => prev.filter((p) => p.id !== id));
+    setAllPackages((prev) => {
+      const updated = prev.filter((p) => p.id !== id);
+      updateCache("packages", updated);
+      return updated;
+    });
     deleteDocFromCollection("packages", id);
   };
 
@@ -295,17 +340,29 @@ export default function App() {
   const [allHotels, setAllHotels] = useState<Hotel[]>(() => loadCache("hotels", []));
 
   const handleAddHotel = (newHotel: Hotel) => {
-    setAllHotels((prev) => [newHotel, ...prev]);
+    setAllHotels((prev) => {
+      const updated = [newHotel, ...prev.filter(h => h.id !== newHotel.id)];
+      updateCache("hotels", updated);
+      return updated;
+    });
     saveDocInCollection("hotels", newHotel);
   };
 
   const handleUpdateHotel = (updatedHotel: Hotel) => {
-    setAllHotels((prev) => prev.map((h) => h.id === updatedHotel.id ? updatedHotel : h));
+    setAllHotels((prev) => {
+      const updated = prev.map((h) => h.id === updatedHotel.id ? updatedHotel : h);
+      updateCache("hotels", updated);
+      return updated;
+    });
     saveDocInCollection("hotels", updatedHotel);
   };
 
   const handleDeleteHotel = (id: string) => {
-    setAllHotels((prev) => prev.filter((h) => h.id !== id));
+    setAllHotels((prev) => {
+      const updated = prev.filter((h) => h.id !== id);
+      updateCache("hotels", updated);
+      return updated;
+    });
     deleteDocFromCollection("hotels", id);
   };
 
@@ -313,19 +370,31 @@ export default function App() {
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>(() => loadCache("restaurants", []));
 
   const handleAddRestaurant = (newRest: Restaurant) => {
-    setAllRestaurants((prev) => [newRest, ...prev]);
+    setAllRestaurants((prev) => {
+      const updated = [newRest, ...prev.filter(r => r.id !== newRest.id)];
+      updateCache("restaurants", updated);
+      return updated;
+    });
     saveDocInCollection("restaurants", newRest);
     saveDocInCollection("dining", newRest);
   };
 
   const handleUpdateRestaurant = (updatedRest: Restaurant) => {
-    setAllRestaurants((prev) => prev.map((r) => r.id === updatedRest.id ? updatedRest : r));
+    setAllRestaurants((prev) => {
+      const updated = prev.map((r) => r.id === updatedRest.id ? updatedRest : r);
+      updateCache("restaurants", updated);
+      return updated;
+    });
     saveDocInCollection("restaurants", updatedRest);
     saveDocInCollection("dining", updatedRest);
   };
 
   const handleDeleteRestaurant = (id: string) => {
-    setAllRestaurants((prev) => prev.filter((r) => r.id !== id));
+    setAllRestaurants((prev) => {
+      const updated = prev.filter((r) => r.id !== id);
+      updateCache("restaurants", updated);
+      return updated;
+    });
     deleteDocFromCollection("restaurants", id);
     deleteDocFromCollection("dining", id);
   };
@@ -334,17 +403,29 @@ export default function App() {
   const [allMosques, setAllMosques] = useState<Mosque[]>(() => loadCache("mosques", []));
 
   const handleAddMosque = (newMosque: Mosque) => {
-    setAllMosques((prev) => [newMosque, ...prev]);
+    setAllMosques((prev) => {
+      const updated = [newMosque, ...prev.filter(m => m.id !== newMosque.id)];
+      updateCache("mosques", updated);
+      return updated;
+    });
     saveDocInCollection("mosques", newMosque);
   };
 
   const handleUpdateMosque = (updatedMosque: Mosque) => {
-    setAllMosques((prev) => prev.map((m) => m.id === updatedMosque.id ? updatedMosque : m));
+    setAllMosques((prev) => {
+      const updated = prev.map((m) => m.id === updatedMosque.id ? updatedMosque : m);
+      updateCache("mosques", updated);
+      return updated;
+    });
     saveDocInCollection("mosques", updatedMosque);
   };
 
   const handleDeleteMosque = (id: string) => {
-    setAllMosques((prev) => prev.filter((m) => m.id !== id));
+    setAllMosques((prev) => {
+      const updated = prev.filter((m) => m.id !== id);
+      updateCache("mosques", updated);
+      return updated;
+    });
     deleteDocFromCollection("mosques", id);
   };
 
@@ -352,17 +433,29 @@ export default function App() {
   const [allGuides, setAllGuides] = useState<TravelGuide[]>(() => loadCache("travelGuides", []));
 
   const handleAddGuide = (newGuide: TravelGuide) => {
-    setAllGuides((prev) => [newGuide, ...prev]);
+    setAllGuides((prev) => {
+      const updated = [newGuide, ...prev.filter(g => g.id !== newGuide.id)];
+      updateCache("travelGuides", updated);
+      return updated;
+    });
     saveDocInCollection("travelGuides", newGuide);
   };
 
   const handleUpdateGuide = (updatedGuide: TravelGuide) => {
-    setAllGuides((prev) => prev.map((g) => g.id === updatedGuide.id ? updatedGuide : g));
+    setAllGuides((prev) => {
+      const updated = prev.map((g) => g.id === updatedGuide.id ? updatedGuide : g);
+      updateCache("travelGuides", updated);
+      return updated;
+    });
     saveDocInCollection("travelGuides", updatedGuide);
   };
 
   const handleDeleteGuide = (id: string) => {
-    setAllGuides((prev) => prev.filter((g) => g.id !== id));
+    setAllGuides((prev) => {
+      const updated = prev.filter((g) => g.id !== id);
+      updateCache("travelGuides", updated);
+      return updated;
+    });
     deleteDocFromCollection("travelGuides", id);
   };
 
@@ -439,14 +532,17 @@ export default function App() {
           if (!dbGuides.some((g) => g.id === item.id)) dbGuides.push(item);
         });
 
-        // Helper to safely merge local state with Firestore so user edits/creations are never wiped out
+        // Helper to merge local state with Firestore, giving priority to Firestore as source of truth
         const safeMerge = <T extends { id: string }>(prevItems: T[], fetchedItems: T[]): T[] => {
-          if (fetchedItems.length === 0) return prevItems;
+          if (!fetchedItems || fetchedItems.length === 0) return prevItems;
           const map = new Map<string, T>();
-          prevItems.forEach((item) => map.set(item.id, item));
-          fetchedItems.forEach((item) => {
-            const existing = map.get(item.id);
-            map.set(item.id, existing ? { ...existing, ...item } : item);
+          // 1. Primary source of truth: fetched items from Firestore
+          fetchedItems.forEach((item) => map.set(item.id, item));
+          // 2. Retain any un-persisted items created locally in this session if not yet in Firestore
+          prevItems.forEach((item) => {
+            if (!map.has(item.id)) {
+              map.set(item.id, item);
+            }
           });
           return Array.from(map.values());
         };
@@ -533,9 +629,11 @@ export default function App() {
         }
       } else if (first === "packages" || first === "package") {
         if (parts.length > 1) {
-          const idOrName = decodeURIComponent(parts[1]).toLowerCase().trim();
-          const cleanTarget = idOrName.replace(/-/g, " ").trim();
+          const rawSegment = decodeURIComponent(parts[1]).trim();
+          const cleanTarget = rawSegment.toLowerCase().replace(/-/g, " ").trim();
+          const slugTarget = rawSegment.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
           const found = allPackages.find(p => 
+            (p.name && getPackageSlug(p) === slugTarget) ||
             (p.title && p.title.toLowerCase().replace(/-/g, " ").trim() === cleanTarget) ||
             (p.name && p.name.toLowerCase().replace(/-/g, " ").trim() === cleanTarget) ||
             p.id.toLowerCase().replace(/-/g, " ").trim() === cleanTarget
@@ -633,7 +731,7 @@ export default function App() {
         if (parts.length > 1) {
           const rawSegment = decodeURIComponent(parts[1]).trim();
           const cleanTarget = rawSegment.toLowerCase().replace(/-/g, " ").trim();
-          const slugTarget = rawSegment.toUpperCase().replace(/[^A-Z0-9]+/g, "-");
+          const slugTarget = rawSegment.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
           const found = allPackages.find(p => 
             (p.name && getPackageSlug(p) === slugTarget) ||
             (p.name && p.name.toLowerCase().replace(/-/g, " ").trim() === cleanTarget) ||
@@ -671,37 +769,31 @@ export default function App() {
     if (currentView === "destinations") {
       path = "/destination";
     } else if (currentView === "destination-detail" && activeDestination) {
-      path = `/destinations/${activeDestination.name.replace(/\s+/g, "-")}`;
+      path = getItemUrl("destination", activeDestination);
     } else if (currentView === "experiences") {
       path = "/experiences";
     } else if (currentView === "experience-detail" && activeExperience) {
-      const nameOrId = activeExperience.title || activeExperience.name || activeExperience.id;
-      path = `/experiences/${nameOrId.replace(/\s+/g, "-")}`;
+      path = getItemUrl("experience", activeExperience);
     } else if (currentView === "packages") {
       path = "/packages";
     } else if (currentView === "package-detail" && activePackage) {
-      const nameOrId = activePackage.title || activePackage.name || activePackage.id;
-      path = `/packages/${nameOrId.replace(/\s+/g, "-")}`;
+      path = getItemUrl("package", activePackage);
     } else if (currentView === "hotels") {
       path = "/hotels";
     } else if (currentView === "hotel-detail" && activeHotel) {
-      const nameOrId = activeHotel.name || activeHotel.id;
-      path = `/hotels/${nameOrId.replace(/\s+/g, "-")}`;
+      path = getItemUrl("hotel", activeHotel);
     } else if (currentView === "restaurants") {
       path = "/dining";
     } else if (currentView === "dining-detail" && activeRestaurant) {
-      path = `/dining/${activeRestaurant.name.replace(/\s+/g, "-")}`;
+      path = getItemUrl("restaurant", activeRestaurant);
     } else if (currentView === "mosques") {
       path = "/mosques";
     } else if (currentView === "mosque-detail" && activeMosque) {
-      path = `/mosques/${activeMosque.name.replace(/\s+/g, "-")}`;
+      path = getItemUrl("mosque", activeMosque);
     } else if (currentView === "inspiration") {
       path = "/inspiration";
     } else if (currentView === "blog-detail" && activeGuide) {
-      const guideSlug = (activeGuide as any).slug || (activeGuide.title 
-        ? activeGuide.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") 
-        : activeGuide.id);
-      path = `/inspiration/${guideSlug}`;
+      path = getItemUrl("guide", activeGuide);
     } else if (currentView === "admin-cms") {
       path = "/admin-cms";
     } else if (currentView === "package-inquiry" && activePackage) {
@@ -1807,7 +1899,7 @@ export default function App() {
           
           <div className="text-center space-y-5">
             <h2 className="text-3xl sm:text-4xl font-serif text-brand-charcoal font-bold">
-              Featured Luxury Tour Packages
+              Featured Tour Packages
             </h2>
             <p className="text-brand-charcoal/60 text-sm max-w-xl mx-auto leading-relaxed">
               Curated master itineraries incorporating seamless custom transit, private local historians, and certified dining.
@@ -1815,7 +1907,7 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {allPackages.map((pack) => {
+            {allPackages.slice(0, 3).map((pack) => {
               const isSaved = wishlist.packages.includes(pack.id);
               const destinationTag = pack.destinations && pack.destinations.length > 0
                 ? pack.destinations.join(" • ")
@@ -1912,6 +2004,24 @@ export default function App() {
               );
             })}
           </div>
+
+          {/* View More Packages button */}
+          <div className="text-center pt-4">
+            <a
+              href="/packages"
+              onClick={(e) => {
+                if (e.ctrlKey || e.metaKey || e.button === 1 || e.shiftKey) return;
+                e.preventDefault();
+                setCurrentView("packages");
+                window.history.pushState(null, "", "/packages");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="inline-flex items-center gap-2 bg-[#0F1626] hover:bg-brand-blue-accent text-white font-mono text-xs font-bold uppercase tracking-widest px-8 py-3.5 rounded-xl border border-brand-blue-accent/20 transition-all shadow-md hover:shadow-lg cursor-pointer group"
+            >
+              <span>View More Packages</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </a>
+          </div>
         </section>
       </div>
     </div>
@@ -1932,8 +2042,8 @@ export default function App() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {allExperiences.map((exp) => {
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {allExperiences.slice(0, 3).map((exp) => {
               const isSaved = wishlist.experiences.includes(exp.id);
               return (
                 <div key={exp.id} className="bg-white rounded-3xl border border-brand-blue-accent/15 overflow-hidden shadow-sm group hover:shadow-md transition-all flex flex-col justify-between">
@@ -1979,18 +2089,36 @@ export default function App() {
               );
             })}
           </div>
+
+          {/* View More Experiences button */}
+          <div className="text-center pt-4">
+            <a
+              href="/experiences"
+              onClick={(e) => {
+                if (e.ctrlKey || e.metaKey || e.button === 1 || e.shiftKey) return;
+                e.preventDefault();
+                setCurrentView("experiences");
+                window.history.pushState(null, "", "/experiences");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="inline-flex items-center gap-2 bg-[#0F1626] hover:bg-brand-blue-accent text-white font-mono text-xs font-bold uppercase tracking-widest px-8 py-3.5 rounded-xl border border-brand-blue-accent/20 transition-all shadow-md hover:shadow-lg cursor-pointer group"
+            >
+              <span>View More Experiences</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </a>
+          </div>
         </section>
       </div>
     </div>
 
-    {/* ---------------- 5. MUSLIM-FRIENDLY HOTELS ---------------- */}
+    {/* ---------------- 5. SELECT PREMIUM STAYS ---------------- */}
     <div className="w-full bg-brand-lightbg py-20 border-b border-brand-blue-accent/15">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <section id="hotels" className="space-y-12">
           
           <div className="text-center space-y-5">
             <h2 className="text-3xl sm:text-4xl font-serif text-brand-charcoal font-bold">
-              Muslim-Friendly Luxury Hotels
+              Select Premium Stays
             </h2>
             <p className="text-brand-charcoal/60 text-sm max-w-xl mx-auto leading-relaxed">
               Exquisite properties offering private spaces, certified halal selections, and seamless proximity to mosques.
@@ -1998,7 +2126,7 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {allHotels.map((hotel) => {
+            {allHotels.slice(0, 3).map((hotel) => {
               const isSaved = wishlist.hotels.includes(hotel.id);
               return (
                 <div 
@@ -2089,11 +2217,29 @@ export default function App() {
               );
             })}
           </div>
+
+          {/* View More Stays button */}
+          <div className="text-center pt-4">
+            <a
+              href="/hotels"
+              onClick={(e) => {
+                if (e.ctrlKey || e.metaKey || e.button === 1 || e.shiftKey) return;
+                e.preventDefault();
+                setCurrentView("hotels");
+                window.history.pushState(null, "", "/hotels");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="inline-flex items-center gap-2 bg-[#0F1626] hover:bg-brand-blue-accent text-white font-mono text-xs font-bold uppercase tracking-widest px-8 py-3.5 rounded-xl border border-brand-blue-accent/20 transition-all shadow-md hover:shadow-lg cursor-pointer group"
+            >
+              <span>View More Stays</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </a>
+          </div>
         </section>
       </div>
     </div>
 
-    {/* ---------------- 6. HALAL FOOD GUIDE ---------------- */}
+    {/* ---------------- 6. VERIFIED FOOD GUIDE ---------------- */}
     <div className="w-full bg-white py-20 border-b border-brand-blue-accent/15">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <section id="halal-dining" className="space-y-12">
@@ -2101,7 +2247,7 @@ export default function App() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-brand-blue-accent/20 pb-4">
             <div className="space-y-4">
               <h2 className="text-3xl sm:text-4xl font-serif text-brand-charcoal font-bold">
-                Verified Halal Food Guide
+                Verified Food Guide
               </h2>
             </div>
             <p className="text-brand-charcoal/60 text-xs sm:text-sm max-w-md leading-relaxed">
@@ -2110,7 +2256,7 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {allRestaurants.map((rest) => {
+            {allRestaurants.slice(0, 4).map((rest) => {
               const isSaved = wishlist.restaurants.includes(rest.id);
               return (
                 <div 
@@ -2182,6 +2328,24 @@ export default function App() {
               );
             })}
           </div>
+
+          {/* View More Food Options button */}
+          <div className="text-center pt-4">
+            <a
+              href="/dining"
+              onClick={(e) => {
+                if (e.ctrlKey || e.metaKey || e.button === 1 || e.shiftKey) return;
+                e.preventDefault();
+                setCurrentView("restaurants");
+                window.history.pushState(null, "", "/dining");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="inline-flex items-center gap-2 bg-[#0F1626] hover:bg-brand-blue-accent text-white font-mono text-xs font-bold uppercase tracking-widest px-8 py-3.5 rounded-xl border border-brand-blue-accent/20 transition-all shadow-md hover:shadow-lg cursor-pointer group"
+            >
+              <span>View More Food Options</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </a>
+          </div>
         </section>
       </div>
     </div>
@@ -2201,7 +2365,7 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {allMosques.map((mosque) => (
+            {allMosques.slice(0, 3).map((mosque) => (
               <div key={mosque.id} className="bg-white rounded-3xl border border-brand-blue-accent/15 overflow-hidden shadow-sm flex flex-col justify-between hover:border-brand-blue-accent transition-all group">
                 <div className="relative overflow-hidden h-48">
                   <img src={mosque.image} alt={mosque.name} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" />
@@ -2236,6 +2400,24 @@ export default function App() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* View More Mosques button */}
+          <div className="text-center pt-4">
+            <a
+              href="/mosques"
+              onClick={(e) => {
+                if (e.ctrlKey || e.metaKey || e.button === 1 || e.shiftKey) return;
+                e.preventDefault();
+                setCurrentView("mosques");
+                window.history.pushState(null, "", "/mosques");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="inline-flex items-center gap-2 bg-[#0F1626] hover:bg-brand-blue-accent text-white font-mono text-xs font-bold uppercase tracking-widest px-8 py-3.5 rounded-xl border border-brand-blue-accent/20 transition-all shadow-md hover:shadow-lg cursor-pointer group"
+            >
+              <span>View More Mosques</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </a>
           </div>
         </section>
       </div>
@@ -2349,6 +2531,24 @@ export default function App() {
               </div>
             );
           })()}
+
+          {/* View More Articles button */}
+          <div className="text-center pt-4">
+            <a
+              href="/inspiration"
+              onClick={(e) => {
+                if (e.ctrlKey || e.metaKey || e.button === 1 || e.shiftKey) return;
+                e.preventDefault();
+                setCurrentView("inspiration");
+                window.history.pushState(null, "", "/inspiration");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="inline-flex items-center gap-2 bg-[#0F1626] hover:bg-brand-blue-accent text-white font-mono text-xs font-bold uppercase tracking-widest px-8 py-3.5 rounded-xl border border-brand-blue-accent/20 transition-all shadow-md hover:shadow-lg cursor-pointer group"
+            >
+              <span>View More Articles</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </a>
+          </div>
         </section>
       </div>
     </div>

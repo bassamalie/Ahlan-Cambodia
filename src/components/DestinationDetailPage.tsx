@@ -712,7 +712,7 @@ export default function DestinationDetailPage({
                         <span>Save</span>
                       </button>
                       <a 
-                        href={`/experiences/${(exp.name || exp.id).replace(/\s+/g, "-")}`}
+                        href={`/experiences/${(exp.name || exp.id).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
                         onClick={(e) => {
                           if (!e.ctrlKey && !e.metaKey && e.button !== 1 && !e.shiftKey) {
                             e.preventDefault();
@@ -840,7 +840,7 @@ export default function DestinationDetailPage({
                       {/* Card Footer action button */}
                       <div className="pt-2 border-t border-slate-100 flex justify-end">
                         <a 
-                          href={`/hotels/${(hotel.name || hotel.id).replace(/\s+/g, "-")}`}
+                          href={`/hotels/${(hotel.name || hotel.id).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
                           onClick={(e) => {
                             if (!e.ctrlKey && !e.metaKey && e.button !== 1 && !e.shiftKey) {
                               e.preventDefault();
@@ -1175,7 +1175,7 @@ export default function DestinationDetailPage({
                           {/* Footer action */}
                           <div className="pt-4 border-t border-brand-blue-accent/10 flex items-center justify-end text-xs">
                             <a 
-                              href={`/dining/${(rest.name || rest.id).replace(/\s+/g, "-")}`}
+                              href={`/dining/${(rest.name || rest.id).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
                               onClick={(e) => {
                                 if (!e.ctrlKey && !e.metaKey && e.button !== 1 && !e.shiftKey) {
                                   e.preventDefault();

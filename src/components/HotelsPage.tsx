@@ -249,7 +249,7 @@ export default function HotelsPage({
                       {/* Card Footer action button */}
                       <div className="pt-2 border-t border-slate-100 flex justify-end">
                         <a 
-                          href={`/hotels/${(hotel.name || hotel.id).replace(/\s+/g, "-")}`}
+                          href={`/hotels/${(hotel.name || hotel.id).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
                           onClick={(e) => {
                             if (!e.ctrlKey && !e.metaKey && e.button !== 1 && !e.shiftKey) {
                               e.preventDefault();

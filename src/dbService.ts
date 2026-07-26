@@ -39,6 +39,26 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 }
 
 /**
+ * Recursively cleans an object for Firestore by removing any undefined properties.
+ */
+export function cleanForFirestore<T>(obj: T): T {
+  if (obj === null || obj === undefined) return obj;
+  if (Array.isArray(obj)) {
+    return obj.map(item => cleanForFirestore(item)) as unknown as T;
+  }
+  if (typeof obj === "object" && !(obj instanceof Date)) {
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = cleanForFirestore(value);
+      }
+    }
+    return cleaned;
+  }
+  return obj;
+}
+
+/**
  * Fetches an entire collection from Firestore.
  * Performs a one-time initial seed into Firestore if the collection is brand new and has never been seeded.
  * If the collection has been seeded previously and is empty (e.g., user deleted all items), returns empty array [].
@@ -73,7 +93,7 @@ export async function fetchCollection<T extends { id: string }>(
           const batch = writeBatch(db);
           for (const item of defaultData) {
             const docRef = doc(db, collectionName, item.id);
-            batch.set(docRef, item);
+            batch.set(docRef, cleanForFirestore(item));
           }
           await batch.commit();
 
@@ -118,7 +138,8 @@ export async function saveDocInCollection<T extends { id: string }>(
   const path = `${collectionName}/${item.id}`;
   try {
     const docRef = doc(db, collectionName, item.id);
-    await setDoc(docRef, item);
+    const cleaned = cleanForFirestore(item);
+    await setDoc(docRef, cleaned);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -156,7 +177,8 @@ export async function fetchDocument<T>(
     
     if (!docSnap.exists()) {
       console.log(`Document "${path}" does not exist. Initializing with default data...`);
-      await setDoc(docRef, defaultData as any);
+      const cleanedDefault = cleanForFirestore(defaultData);
+      await setDoc(docRef, cleanedDefault as any);
       return defaultData;
     }
     
@@ -178,7 +200,8 @@ export async function saveDocument<T>(
   const path = `${collectionName}/${docId}`;
   try {
     const docRef = doc(db, collectionName, docId);
-    await setDoc(docRef, data as any);
+    const cleaned = cleanForFirestore(data);
+    await setDoc(docRef, cleaned as any);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }

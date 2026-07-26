@@ -747,7 +747,7 @@ export default function ExperienceDetailPage({
                       </button>
                       
                       <a 
-                        href={`/experiences/${(exp.title || exp.name || exp.id).replace(/\s+/g, "-")}`}
+                        href={`/experiences/${(exp.title || exp.name || exp.id).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
                         onClick={(e) => {
                           if (!e.ctrlKey && !e.metaKey && e.button !== 1 && !e.shiftKey) {
                             e.preventDefault();

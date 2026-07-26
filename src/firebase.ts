@@ -18,8 +18,10 @@ const app = initializeApp(firebaseConfig);
 export const storage = getStorage(app);
 
 // Initialize Firestore
-import { getFirestore } from "firebase/firestore";
-export const db = getFirestore(app);
+import { initializeFirestore } from "firebase/firestore";
+export const db = initializeFirestore(app, {
+  ignoreUndefinedProperties: true
+});
 
 /**
  * Uploads a File object (from file inputs) directly to Firebase Storage.
