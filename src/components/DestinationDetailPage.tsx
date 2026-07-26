@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { 
   ArrowLeft, ArrowRight, Heart, Star, MapPin, Sparkles, CheckCircle, 
   Tv, Play, Utensils, BookOpen, Compass, Calendar, 
-  ExternalLink, ChevronRight, Award, Info, ShieldCheck, Clock, Bookmark,
+  ExternalLink, ChevronLeft, ChevronRight, Award, Info, ShieldCheck, Clock, Bookmark,
   Instagram, Youtube, ThumbsUp, MessageCircle, Send, Share2, Eye
 } from "lucide-react";
 import { Destination, Hotel, TourPackage, Experience, Mosque, Restaurant, TravelGuide } from "../types";
@@ -199,6 +199,7 @@ export default function DestinationDetailPage({
 }: DestinationDetailPageProps) {
   const [activeTab, setActiveTab] = useState<"all" | "hotels" | "experiences" | "packages" | "mosques" | "dining" | "social" | "blogs">("all");
   const [socialFilter, setSocialFilter] = useState<"all" | "tiktok" | "instagram" | "youtube">("all");
+  const [socialVideoIndex, setSocialVideoIndex] = useState(0);
   const [selectedSocialCard, setSelectedSocialCard] = useState<SocialCard | null>(null);
   const [newComment, setNewComment] = useState("");
   const [localComments, setLocalComments] = useState<{ [key: string]: any[] }>({});
@@ -1271,7 +1272,10 @@ export default function DestinationDetailPage({
                   ].map((plat) => (
                     <button
                       key={plat.id}
-                      onClick={() => setSocialFilter(plat.id as any)}
+                      onClick={() => {
+                        setSocialFilter(plat.id as any);
+                        setSocialVideoIndex(0);
+                      }}
                       className={`text-[10px] font-mono font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-lg cursor-pointer transition-all ${
                         socialFilter === plat.id 
                           ? "bg-brand-blue text-white border border-brand-blue-accent/20" 
@@ -1282,6 +1286,32 @@ export default function DestinationDetailPage({
                     </button>
                   ))}
                 </div>
+
+                {filteredSocialCards.length > 3 && (
+                  <div className="flex items-center gap-1.5 bg-black/30 p-1.5 rounded-xl border border-white/10 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setSocialVideoIndex(prev => (prev <= 0 ? Math.max(0, filteredSocialCards.length - 3) : prev - 1))}
+                      className="p-1.5 rounded-lg hover:bg-white/10 text-white transition-all cursor-pointer"
+                      title="Previous Videos"
+                      aria-label="Previous Videos"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-[10px] font-mono text-white/80 px-1">
+                      {socialVideoIndex + 1}-{Math.min(socialVideoIndex + 3, filteredSocialCards.length)} / {filteredSocialCards.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSocialVideoIndex(prev => (prev >= filteredSocialCards.length - 3 ? 0 : prev + 1))}
+                      className="p-1.5 rounded-lg hover:bg-white/10 text-white transition-all cursor-pointer"
+                      title="Next Videos"
+                      aria-label="Next Videos"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
 
                 {/* Add Video Button */}
                 <button
@@ -1431,34 +1461,57 @@ export default function DestinationDetailPage({
               </div>
             )}
 
-            {/* Social Media Cards Grid */}
+            {/* Social Media Cards Carousel */}
             {filteredSocialCards.length === 0 ? (
               <div className="text-center py-12 px-4 bg-white/5 rounded-2xl border border-white/10 max-w-md mx-auto relative z-10">
                 <p className="text-white/80 font-sans text-sm font-medium">No social videos added for {destination.name} yet.</p>
                 <p className="text-white/50 text-xs mt-1">Click 'Share Video' above to feature the first video reel!</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 relative z-10">
-                {filteredSocialCards.map((card) => {
-                  const c = card as any;
-                  return (
-                    <div
-                      key={card.id}
-                      onClick={() => setSelectedSocialCard(card)}
-                      className="cursor-pointer"
+              <div className="relative pt-4 z-10 group/dest-carousel">
+                {filteredSocialCards.length > 3 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setSocialVideoIndex(prev => (prev <= 0 ? Math.max(0, filteredSocialCards.length - 3) : prev - 1))}
+                      className="hidden lg:flex absolute -left-5 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-brand-charcoal/80 border border-white/20 shadow-xl text-white hover:bg-brand-blue-accent hover:text-[#0F1626] items-center justify-center transition-all cursor-pointer hover:scale-105"
+                      aria-label="Previous video"
                     >
-                      <SocialVideoCard
-                        video={{
-                          ...c,
-                          thumbnailUrl: c.thumbnailUrl || c.thumbnail
-                        }}
-                        fallbackName={destination.name}
-                        restaurantName={c.restaurantName}
-                        restaurantImage={destination.image}
-                      />
-                    </div>
-                  );
-                })}
+                      <ChevronLeft className="w-6 h-6" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSocialVideoIndex(prev => (prev >= filteredSocialCards.length - 3 ? 0 : prev + 1))}
+                      className="hidden lg:flex absolute -right-5 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-brand-charcoal/80 border border-white/20 shadow-xl text-white hover:bg-brand-blue-accent hover:text-[#0F1626] items-center justify-center transition-all cursor-pointer hover:scale-105"
+                      aria-label="Next video"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </button>
+                  </>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 transition-all duration-300">
+                  {filteredSocialCards.slice(socialVideoIndex, socialVideoIndex + 3).map((card) => {
+                    const c = card as any;
+                    return (
+                      <div
+                        key={card.id}
+                        onClick={() => setSelectedSocialCard(card)}
+                        className="cursor-pointer"
+                      >
+                        <SocialVideoCard
+                          video={{
+                            ...c,
+                            thumbnailUrl: c.thumbnailUrl || c.thumbnail
+                          }}
+                          fallbackName={destination.name}
+                          restaurantName={c.restaurantName}
+                          restaurantImage={destination.image}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
