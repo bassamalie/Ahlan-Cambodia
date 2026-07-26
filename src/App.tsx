@@ -10,7 +10,7 @@ import {
   Compass, Heart, MapPin, Star, Search, Menu, X, Globe, Sparkles, 
   Calculator, Sun, Moon, Sunset, Calendar, ArrowRight, Utensils, 
   BookOpen, Tv, CheckCircle, MessageSquare, Clock, Share2, 
-  Sliders, ChevronRight, Eye, RefreshCw, Send, ShieldCheck, Mail, Phone, ExternalLink, HelpCircle, Settings,
+  Sliders, ChevronLeft, ChevronRight, Eye, RefreshCw, Send, ShieldCheck, Mail, Phone, ExternalLink, HelpCircle, Settings,
   Facebook, Instagram, Twitter, Youtube
 } from "lucide-react";
 import { destinations, tourPackages, experiences, hotels, restaurants, mosques, travelGuides, testimonials } from "./data";
@@ -248,6 +248,7 @@ export default function App() {
 
   // Dynamic destinations state with instant cache hydration
   const [allDestinations, setAllDestinations] = useState<Destination[]>(() => loadCache("destinations", destinations));
+  const [videoSliderIndex, setVideoSliderIndex] = useState<number>(0);
 
   const handleAddDestination = (newDest: Destination) => {
     setAllDestinations((prev) => {
@@ -1133,6 +1134,10 @@ export default function App() {
       id: `dynamic-dest-${dest.id}-${i}`
     })))
   ];
+
+  // Slice up to 10 most recently added clips and display 3 at a time in a carousel
+  const recentHomeVideos = [...combinedHomeVideos].reverse().slice(0, 10);
+  const visibleVideos = recentHomeVideos.slice(videoSliderIndex, videoSliderIndex + 3);
 
   // Calculate total saved count
   const totalSavedCount: number = Object.keys(wishlist).reduce((acc: number, key: string) => acc + (wishlist[key]?.length || 0), 0);
@@ -2582,31 +2587,85 @@ export default function App() {
       </div>
     </div>
 
-    {/* ---------------- 9. VIDEOS FROM MUSLIM TRAVELLERS ---------------- */}
-    {combinedHomeVideos.length > 0 && (
+    {/* ---------------- 9. EXPLORE THROUGH MOTION ---------------- */}
+    {recentHomeVideos.length > 0 && (
       <div className="w-full bg-white py-20 border-b border-brand-blue-accent/15">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <section id="videos" className="space-y-12">
+          <section id="videos" className="space-y-10">
             
-            <div className="text-center space-y-5">
-              <h2 className="text-3xl sm:text-4xl font-serif text-brand-charcoal font-bold">
-                Videos From Muslim Travellers
-              </h2>
-              <p className="text-brand-charcoal/60 text-sm max-w-xl mx-auto leading-relaxed">
-                Step into the sights directly. Watch authentic travel logs, culinary walkthroughs, and pristine island tours from our global guests.
-              </p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-6">
+              <div className="space-y-2">
+                <h2 className="text-3xl sm:text-4xl font-serif text-brand-charcoal font-bold">
+                  Explore Through Motion
+                </h2>
+                <p className="text-brand-charcoal/60 text-sm max-w-xl leading-relaxed">
+                  Step into the sights directly. Watch authentic travel logs, culinary walkthroughs, and pristine island tours from our global guests.
+                </p>
+              </div>
+
+              {recentHomeVideos.length > 3 && (
+                <div className="flex items-center gap-4 shrink-0 self-start md:self-auto">
+                  <span className="text-xs font-mono font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200">
+                    {videoSliderIndex + 1} – {Math.min(videoSliderIndex + 3, recentHomeVideos.length)} of {recentHomeVideos.length}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setVideoSliderIndex(prev => (prev <= 0 ? Math.max(0, recentHomeVideos.length - 3) : prev - 1))}
+                      className="p-2.5 rounded-full border border-slate-200 bg-white hover:bg-brand-blue-accent hover:text-[#0F1626] text-slate-700 transition-all shadow-sm hover:shadow cursor-pointer"
+                      title="Previous Videos"
+                      aria-label="Previous Videos"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVideoSliderIndex(prev => (prev >= recentHomeVideos.length - 3 ? 0 : prev + 1))}
+                      className="p-2.5 rounded-full border border-slate-200 bg-white hover:bg-brand-blue-accent hover:text-[#0F1626] text-slate-700 transition-all shadow-sm hover:shadow cursor-pointer"
+                      title="Next Videos"
+                      aria-label="Next Videos"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {combinedHomeVideos.map((vid) => (
-                <SocialVideoCard
-                  key={vid.id}
-                  video={vid}
-                  fallbackName={vid.fallbackName}
-                  restaurantImage={vid.restaurantImage}
-                />
-              ))}
+            <div className="relative group/carousel">
+              {recentHomeVideos.length > 3 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setVideoSliderIndex(prev => (prev <= 0 ? Math.max(0, recentHomeVideos.length - 3) : prev - 1))}
+                    className="hidden lg:flex absolute -left-5 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white border border-slate-200 shadow-lg text-slate-700 hover:bg-brand-blue-accent hover:text-[#0F1626] items-center justify-center transition-all cursor-pointer hover:scale-105"
+                    aria-label="Previous video"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVideoSliderIndex(prev => (prev >= recentHomeVideos.length - 3 ? 0 : prev + 1))}
+                    className="hidden lg:flex absolute -right-5 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white border border-slate-200 shadow-lg text-slate-700 hover:bg-brand-blue-accent hover:text-[#0F1626] items-center justify-center transition-all cursor-pointer hover:scale-105"
+                    aria-label="Next video"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 transition-all duration-300">
+                {visibleVideos.map((vid) => (
+                  <SocialVideoCard
+                    key={vid.id}
+                    video={vid}
+                    fallbackName={vid.fallbackName}
+                    restaurantImage={vid.restaurantImage}
+                  />
+                ))}
+              </div>
             </div>
+
           </section>
         </div>
       </div>
