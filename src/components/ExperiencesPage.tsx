@@ -3,6 +3,7 @@ import {
   Compass, Heart, Search, ArrowLeft, SlidersHorizontal, MapPin, Sparkles, Clock, Tag, Globe, ExternalLink, ShieldCheck, Loader2
 } from "lucide-react";
 import { Experience } from "../types";
+import { optimizeCardImageUrl } from "../googlePlacesPhotoService";
 
 interface ExperiencesPageProps {
   experiences: Experience[];
@@ -422,11 +423,11 @@ export default function ExperiencesPage({
                     className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.01] hover:border-brand-blue-accent transition-luxury flex flex-col border border-brand-blue-accent/15"
                   >
                     {/* Cover image with category badge */}
-                    <div className="relative w-full h-64 overflow-hidden">
+                    <div className="relative w-full h-64 overflow-hidden bg-slate-100">
                       <img 
-                        src={exp.image} 
+                        src={optimizeCardImageUrl(exp.image, 800)} 
                         alt={exp.name} 
-                        loading="lazy"
+                        loading="eager"
                         decoding="async"
                         className="w-full h-full object-cover hover:scale-105 transition-all duration-700"
                       />

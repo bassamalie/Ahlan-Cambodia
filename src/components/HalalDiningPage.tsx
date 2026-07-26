@@ -3,6 +3,7 @@ import {
   Heart, Search, ArrowLeft, SlidersHorizontal, MapPin, Sparkles, CheckCircle, ShieldCheck, Utensils 
 } from "lucide-react";
 import { Restaurant } from "../types";
+import { optimizeCardImageUrl } from "../googlePlacesPhotoService";
 
 interface HalalDiningPageProps {
   restaurants: Restaurant[];
@@ -181,11 +182,11 @@ export default function HalalDiningPage({
                     className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.01] hover:border-brand-blue-accent transition-luxury border border-brand-blue-accent/15 flex flex-col justify-between group"
                   >
                     {/* Cover image with tags */}
-                    <div className="relative h-56 overflow-hidden">
+                    <div className="relative h-56 overflow-hidden bg-slate-100">
                       <img 
-                        src={rest.image} 
+                        src={optimizeCardImageUrl(rest.image, 800)} 
                         alt={rest.name} 
-                        loading="lazy"
+                        loading="eager"
                         decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
                       />

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { destinations, tourPackages, experiences, hotels, restaurants, mosques, travelGuides, testimonials } from "./data";
 import { Destination, TourPackage, Experience, Hotel, Restaurant, Mosque, TravelGuide } from "./types";
-import { NO_PHOTO_AVAILABLE_PLACEHOLDER } from "./googlePlacesPhotoService";
+import { NO_PHOTO_AVAILABLE_PLACEHOLDER, optimizeCardImageUrl } from "./googlePlacesPhotoService";
 import InteractiveMap from "./components/InteractiveMap";
 import PrayerWeatherWidget from "./components/PrayerWeatherWidget";
 import AIChatAssistant from "./components/AIChatAssistant";
@@ -1924,9 +1924,9 @@ export default function App() {
                   {/* Top Cover Image */}
                   <div className="relative w-full aspect-[4/3] overflow-hidden bg-slate-100">
                     <img 
-                      src={pack.image} 
+                      src={optimizeCardImageUrl(pack.image, 800)} 
                       alt={pack.name} 
-                      loading="lazy"
+                      loading="eager"
                       decoding="async"
                       className="w-full h-full object-cover hover:scale-105 transition-all duration-700" 
                     />
@@ -2133,10 +2133,12 @@ export default function App() {
                   className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group"
                 >
                   {/* Card image container */}
-                  <div className="relative h-52 overflow-hidden">
+                  <div className="relative h-52 overflow-hidden bg-slate-100">
                     <img 
-                      src={hotel.image || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
+                      src={optimizeCardImageUrl(hotel.image, 800) || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
                       alt={hotel.name} 
+                      loading="eager"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
                       referrerPolicy="no-referrer"
                       onError={(e) => { e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER; }}

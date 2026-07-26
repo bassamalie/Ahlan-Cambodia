@@ -121,3 +121,29 @@ export function isNoPhotoPlaceholder(url?: string | null): boolean {
   if (!url) return true;
   return url.includes("No%20Photo%20Available") || url.includes("No Photo Available");
 }
+
+/**
+ * Optimizes card image URLs (e.g., Unsplash, Google CDN) to appropriate widths and compression
+ * to eliminate image loading latency on UI cards across the site.
+ */
+export function optimizeCardImageUrl(url?: string | null, width = 800): string {
+  if (!url || typeof url !== "string") return NO_PHOTO_AVAILABLE_PLACEHOLDER;
+  const trimmed = url.trim();
+  if (!trimmed) return NO_PHOTO_AVAILABLE_PLACEHOLDER;
+
+  // Unsplash image optimization
+  if (trimmed.includes("images.unsplash.com")) {
+    try {
+      const parsed = new URL(trimmed);
+      parsed.searchParams.set("auto", "format");
+      parsed.searchParams.set("fit", "crop");
+      parsed.searchParams.set("w", String(width));
+      parsed.searchParams.set("q", "80");
+      return parsed.toString();
+    } catch {
+      return trimmed;
+    }
+  }
+
+  return trimmed;
+}

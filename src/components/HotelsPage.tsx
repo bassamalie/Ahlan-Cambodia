@@ -3,7 +3,7 @@ import {
   Compass, Heart, Search, ArrowLeft, ArrowRight, SlidersHorizontal, MapPin, Sparkles, CheckCircle, Star, Info 
 } from "lucide-react";
 import { Hotel } from "../types";
-import { NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
+import { NO_PHOTO_AVAILABLE_PLACEHOLDER, optimizeCardImageUrl } from "../googlePlacesPhotoService";
 
 interface HotelsPageProps {
   hotels: Hotel[];
@@ -180,11 +180,11 @@ export default function HotelsPage({
                     className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.01] transition-luxury flex flex-col justify-between border border-brand-blue-accent/15"
                   >
                     {/* Cover image with rating */}
-                    <div className="relative h-52 sm:h-56 overflow-hidden">
+                    <div className="relative h-52 sm:h-56 overflow-hidden bg-slate-100">
                       <img 
-                        src={hotel.image || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
+                        src={optimizeCardImageUrl(hotel.image, 800) || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
                         alt={hotel.name} 
-                        loading="lazy"
+                        loading="eager"
                         decoding="async"
                         className="w-full h-full object-cover hover:scale-105 transition-all duration-700"
                         referrerPolicy="no-referrer"

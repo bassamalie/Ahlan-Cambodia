@@ -3,6 +3,7 @@ import {
   Compass, Heart, Star, Search, ArrowLeft, SlidersHorizontal, MapPin, Sparkles, CheckCircle 
 } from "lucide-react";
 import { Destination } from "../types";
+import { optimizeCardImageUrl } from "../googlePlacesPhotoService";
 
 interface DestinationsPageProps {
   destinations: Destination[];
@@ -193,11 +194,11 @@ export default function DestinationsPage({
                     className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.01] transition-luxury flex flex-col justify-between border border-brand-blue-accent/15"
                   >
                     {/* Cover image with gradient & rating */}
-                    <div className="relative h-64 sm:h-72 overflow-hidden">
+                    <div className="relative h-64 sm:h-72 overflow-hidden bg-slate-100">
                       <img 
-                        src={dest.image} 
+                        src={optimizeCardImageUrl(dest.image, 800)} 
                         alt={dest.name} 
-                        loading="lazy"
+                        loading="eager"
                         decoding="async"
                         className="w-full h-full object-cover hover:scale-105 transition-all duration-700"
                       />

@@ -3,6 +3,7 @@ import {
   Compass, Heart, Search, ArrowLeft, SlidersHorizontal, MapPin, Sparkles, Clock, CheckCircle 
 } from "lucide-react";
 import { TourPackage } from "../types";
+import { optimizeCardImageUrl } from "../googlePlacesPhotoService";
 
 interface PackagesPageProps {
   packages: TourPackage[];
@@ -162,9 +163,9 @@ export default function PackagesPage({
                     {/* Top Cover Image */}
                     <div className="relative w-full aspect-[4/3] overflow-hidden bg-slate-100">
                       <img 
-                        src={pkg.image} 
+                        src={optimizeCardImageUrl(pkg.image, 800)} 
                         alt={pkg.name} 
-                        loading="lazy"
+                        loading="eager"
                         decoding="async"
                         className="w-full h-full object-cover hover:scale-105 transition-all duration-700"
                       />
