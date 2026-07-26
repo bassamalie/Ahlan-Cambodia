@@ -389,7 +389,7 @@ export default function PackageDetailPage({
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-3">
               <button
                 onClick={() => onToggleWishlist(tourPackage.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm ${
