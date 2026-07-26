@@ -3,7 +3,7 @@ import {
   Heart, Search, ArrowLeft, SlidersHorizontal, MapPin, Sparkles, CheckCircle, ShieldCheck, Utensils 
 } from "lucide-react";
 import { Restaurant } from "../types";
-import { optimizeCardImageUrl } from "../googlePlacesPhotoService";
+import { optimizeCardImageUrl, NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
 
 interface HalalDiningPageProps {
   restaurants: Restaurant[];
@@ -184,11 +184,14 @@ export default function HalalDiningPage({
                     {/* Cover image with tags */}
                     <div className="relative h-56 overflow-hidden bg-slate-100">
                       <img 
-                        src={optimizeCardImageUrl(rest.image, 800)} 
+                        src={optimizeCardImageUrl(rest.image, 800) || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
                         alt={rest.name} 
                         loading="eager"
                         decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
+                        onError={(e) => {
+                          e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER;
+                        }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
                       
@@ -201,14 +204,18 @@ export default function HalalDiningPage({
                         <Heart className={`w-4 h-4 ${isSaved ? "text-brand-red fill-brand-red" : "text-brand-charcoal/60"}`} />
                       </button>
 
-                      {/* Overlaid Dining status tags - Only Halal Verified shown on cards */}
-                      {rest.halalCertified && (
-                        <div className="absolute top-4 left-4 flex flex-col gap-1.5 items-start">
-                          <span className="bg-brand-blue-accent text-white text-[9px] font-mono font-bold uppercase px-2.5 py-1 rounded-md shadow-xs">
+                      {/* Overlaid Dining status tags on dining cards */}
+                      <div className="absolute top-4 left-4 flex flex-col gap-1.5 items-start z-10">
+                        {(rest.halalCertified || rest.halalStanding === "Halal Verified") ? (
+                          <span className="bg-emerald-600 text-white text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-xs">
                             HALAL VERIFIED
                           </span>
-                        </div>
-                      )}
+                        ) : (
+                          <span className="bg-brand-blue-accent hover:bg-blue-700 text-white text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-xs transition-colors">
+                            MUSLIM FRIENDLY
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Content Body */}

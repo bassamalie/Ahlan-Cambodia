@@ -3,7 +3,7 @@ import {
   Heart, Search, ArrowLeft, SlidersHorizontal, MapPin, Sparkles, CheckCircle, Info, Calendar, Users 
 } from "lucide-react";
 import { Mosque } from "../types";
-import { optimizeCardImageUrl } from "../googlePlacesPhotoService";
+import { optimizeCardImageUrl, NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
 
 interface MosquesPageProps {
   mosques: Mosque[];
@@ -120,11 +120,14 @@ export default function MosquesPage({
                   {/* Cover Image */}
                   <div className="relative h-60 overflow-hidden bg-slate-100">
                     <img 
-                      src={optimizeCardImageUrl(mosque.image, 800)} 
+                      src={optimizeCardImageUrl(mosque.image, 800) || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
                       alt={mosque.name} 
                       loading="eager"
                       decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
+                      onError={(e) => {
+                        e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER;
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal via-transparent to-transparent" />
                     

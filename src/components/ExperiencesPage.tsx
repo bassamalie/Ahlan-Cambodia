@@ -3,7 +3,7 @@ import {
   Compass, Heart, Search, ArrowLeft, SlidersHorizontal, MapPin, Sparkles, Clock, Tag, Globe, ExternalLink, ShieldCheck, Loader2
 } from "lucide-react";
 import { Experience } from "../types";
-import { optimizeCardImageUrl } from "../googlePlacesPhotoService";
+import { optimizeCardImageUrl, NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
 
 interface ExperiencesPageProps {
   experiences: Experience[];
@@ -425,11 +425,14 @@ export default function ExperiencesPage({
                     {/* Cover image with category badge */}
                     <div className="relative w-full h-64 overflow-hidden bg-slate-100">
                       <img 
-                        src={optimizeCardImageUrl(exp.image, 800)} 
+                        src={optimizeCardImageUrl(exp.image, 800) || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
                         alt={exp.name} 
                         loading="eager"
                         decoding="async"
                         className="w-full h-full object-cover hover:scale-105 transition-all duration-700"
+                        onError={(e) => {
+                          e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER;
+                        }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal/60 via-transparent to-transparent" />
                       

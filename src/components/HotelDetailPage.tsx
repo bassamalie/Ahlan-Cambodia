@@ -370,6 +370,10 @@ export default function HotelDetailPage({
   };
   const stay22Url = getStay22BookingUrl();
 
+  const hotelUploadedGallery = (hotel.photoUrls && hotel.photoUrls.filter(u => u && u.trim()).length > 0)
+    ? hotel.photoUrls.filter(u => u && u.trim())
+    : (hotel.image ? [hotel.image] : [NO_PHOTO_AVAILABLE_PLACEHOLDER]);
+
   const ext = hotelExtendedData[hotel.id] || {
     extendedDescription: hotel.description,
     atmosphere: "Premium Luxury Vibe",
@@ -377,7 +381,7 @@ export default function HotelDetailPage({
     halalBreakfastDetail: hotel.halalBreakfast,
     mosqueDetail: hotel.nearbyMosque,
     amenitiesList: (hotel.amenities || ["Free Wifi", "Halal Dining", "Pool"]).map(a => ({ name: a, category: "leisure" })),
-    galleryImages: (hotel.photoUrls && hotel.photoUrls.length > 0) ? hotel.photoUrls : [hotel.image || NO_PHOTO_AVAILABLE_PLACEHOLDER],
+    galleryImages: hotelUploadedGallery,
     roomTiers: [
       {
         name: "Deluxe Suite",
@@ -385,7 +389,7 @@ export default function HotelDetailPage({
         size: "45 sqm",
         capacity: "2 Guests",
         description: "Our high-end signature room offering utmost comfort, premium bidet bathrooms, and elegant Cambodian artwork.",
-        image: hotel.image,
+        image: hotel.image || NO_PHOTO_AVAILABLE_PLACEHOLDER,
         features: ["Premium bidet bathroom", "Free High-speed Wi-Fi", "In-room prayer mats", "Ablution friendly space"]
       }
     ],
@@ -396,6 +400,11 @@ export default function HotelDetailPage({
       { name: "Nearby Mosque", distance: "5-10 mins", description: hotel.nearbyMosque }
     ]
   };
+
+  // Ensure galleryImages always uses hotelUploadedGallery if hotel has uploaded photos
+  const activeGalleryImages = (hotel.photoUrls && hotel.photoUrls.filter(u => u && u.trim()).length > 0)
+    ? hotel.photoUrls.filter(u => u && u.trim())
+    : (hotel.image ? [hotel.image] : ext.galleryImages || [NO_PHOTO_AVAILABLE_PLACEHOLDER]);
 
   const [activeTab, setActiveTab] = useState<"overview" | "halal" | "suites" | "location">("overview");
   const [activeRoomIndex, setActiveRoomIndex] = useState<number>(0);
@@ -446,12 +455,12 @@ export default function HotelDetailPage({
   
   const handlePrevCollage = () => {
     if (selectedCollageIndex === null) return;
-    setSelectedCollageIndex((prev) => (prev === 0 ? collageImages.length - 1 : prev! - 1));
+    setSelectedCollageIndex((prev) => (prev === 0 ? activeGalleryImages.length - 1 : prev! - 1));
   };
 
   const handleNextCollage = () => {
     if (selectedCollageIndex === null) return;
-    setSelectedCollageIndex((prev) => (prev === collageImages.length - 1 ? 0 : prev! + 1));
+    setSelectedCollageIndex((prev) => (prev === activeGalleryImages.length - 1 ? 0 : prev! + 1));
   };
 
   // Keyboard navigation for Collage Lightbox
@@ -585,19 +594,22 @@ export default function HotelDetailPage({
 
           <div className="max-w-5xl max-h-[80vh] flex flex-col items-center text-center" onClick={e => e.stopPropagation()}>
             <img 
-              src={collageImages[selectedCollageIndex].url} 
-              alt={collageImages[selectedCollageIndex].title}
+              src={activeGalleryImages[selectedCollageIndex] || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
+              alt={`${hotel.name} Photo ${selectedCollageIndex + 1}`}
               className="max-w-full max-h-[70vh] object-contain rounded-2xl border border-white/10 shadow-2xl"
               referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER;
+              }}
             />
             <h3 className="text-white font-serif font-bold text-lg mt-4 tracking-wide">
-              {collageImages[selectedCollageIndex].title}
+              {hotel.name}
             </h3>
             <p className="text-brand-blue-accent font-mono text-xs mt-1 uppercase tracking-widest">
-              {collageImages[selectedCollageIndex].location}
+              {hotel.location}
             </p>
             <p className="text-white/40 font-mono text-[10px] mt-2">
-              Image {selectedCollageIndex + 1} of {collageImages.length}
+              Image {selectedCollageIndex + 1} of {activeGalleryImages.length}
             </p>
           </div>
 
@@ -817,7 +829,7 @@ export default function HotelDetailPage({
                     <div className="flex items-center justify-between">
                       <h4 className="text-[11px] font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-2">
                         <span className="w-1 h-4 bg-brand-blue-accent rounded-full inline-block shrink-0" />
-                        <span>Curated Photo Gallery ({ext.galleryImages ? ext.galleryImages.length : 0} Photos)</span>
+                        <span>Curated Photo Gallery ({activeGalleryImages.length} Photos)</span>
                       </h4>
                       <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold">
                         Vetted Property
@@ -825,20 +837,19 @@ export default function HotelDetailPage({
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                      {(ext.galleryImages || [hotel.image]).map((imgUrl, i) => (
+                      {activeGalleryImages.map((imgUrl, i) => (
                         <div 
                           key={i}
-                          onClick={() => {
-                            const cIdx = collageImages.findIndex(c => c.url === imgUrl);
-                            if (cIdx !== -1) setSelectedCollageIndex(cIdx);
-                            else setSelectedCollageIndex(0);
-                          }}
-                          className="group relative h-28 sm:h-36 rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
+                          onClick={() => setSelectedCollageIndex(i)}
+                          className="group relative h-28 sm:h-36 rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer bg-slate-100"
                         >
                           <img 
-                            src={imgUrl} 
+                            src={imgUrl || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
                             alt={`${hotel.name} view ${i + 1}`} 
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            onError={(e) => {
+                              e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER;
+                            }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
                             <span className="text-[9px] font-mono text-white font-bold uppercase tracking-wider flex items-center gap-1">
@@ -1252,23 +1263,26 @@ export default function HotelDetailPage({
             </h3>
           </div>
           <span className="text-xs font-mono text-slate-500 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shrink-0 self-start sm:self-auto">
-            10 Curation Slides
+            {activeGalleryImages.length} Property Photos
           </span>
         </div>
 
-        {/* Clean balanced grid replacing asymmetric bento style */}
+        {/* Clean balanced grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {collageImages.map((img, idx) => (
+          {activeGalleryImages.map((imgUrl, idx) => (
             <div 
               key={idx}
               onClick={() => setSelectedCollageIndex(idx)}
               className="relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer group bg-slate-100 border border-slate-200 shadow-sm hover:shadow-md transition-all"
             >
               <img 
-                src={img.url} 
-                alt={img.title} 
+                src={imgUrl || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
+                alt={`${hotel.name} Photo ${idx + 1}`} 
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                  e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER;
+                }}
               />
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>

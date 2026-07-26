@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   ArrowLeft, Heart, Share2, MapPin, Check, 
   Info, Clock, Calendar, Users, Shield, Compass, BookOpen
 } from "lucide-react";
 import { Mosque, Restaurant } from "../types";
+import { NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
 
 interface MosqueDetailPageProps {
   mosque: Mosque;
@@ -168,30 +169,67 @@ export default function MosqueDetailPage({
     });
   };
 
-  // Find corresponding Restaurant objects for nearby names
-  const matchedRestaurants = mosque.nearbyRestaurants.map(name => {
-    return allRestaurants.find(r => r.name.toLowerCase() === name.toLowerCase() || r.id === name.toLowerCase().replace(/\s+/g, "-")) || {
-      id: name.toLowerCase().replace(/\s+/g, "-"),
-      name: name,
-      cuisine: "Halal Culinary",
-      rating: 4.8,
-      image: "https://images.unsplash.com/photo-1543007630-9710e4a00a20?auto=format&fit=crop&q=80&w=600",
-      halalCertified: true,
-      muslimOwned: true,
-      prayerRoomNearby: "In-house facilities",
-      location: mosque.location,
-      description: "A beloved dining spot near the mosque."
-    } as Restaurant;
-  });
+  // Auto-capture nearby Halal dining based on explicit list or location proximity (maximum 4)
+  const matchedRestaurants = useMemo(() => {
+    if (!allRestaurants || allRestaurants.length === 0) return [];
+
+    const mosqueLoc = (mosque.location || mosque.address || "").toLowerCase();
+
+    // Helper to calculate relevance score
+    const scoreRestaurant = (r: Restaurant) => {
+      let score = 0;
+      const rName = (r.name || "").toLowerCase();
+      const rLoc = (r.location || r.address || "").toLowerCase();
+
+      // 1. Explicitly named in mosque.nearbyRestaurants
+      if (mosque.nearbyRestaurants && mosque.nearbyRestaurants.some(n => n.toLowerCase() === rName || r.id === n.toLowerCase().replace(/\s+/g, "-"))) {
+        score += 1000;
+      }
+
+      // 2. Exact or district match
+      if (mosqueLoc && rLoc) {
+        if (mosqueLoc.includes(rLoc) || rLoc.includes(mosqueLoc)) {
+          score += 400;
+        }
+      }
+
+      // 3. City-level match (e.g. Phnom Penh, Siem Reap, Kampot)
+      if (mosqueLoc.includes("phnom penh") && (rLoc.includes("phnom penh") || !rLoc)) {
+        score += 200;
+      } else if (mosqueLoc.includes("siem reap") && rLoc.includes("siem reap")) {
+        score += 200;
+      } else if (mosqueLoc.includes("kampot") && rLoc.includes("kampot")) {
+        score += 200;
+      } else if (mosqueLoc.includes("battambang") && rLoc.includes("battambang")) {
+        score += 200;
+      } else if (mosqueLoc.includes("koh rong") && rLoc.includes("koh rong")) {
+        score += 200;
+      } else if (!rLoc || rLoc.includes("phnom penh")) {
+        // Fallback default city match (Phnom Penh)
+        score += 100;
+      }
+
+      // 4. Rating boost
+      score += (r.rating || 4.5) * 10;
+
+      return score;
+    };
+
+    const sorted = [...allRestaurants].sort((a, b) => scoreRestaurant(b) - scoreRestaurant(a));
+    return sorted.slice(0, 4);
+  }, [allRestaurants, mosque]);
 
   return (
     <div className="bg-white min-h-screen pb-16" id={`mosque-detail-${mosque.id}`}>
       {/* --- Majestic Full-Width Cover Section --- */}
       <div className="relative w-full h-[320px] sm:h-[380px] md:h-[400px] overflow-hidden">
         <img 
-          src={mosque.image} 
+          src={mosque.image || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
           alt={mosque.name} 
           className="absolute inset-0 w-full h-full object-cover scale-105 transform hover:scale-100 transition-transform duration-[10000ms] ease-out"
+          onError={(e) => {
+            e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER;
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/40" />
         
@@ -233,20 +271,6 @@ export default function MosqueDetailPage({
         <div className="absolute bottom-0 left-0 right-0 z-10 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end h-full space-y-4">
             <div className="space-y-3 max-w-4xl">
-              <div className="flex flex-wrap items-center gap-2">
-                {mosque.isHeritageCenter !== false && (
-                  <span className="bg-brand-blue-accent text-white text-[9px] font-mono uppercase tracking-wider px-3 py-1 rounded-full font-bold flex items-center gap-1 backdrop-blur-sm">
-                    <Compass className="w-3 h-3 animate-spin-slow" />
-                    Islamic Heritage Center
-                  </span>
-                )}
-                {mosque.isActiveJummah !== false && (
-                  <span className="bg-emerald-600/90 text-white text-[9px] font-mono uppercase tracking-wider px-3 py-1 rounded-full font-bold backdrop-blur-sm">
-                    Active Jummah congregation
-                  </span>
-                )}
-              </div>
-              
               <h1 className="text-3xl sm:text-5xl font-serif font-bold text-white tracking-wide leading-tight drop-shadow-md">
                 {mosque.name}
               </h1>
@@ -516,21 +540,24 @@ export default function MosqueDetailPage({
               <div className="space-y-4">
                 {matchedRestaurants.map((rest, idx) => (
                   <div 
-                    key={idx}
+                    key={rest.id || idx}
                     onClick={() => onSelectRestaurant(rest)}
                     className="flex gap-3 items-center group cursor-pointer p-1.5 hover:bg-slate-50 rounded-2xl transition-all"
                   >
                     <img 
-                      src={rest.image} 
+                      src={rest.image || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
                       alt={rest.name} 
-                      className="w-14 h-14 rounded-xl object-cover shrink-0 border border-slate-100"
+                      className="w-14 h-14 rounded-xl object-cover shrink-0 border border-slate-100 bg-slate-100"
+                      onError={(e) => {
+                        e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER;
+                      }}
                     />
                     <div className="min-w-0 flex-1">
                       <h4 className="font-serif text-sm font-bold text-slate-800 truncate group-hover:text-brand-blue-accent transition-colors">
                         {rest.name}
                       </h4>
                       <p className="text-xs text-slate-500 font-mono truncate">
-                        {rest.cuisine}
+                        {rest.cuisine || "Halal Culinary"} • {rest.location || "Nearby"}
                       </p>
                       <span className="inline-block mt-0.5 text-[9px] font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
                         Halal Verified

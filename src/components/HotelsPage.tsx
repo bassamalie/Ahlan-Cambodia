@@ -74,7 +74,7 @@ export default function HotelsPage({
 
           <div className="max-w-3xl space-y-4">
             <h1 className="text-3xl sm:text-5xl font-serif font-bold text-white tracking-wide">
-              MUSLIM-FRIENDLY HOTELS
+              PREMIUM STAYS
             </h1>
             <p className="text-white/85 text-xs sm:text-sm leading-relaxed max-w-2xl font-sans">
               Enjoy custom 5-star sanctuaries handpicked for their exquisite design, private pool offerings, in-room prayer facilities, nearby mosques, and high-end certified Halal breakfasts.

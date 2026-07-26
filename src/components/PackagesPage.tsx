@@ -3,7 +3,7 @@ import {
   Compass, Heart, Search, ArrowLeft, SlidersHorizontal, MapPin, Sparkles, Clock, CheckCircle 
 } from "lucide-react";
 import { TourPackage } from "../types";
-import { optimizeCardImageUrl } from "../googlePlacesPhotoService";
+import { optimizeCardImageUrl, NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
 
 interface PackagesPageProps {
   packages: TourPackage[];
@@ -158,16 +158,20 @@ export default function PackagesPage({
                 return (
                   <div 
                     key={pkg.id}
-                    className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.008] hover:border-brand-blue-accent transition-luxury flex flex-col border border-brand-blue-accent/15"
+                    onClick={() => onSelectItem(pkg)}
+                    className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.008] hover:border-brand-blue-accent transition-luxury flex flex-col border border-brand-blue-accent/15 cursor-pointer group"
                   >
                     {/* Top Cover Image */}
                     <div className="relative w-full aspect-[4/3] overflow-hidden bg-slate-100">
                       <img 
-                        src={optimizeCardImageUrl(pkg.image, 800)} 
+                        src={optimizeCardImageUrl(pkg.image, 800) || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
                         alt={pkg.name} 
                         loading="eager"
                         decoding="async"
-                        className="w-full h-full object-cover hover:scale-105 transition-all duration-700"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
+                        onError={(e) => {
+                          e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER;
+                        }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal/50 via-transparent to-transparent" />
                       
@@ -187,8 +191,11 @@ export default function PackagesPage({
 
                       {/* Floating Save button */}
                       <button 
-                        onClick={() => onToggleWishlist(pkg.id)}
-                        className="absolute top-4 right-4 bg-white/90 hover:bg-white text-brand-charcoal p-2 rounded-full shadow border border-brand-blue-accent/20 transition-all cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleWishlist(pkg.id);
+                        }}
+                        className="absolute top-4 right-4 bg-white/90 hover:bg-white text-brand-charcoal p-2 rounded-full shadow border border-brand-blue-accent/20 transition-all cursor-pointer z-10"
                         title={isSaved ? "Saved to wishlist" : "Save Package"}
                       >
                         <Heart className={`w-3.5 h-3.5 ${isSaved ? "text-brand-red fill-brand-red" : "text-brand-charcoal/60"}`} />

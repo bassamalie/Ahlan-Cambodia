@@ -1545,8 +1545,16 @@ export default function App() {
           <section className="relative min-h-[580px] lg:min-h-[660px] py-16 lg:py-22 flex items-center justify-center overflow-hidden">
         
         {/* Cinematic Backdrop Images representing premium tourism */}
-        <div className="absolute inset-0 z-0">
-          {(homepageSettings.heroImages || []).map((img: string, index: number) => (
+        <div className="absolute inset-0 z-0 bg-slate-900">
+          {(
+            (homepageSettings.heroImages && homepageSettings.heroImages.some(i => i && i.trim() && !i.includes("unsplash.com")))
+              ? homepageSettings.heroImages.filter(i => i && i.trim() && !i.includes("unsplash.com"))
+              : (allDestinations.map(d => d.image).filter(i => i && i.trim()).length > 0)
+              ? allDestinations.map(d => d.image).filter(i => i && i.trim())
+              : (homepageSettings.heroImages && homepageSettings.heroImages.length > 0)
+              ? homepageSettings.heroImages
+              : defaultHeroImages
+          ).map((img: string, index: number) => (
             <div
               key={index}
               className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
@@ -1557,6 +1565,9 @@ export default function App() {
                 src={img} 
                 alt={`Hero Backdrop ${index + 1}`} 
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             </div>
           ))}
@@ -1919,16 +1930,24 @@ export default function App() {
               return (
                 <div 
                   key={pack.id} 
-                  className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.008] hover:border-brand-blue-accent transition-luxury flex flex-col border border-brand-blue-accent/15"
+                  onClick={() => {
+                    setActivePackage(pack);
+                    setCurrentView("package-detail");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.008] hover:border-brand-blue-accent transition-luxury flex flex-col border border-brand-blue-accent/15 cursor-pointer group"
                 >
                   {/* Top Cover Image */}
                   <div className="relative w-full aspect-[4/3] overflow-hidden bg-slate-100">
                     <img 
-                      src={optimizeCardImageUrl(pack.image, 800)} 
+                      src={optimizeCardImageUrl(pack.image, 800) || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
                       alt={pack.name} 
                       loading="eager"
                       decoding="async"
-                      className="w-full h-full object-cover hover:scale-105 transition-all duration-700" 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
+                      onError={(e) => {
+                        e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER;
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal/50 via-transparent to-transparent" />
                     
@@ -1948,8 +1967,11 @@ export default function App() {
 
                     {/* Floating Save button */}
                     <button
-                      onClick={() => toggleWishlist(pack.id, "packages")}
-                      className="absolute top-4 right-4 bg-white/90 hover:bg-white text-brand-charcoal p-2 rounded-full shadow border border-brand-blue-accent/20 transition-all cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleWishlist(pack.id, "packages");
+                      }}
+                      className="absolute top-4 right-4 bg-white/90 hover:bg-white text-brand-charcoal p-2 rounded-full shadow border border-brand-blue-accent/20 transition-all cursor-pointer z-10"
                       title={isSaved ? "Saved to wishlist" : "Save Package"}
                     >
                       <Heart className={`w-3.5 h-3.5 ${isSaved ? "text-brand-red fill-brand-red" : "text-brand-charcoal/60"}`} />
@@ -2284,14 +2306,18 @@ export default function App() {
                       <Heart className={`w-4 h-4 ${isSaved ? "text-brand-red fill-brand-red" : "text-brand-charcoal/60"}`} />
                     </button>
 
-                    {/* Overlaid Dining status tags - Only Halal Verified shown on cards */}
-                    {rest.halalCertified && (
-                      <div className="absolute top-4 left-4 flex flex-col gap-1.5 items-start">
-                        <span className="bg-brand-blue-accent text-white text-[9px] font-mono font-bold uppercase px-2.5 py-1 rounded-md shadow-xs">
+                    {/* Overlaid Dining status tags on dining cards */}
+                    <div className="absolute top-4 left-4 flex flex-col gap-1.5 items-start z-10">
+                      {(rest.halalCertified || rest.halalStanding === "Halal Verified") ? (
+                        <span className="bg-emerald-600 text-white text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-xs">
                           HALAL VERIFIED
                         </span>
-                      </div>
-                    )}
+                      ) : (
+                        <span className="bg-brand-blue-accent hover:bg-blue-700 text-white text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-xs transition-colors">
+                          MUSLIM FRIENDLY
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Content Body */}

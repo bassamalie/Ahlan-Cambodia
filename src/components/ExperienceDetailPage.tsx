@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { Experience } from "../types";
 import { experiences } from "../data";
+import { NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
 
 interface ExperienceDetailPageProps {
   experience: Experience;
@@ -220,15 +221,11 @@ export default function ExperienceDetailPage({
   onNavigateView
 }: ExperienceDetailPageProps) {
   const activeGallery = useMemo(() => {
-    if (experience.gallery && experience.gallery.length > 0) {
-      return experience.gallery.map((url, i) => ({ url, caption: `Visual Aspect ${i + 1}` }));
+    if (experience.gallery && experience.gallery.filter(u => u && u.trim()).length > 0) {
+      return experience.gallery.filter(u => u && u.trim()).map((url, i) => ({ url, caption: `Visual Aspect ${i + 1}` }));
     }
-    return galleryImages[experience.id] || [
-      { url: experience.image, caption: experience.name },
-      { url: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=600", caption: "Cambodian Heritage Vista" },
-      { url: "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&q=80&w=600", caption: "Beautiful Cambodia Waterways" },
-      { url: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&q=80&w=600", caption: "Spiritual Cambodian Golden Sunset" },
-      { url: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=600", caption: "Smiling Water Village Portrait" }
+    return [
+      { url: experience.image || NO_PHOTO_AVAILABLE_PLACEHOLDER, caption: experience.name }
     ];
   }, [experience]);
 
@@ -346,18 +343,21 @@ export default function ExperienceDetailPage({
 
   // Use the 5th image (smiling portrait or detailed asset) as the Overview graphic if available
   const overviewImageSrc = useMemo(() => {
-    return experience.overviewImage || activeGallery[4]?.url || experience.image;
+    return experience.overviewImage || experience.image || activeGallery[0]?.url || NO_PHOTO_AVAILABLE_PLACEHOLDER;
   }, [experience.overviewImage, activeGallery, experience.image]);
 
   return (
     <div id="experience-detail-root" className="w-full bg-white min-h-screen pb-24 animate-fade-in">
       
       {/* --- Majestic Full-Width Hero Section --- */}
-      <div className="relative w-full h-[350px] sm:h-[400px] md:h-[420px] overflow-hidden">
+      <div className="relative w-full h-[350px] sm:h-[400px] md:h-[420px] overflow-hidden bg-slate-100">
         <img 
-          src={experience.image} 
+          src={experience.image || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
           alt={experience.name} 
           className="absolute inset-0 w-full h-full object-cover scale-105 transform hover:scale-100 transition-transform duration-10000 ease-out"
+          onError={(e) => {
+            e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER;
+          }}
         />
         <div className="absolute inset-0 hero-gradient" />
         <div className="absolute inset-0 bg-black/35" />

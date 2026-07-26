@@ -10,6 +10,7 @@ import { TourPackage, Hotel } from "../types";
 import { hotels } from "../data";
 import WiseTravelCard from "./WiseTravelCard";
 import { getTourCode, generatePackagePdf } from "../utils/pdfGenerator";
+import { NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
 
 interface PackageDetailPageProps {
   tourPackage: TourPackage;
@@ -38,42 +39,11 @@ export default function PackageDetailPage({
   onSelectPackage,
   onNavigateView
 }: PackageDetailPageProps) {
-  const galleryImages = tourPackage.gallery && tourPackage.gallery.length > 0
+  const galleryImages = (tourPackage.gallery && tourPackage.gallery.length > 0)
     ? tourPackage.gallery.map(url => ({ url, title: "" }))
-    : [
-    {
-      url: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=1200",
-      title: "Angkor Wat Dawn Silhouette"
-    },
-    {
-      url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200",
-      title: "Pristine Sands of Koh Rong"
-    },
-    {
-      url: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&q=80&w=1200",
-      title: "Royal Palace Spires"
-    },
-    {
-      url: "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&q=80&w=1200",
-      title: "Mekong River Sunset Drift"
-    },
-    {
-      url: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
-      title: "Luxury Sanctuary Pools"
-    },
-    {
-      url: "https://images.unsplash.com/photo-1543007630-9710e4a00a20?auto=format&fit=crop&q=80&w=1200",
-      title: "Artisanal Halal Gastronomy"
-    },
-    {
-      url: "https://images.unsplash.com/photo-1439066615861-d1af74d74000?auto=format&fit=crop&q=80&w=1200",
-      title: "Song Saa Private Overwater Retreat"
-    },
-    {
-      url: "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200",
-      title: "Rosewood Panoramic High Lounge"
-    }
-  ];
+    : tourPackage.image
+    ? [{ url: tourPackage.image, title: tourPackage.name }]
+    : [{ url: NO_PHOTO_AVAILABLE_PLACEHOLDER, title: tourPackage.name }];
 
   const isSaved = wishlist.includes(tourPackage.id);
   const [activeTab, setActiveTab] = useState<"itinerary" | "inclusions" | "exclusions">("itinerary");
@@ -208,7 +178,7 @@ export default function PackageDetailPage({
         id: `fallback-hotel-${idx}-${idOrName}`,
         name: formattedName,
         location: "Cambodia",
-        image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+        image: NO_PHOTO_AVAILABLE_PLACEHOLDER,
         description: "Selected luxury partner stay offering verified Muslim-friendly amenities and seamless proximity.",
         rating: 5.0,
         stars: 5,
@@ -236,7 +206,7 @@ export default function PackageDetailPage({
             id: `custom-hotel-${idx}-${tourPackage.id}`,
             name: slot.customHotel.name,
             location: slot.customHotel.location || "Cambodia",
-            image: slot.customHotel.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+            image: slot.customHotel.image || NO_PHOTO_AVAILABLE_PLACEHOLDER,
             description: slot.customHotel.description || "Bespoke custom luxury hotel.",
             rating: 5.0,
             stars: 5,
@@ -273,7 +243,7 @@ export default function PackageDetailPage({
           id: `custom-hotel-${idx}-${tourPackage.id}`,
           name: ch.name,
           location: ch.location || "Cambodia",
-          image: ch.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+          image: ch.image || NO_PHOTO_AVAILABLE_PLACEHOLDER,
           description: ch.description || "Bespoke custom luxury hotel.",
           rating: 5.0,
           stars: 5,

@@ -1749,6 +1749,36 @@ export default function AdminCMS({
   const [mosqueGoogleMapsUrl, setMosqueGoogleMapsUrl] = useState("");
   const [mosqueFullAddress, setMosqueFullAddress] = useState("");
 
+  const autoCaptureAddressFromMapLink = (mapUrl: string, name: string, location: string): string => {
+    const loc = location ? `${location}, Cambodia` : "Cambodia";
+    if (!mapUrl || !mapUrl.trim()) {
+      return name ? `${name}, ${loc}` : loc;
+    }
+    try {
+      let queryParam = "";
+      if (mapUrl.includes("q=")) {
+        queryParam = mapUrl.split("q=")[1]?.split("&")[0] || "";
+      } else if (mapUrl.includes("/place/")) {
+        queryParam = mapUrl.split("/place/")[1]?.split("/")[0] || "";
+      } else if (mapUrl.includes("query=")) {
+        queryParam = mapUrl.split("query=")[1]?.split("&")[0] || "";
+      }
+
+      if (queryParam) {
+        const decoded = decodeURIComponent(queryParam.replace(/\+/g, " ")).trim();
+        if (decoded) {
+          if (decoded.toLowerCase().includes("cambodia") || (location && decoded.toLowerCase().includes(location.toLowerCase()))) {
+            return decoded;
+          }
+          return `${decoded}, ${loc}`;
+        }
+      }
+    } catch {
+      // fallback
+    }
+    return name ? `${name}, ${loc}` : loc;
+  };
+
   // Step 4: Amenities
   const [mosqueAmenities, setMosqueAmenities] = useState<string[]>([""]);
 
@@ -2048,7 +2078,7 @@ export default function AdminCMS({
       extendedDescription: mosqueLongDesc,
       architectureType: mosqueArchitectureStyle,
       historicalContext: mosqueHistoricalLegacy,
-      address: mosqueFullAddress,
+      address: mosqueFullAddress || autoCaptureAddressFromMapLink(mosqueGoogleMapsUrl, mosqueName, mosqueLocation),
       amenities: mosqueAmenities.filter(a => a.trim() !== ""),
       visitorGuidelines: mosqueGuidelines.map(g => ({ title: g.title, desc: g.content })),
       prayerTimes: {
@@ -8576,21 +8606,29 @@ export default function AdminCMS({
                             <input
                               type="text"
                               value={mosqueGoogleMapsUrl}
-                              onChange={(e) => setMosqueGoogleMapsUrl(e.target.value)}
-                              placeholder="e.g., https://maps.google.com/?q=Al-Serkal+Mosque"
+                              onChange={(e) => {
+                                const url = e.target.value;
+                                setMosqueGoogleMapsUrl(url);
+                                const autoCaptured = autoCaptureAddressFromMapLink(url, mosqueName, mosqueLocation);
+                                setMosqueFullAddress(autoCaptured);
+                              }}
+                              placeholder="e.g., https://maps.google.com/?q=Al-Serkal+Mosque+Phnom+Penh"
                               className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-[#0F1626] font-medium"
                             />
+                            <p className="text-[10px] text-slate-400 font-mono">Paste Google Maps URL or location link to auto-capture exact address parameters.</p>
                           </div>
 
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Full Physical Address *</label>
-                            <input
-                              type="text"
-                              value={mosqueFullAddress}
-                              onChange={(e) => setMosqueFullAddress(e.target.value)}
-                              placeholder="e.g., No. 56, Boulevard Preah Monivong, Phnom Penh, Cambodia (Visible below Google Maps frame)"
-                              className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-[#0F1626] font-medium"
-                            />
+                          <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-4 space-y-2">
+                            <div className="flex items-center gap-2 text-emerald-800 font-mono text-[10px] uppercase font-bold tracking-wider">
+                              <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              <span>Auto-Captured Physical Address</span>
+                            </div>
+                            <p className="text-xs text-slate-800 font-sans font-semibold">
+                              {mosqueFullAddress || autoCaptureAddressFromMapLink(mosqueGoogleMapsUrl, mosqueName, mosqueLocation)}
+                            </p>
+                            <p className="text-[10px] text-slate-500 italic">
+                              Address is automatically captured from the Google Maps location link &amp; destination context.
+                            </p>
                           </div>
                         </div>
                       </div>

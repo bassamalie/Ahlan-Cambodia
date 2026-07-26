@@ -6,6 +6,7 @@ import {
   Youtube, Instagram, Video, Play, ExternalLink, Eye, ThumbsUp
 } from "lucide-react";
 import { Restaurant } from "../types";
+import { NO_PHOTO_AVAILABLE_PLACEHOLDER } from "../googlePlacesPhotoService";
 
 function getAutoThumbnail(url: string): string | null {
   if (!url) return null;
@@ -429,20 +430,6 @@ export default function DiningDetailPage({
         <div className="absolute bottom-0 left-0 right-0 z-10 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end h-full space-y-4">
             <div className="space-y-3 max-w-4xl">
-              <div className="flex flex-wrap items-center gap-2">
-                {restaurant.halalCertified && (
-                  <span className="bg-emerald-600/90 text-white text-[10px] font-mono uppercase tracking-wider px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 backdrop-blur-sm">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    Halal Verified
-                  </span>
-                )}
-                {restaurant.muslimFriendly && (
-                  <span className="bg-cyan-700/90 text-white text-[10px] font-mono uppercase tracking-wider px-2.5 py-0.5 rounded-full font-bold backdrop-blur-sm">
-                    Muslim Friendly
-                  </span>
-                )}
-              </div>
-              
               <h1 className="text-3xl sm:text-5xl font-serif font-bold text-white tracking-wide leading-tight drop-shadow-md">
                 {restaurant.name}
               </h1>
@@ -566,11 +553,14 @@ export default function DiningDetailPage({
                       className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow duration-300"
                     >
                       <div>
-                        <div className="relative h-48 w-full overflow-hidden">
+                        <div className="relative h-48 w-full overflow-hidden bg-slate-100">
                           <img 
-                            src={dish.image} 
+                            src={dish.image || restaurant.image || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
                             alt={dish.name} 
                             className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
+                            onError={(e) => {
+                              e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER;
+                            }}
                           />
                           {dish.tag && (
                             <span className="absolute top-4 left-4 bg-brand-blue-accent text-white font-mono text-[9px] uppercase tracking-wider font-bold px-3 py-1 rounded-full shadow-md">

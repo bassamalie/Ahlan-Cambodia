@@ -453,11 +453,14 @@ export default function DestinationDetailPage({
     <div className="w-full bg-white min-h-screen pb-24 animate-fade-in" id="destination-detail-root">
       
       {/* --- Majestic Full-Width Hero Section --- */}
-      <div className="relative w-full h-[350px] sm:h-[400px] md:h-[420px] overflow-hidden">
+      <div className="relative w-full h-[350px] sm:h-[400px] md:h-[420px] overflow-hidden bg-slate-100">
         <img 
-          src={destination.image} 
+          src={destination.image || NO_PHOTO_AVAILABLE_PLACEHOLDER} 
           alt={destination.name} 
           className="absolute inset-0 w-full h-full object-cover scale-105 transform hover:scale-100 transition-transform duration-10000 ease-out"
+          onError={(e) => {
+            e.currentTarget.src = NO_PHOTO_AVAILABLE_PLACEHOLDER;
+          }}
         />
         <div className="absolute inset-0 hero-gradient" />
         <div className="absolute inset-0 bg-black/30" />
@@ -1130,20 +1133,14 @@ export default function DestinationDetailPage({
                             <Heart className={`w-4 h-4 ${isSaved ? "text-brand-red fill-brand-red" : "text-brand-charcoal/60"}`} />
                           </button>
 
-                          {/* Overlaid Dining status tags */}
-                          <div className="absolute top-4 left-4 flex flex-col gap-1.5 items-start">
-                            {rest.halalCertified && (
-                              <span className="bg-brand-blue-accent text-white text-[9px] font-mono font-bold uppercase px-2.5 py-1 rounded-md shadow-xs">
+                          {/* Overlaid Dining status tags on dining cards */}
+                          <div className="absolute top-4 left-4 flex flex-col gap-1.5 items-start z-10">
+                            {(rest.halalCertified || rest.halalStanding === "Halal Verified") ? (
+                              <span className="bg-emerald-600 text-white text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-xs">
                                 HALAL VERIFIED
                               </span>
-                            )}
-                            {rest.muslimOwned && (
-                              <span className="bg-cambodia-red text-white text-[9px] font-mono font-bold uppercase px-2.5 py-1 rounded-md shadow-xs">
-                                MUSLIM OWNED
-                              </span>
-                            )}
-                            {rest.muslimFriendly && !rest.halalCertified && (
-                              <span className="bg-emerald-700 text-white text-[9px] font-mono font-bold uppercase px-2.5 py-1 rounded-md shadow-xs">
+                            ) : (
+                              <span className="bg-brand-blue-accent hover:bg-blue-700 text-white text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-xs transition-colors">
                                 MUSLIM FRIENDLY
                               </span>
                             )}
