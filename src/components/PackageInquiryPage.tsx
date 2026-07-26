@@ -141,29 +141,29 @@ export default function PackageInquiryPage({ tourPackage, onBack }: PackageInqui
           </div>
 
           {/* PACKAGE SUMMARY BAR */}
-          <div className="bg-slate-50 border-b border-slate-200 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+          <div className="bg-slate-50 border-b border-slate-200 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 min-w-0 flex-1">
               <img 
                 src={tourPackage.image} 
                 alt={tourPackage.name} 
                 className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-200 shrink-0 shadow-sm"
               />
-              <div className="space-y-1 min-w-0">
+              <div className="space-y-1 min-w-0 flex-1 pr-1">
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-brand-blue-accent block">
                   SELECTED PACKAGE
                 </span>
-                <h2 className="font-serif text-base sm:text-lg font-bold text-brand-charcoal truncate">
+                <h2 className="font-serif text-base sm:text-lg font-bold text-brand-charcoal break-words leading-tight">
                   {tourPackage.name}
                 </h2>
-                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 font-medium">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-brand-blue-accent" />
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-600 font-medium">
+                  <span className="flex items-center gap-1 shrink-0">
+                    <Calendar className="w-3.5 h-3.5 text-brand-blue-accent shrink-0" />
                     {tourPackage.duration}
                   </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-brand-blue-accent" />
-                    {tourPackage.destinations?.join(", ") || "Cambodia"}
+                  <span className="text-slate-300">•</span>
+                  <span className="flex items-center gap-1 min-w-0 break-words">
+                    <MapPin className="w-3.5 h-3.5 text-brand-blue-accent shrink-0" />
+                    <span className="break-words">{tourPackage.destinations?.join(", ") || "Cambodia"}</span>
                   </span>
                 </div>
               </div>
