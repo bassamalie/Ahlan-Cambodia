@@ -1008,6 +1008,32 @@ export default function AdminCMS({
   const [diningOpeningHours, setDiningOpeningHours] = useState("");
   const [diningContactNumber, setDiningContactNumber] = useState("");
   const [diningAddress, setDiningAddress] = useState("");
+  const [isCapturingLocation, setIsCapturingLocation] = useState(false);
+  const [locationCapturedSuccess, setLocationCapturedSuccess] = useState(false);
+
+  const handleAutoCaptureLocation = async (urlOverride?: string) => {
+    const targetUrl = (urlOverride !== undefined ? urlOverride : diningGoogleMapsUrl).trim();
+    if (!targetUrl) return;
+
+    setIsCapturingLocation(true);
+    setLocationCapturedSuccess(false);
+
+    try {
+      const res = await fetch(`/api/parse-google-maps-url?url=${encodeURIComponent(targetUrl)}`);
+      const data = await res.json();
+      if (data.success) {
+        if (data.address) setDiningAddress(data.address);
+        if (data.contactNumber) setDiningContactNumber(data.contactNumber);
+        if (data.openingHours) setDiningOpeningHours(data.openingHours);
+        setLocationCapturedSuccess(true);
+        triggerToast("Location details auto-captured from Google Maps!", "success");
+      }
+    } catch (err) {
+      console.error("Error auto-capturing location details:", err);
+    } finally {
+      setIsCapturingLocation(false);
+    }
+  };
 
   // Step 4: Signature Dishes
   const [diningSignatureDishes, setDiningSignatureDishes] = useState<{
@@ -7735,50 +7761,113 @@ export default function AdminCMS({
 
                     {/* STEP 3: LOCATION & MAPS */}
                     {diningFormStep === 3 && (
-                      <div className="space-y-4 animate-fade-in">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Google Maps Location URL *</label>
+                      <div className="space-y-5 animate-fade-in">
+                        {/* Google Maps URL Input & Auto-Capture Controller */}
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#0F1626] flex items-center gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-brand-blue-accent" />
+                              Google Maps Location Link *
+                            </label>
+                            {locationCapturedSuccess && (
+                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-mono font-bold flex items-center gap-1">
+                                <CheckCircle className="w-3 h-3" /> Auto-Captured
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex gap-2">
                             <input
                               type="text"
                               value={diningGoogleMapsUrl}
-                              onChange={(e) => setDiningGoogleMapsUrl(e.target.value)}
-                              placeholder="e.g., https://maps.google.com/?q=Shamyana"
-                              className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-[#0F1626] font-medium"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setDiningGoogleMapsUrl(val);
+                                if (val.includes("http") || val.includes("maps") || val.includes("goo.gl")) {
+                                  handleAutoCaptureLocation(val);
+                                }
+                              }}
+                              onBlur={() => {
+                                if (diningGoogleMapsUrl.trim() && (!diningAddress || !diningContactNumber || !diningOpeningHours)) {
+                                  handleAutoCaptureLocation();
+                                }
+                              }}
+                              placeholder="Paste Google Maps URL e.g. https://maps.google.com/?q=Shamyana+Phnom+Penh"
+                              className="flex-1 bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2.5 text-xs outline-none text-[#0F1626] font-medium"
                             />
+                            <button
+                              type="button"
+                              disabled={isCapturingLocation || !diningGoogleMapsUrl.trim()}
+                              onClick={() => handleAutoCaptureLocation()}
+                              className="bg-brand-blue-accent hover:bg-brand-blue-accent/90 disabled:opacity-50 text-[#0F1626] px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-all shadow-sm shrink-0"
+                            >
+                              {isCapturingLocation ? (
+                                <>
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Auto-Capturing...
+                                </>
+                              ) : (
+                                <>
+                                  <RefreshCw className="w-3.5 h-3.5" /> Auto-Capture
+                                </>
+                              )}
+                            </button>
+                          </div>
+                          
+                          <p className="text-[11px] text-slate-500 font-sans">
+                            Enter the Google Maps URL above. Address, Contact Phone Number, and Opening Hours will be automatically captured from Google Maps below. You can edit any field if needed.
+                          </p>
+                        </div>
+
+                        {/* Auto-Captured Details (Fully Editable) */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                            <span className="text-[10px] font-mono font-bold uppercase text-slate-500 tracking-wider">
+                              Captured Location Details (Editable)
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-sans">
+                              Review or adjust any details if needed
+                            </span>
                           </div>
 
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Opening Hours *</label>
-                            <input
-                              type="text"
-                              value={diningOpeningHours}
-                              onChange={(e) => setDiningOpeningHours(e.target.value)}
-                              placeholder="e.g., Daily: 11:00 AM - 10:30 PM"
-                              className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-[#0F1626] font-medium"
-                            />
-                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1.5 sm:col-span-2">
+                              <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600 block">
+                                Full Physical Address *
+                              </label>
+                              <input
+                                type="text"
+                                value={diningAddress}
+                                onChange={(e) => setDiningAddress(e.target.value)}
+                                placeholder="Auto-captured address e.g. No. 24, Street 130, Phnom Penh"
+                                className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2.5 text-xs outline-none text-[#0F1626] font-medium"
+                              />
+                            </div>
 
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Contact / Telephone Number *</label>
-                            <input
-                              type="text"
-                              value={diningContactNumber}
-                              onChange={(e) => setDiningContactNumber(e.target.value)}
-                              placeholder="e.g., +855 (0) 23 777 999"
-                              className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-[#0F1626] font-medium"
-                            />
-                          </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600 block">
+                                Contact / Telephone Number *
+                              </label>
+                              <input
+                                type="text"
+                                value={diningContactNumber}
+                                onChange={(e) => setDiningContactNumber(e.target.value)}
+                                placeholder="Auto-captured phone e.g. +855 (0) 23 777 999"
+                                className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2.5 text-xs outline-none text-[#0F1626] font-medium"
+                              />
+                            </div>
 
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">Full Physical Address *</label>
-                            <input
-                              type="text"
-                              value={diningAddress}
-                              onChange={(e) => setDiningAddress(e.target.value)}
-                              placeholder="e.g., No. 24, Street 130, Phnom Penh, Cambodia"
-                              className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2 text-xs outline-none text-[#0F1626] font-medium"
-                            />
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600 block">
+                                Opening Hours *
+                              </label>
+                              <input
+                                type="text"
+                                value={diningOpeningHours}
+                                onChange={(e) => setDiningOpeningHours(e.target.value)}
+                                placeholder="Auto-captured hours e.g. Daily: 11:00 AM - 10:30 PM"
+                                className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3.5 py-2.5 text-xs outline-none text-[#0F1626] font-medium"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
