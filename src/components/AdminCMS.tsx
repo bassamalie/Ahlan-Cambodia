@@ -1064,11 +1064,7 @@ export default function AdminCMS({
 
   // Step 6: FAQ
   const [diningFaqs, setDiningFaqs] = useState<{ q: string; a: string }[]>([
-    { q: "Is the meat 100% Halal verified?", a: "Yes, every cut of poultry, beef, and lamb is sourced from certified Islamic Council suppliers with verifiable trace tracking." },
-    { q: "Do you serve any alcohol on the premises?", a: "No, our entire establishment is 100% dry. We offer a beautifully curated gourmet mocktail bar instead." },
-    { q: "Is there a private prayer space inside?", a: "Yes, we feature a dedicated prayer room with ablution areas, prayer mats, and Quran copies." },
-    { q: "Is reservation required for families?", a: "While walk-ins are welcome, we highly recommend booking ahead for our private high-walled family salons." },
-    { q: "Do you accommodate other allergen requests?", a: "Yes, our culinary team is fully trained to manage gluten-free, dairy-free, and nut-free requests alongside our Halal protocol." }
+    { q: "", a: "" }
   ]);
 
   // Step 6: Social Media Links & Video Reels
@@ -1236,11 +1232,7 @@ export default function AdminCMS({
     setDiningPrayerSpaceDesc("A quiet, beautifully appointed multi-faith prayer area is located on our second level, complete with clean ablution facilities, soft carpets, premium prayer mats, and Qibla alignments.");
     setDiningPrayerSpaceNote("Please contact our restaurant captain upon arrival to gain priority access.");
     setDiningFaqs([
-      { q: "Is the meat 100% Halal verified?", a: "Yes, every cut of poultry, beef, and lamb is sourced from certified Islamic Council suppliers with verifiable trace tracking." },
-      { q: "Do you serve any alcohol on the premises?", a: "No, our entire establishment is 100% dry. We offer a beautifully curated gourmet mocktail bar instead." },
-      { q: "Is there a private prayer space inside?", a: "Yes, we feature a dedicated prayer room with ablution areas, prayer mats, and Quran copies." },
-      { q: "Is reservation required for families?", a: "While walk-ins are welcome, we highly recommend booking ahead for our private high-walled family salons." },
-      { q: "Do you accommodate other allergen requests?", a: "Yes, our culinary team is fully trained to manage gluten-free, dairy-free, and nut-free requests alongside our Halal protocol." }
+      { q: "", a: "" }
     ]);
     setDiningSocialVideos([]);
   };
@@ -1287,13 +1279,7 @@ export default function AdminCMS({
     if (diningItem.faqs && diningItem.faqs.length > 0) {
       setDiningFaqs(diningItem.faqs);
     } else {
-      setDiningFaqs([
-        { q: "Is the meat 100% Halal verified?", a: "Yes, every cut of poultry, beef, and lamb is sourced from certified Islamic Council suppliers with verifiable trace tracking." },
-        { q: "Do you serve any alcohol on the premises?", a: "No, our entire establishment is 100% dry. We offer a beautifully curated gourmet mocktail bar instead." },
-        { q: "Is there a private prayer space inside?", a: "Yes, we feature a dedicated prayer room with ablution areas, prayer mats, and Quran copies." },
-        { q: "Is reservation required for families?", a: "While walk-ins are welcome, we highly recommend booking ahead for our private high-walled family salons." },
-        { q: "Do you accommodate other allergen requests?", a: "Yes, our culinary team is fully trained to manage gluten-free, dairy-free, and nut-free requests alongside our Halal protocol." }
-      ]);
+      setDiningFaqs([{ q: "", a: "" }]);
     }
     setDiningSocialVideos(diningItem.socialVideos || []);
   };
@@ -1433,11 +1419,7 @@ export default function AdminCMS({
 
   // Step 7: FAQ
   const [hotelFaqsState, setHotelFaqsState] = useState<{ q: string; a: string }[]>([
-    { q: "Is the swimming pool private?", a: "" },
-    { q: "How is cross-contamination prevented for Halal meals?", a: "" },
-    { q: "Are prayer mats and Qibla coordinates provided?", a: "" },
-    { q: "Is there a mosque nearby?", a: "" },
-    { q: "What halal breakfast options are available?", a: "" }
+    { q: "", a: "" }
   ]);
 
   // --- Google Places Hotel Import & Refresh States ---
@@ -2214,11 +2196,7 @@ export default function AdminCMS({
     ]);
     setHotelGallery(Array(10).fill(""));
     setHotelFaqsState([
-      { q: "Is the swimming pool private?", a: "The main 35m saltwater swimming pool is a beautiful shared space. However, for complete privacy, our luxury Private Pool Villas feature high-walled private gardens with individual plunge pools ensuring zero external visibility." },
-      { q: "How is cross-contamination prevented for Halal meals?", a: "Raffles operates a designated, certified Halal food preparation station. All Halal items are stored in segregated cooling units, and cooked with certified-only utensils and pans to guarantee 100% integrity." },
-      { q: "Are prayer mats and Qibla coordinates provided?", a: "Yes, every Muslim guest is provided with sanitized premium prayer mats and a localized Qibla indicator map automatically. Qurans are also pre-stocked in your room upon requesting at booking." },
-      { q: "Is there a mosque nearby?", a: "Yes, Siem Reap Mosque is just 4 minutes away by car or 12 minutes by foot." },
-      { q: "What halal breakfast options are available?", a: "Certified Halal breakfast prepared in a dedicated, strictly sanitized section of the royal kitchen with exclusive cookware." }
+      { q: "", a: "" }
     ]);
   };
 
@@ -2297,13 +2275,7 @@ export default function AdminCMS({
     if (hotelItem.faqs && hotelItem.faqs.length > 0) {
       setHotelFaqsState(hotelItem.faqs);
     } else {
-      setHotelFaqsState([
-        { q: "Is the swimming pool private?", a: "Yes, our Private Pool Villas feature absolute high-walled privacy with no visibility." },
-        { q: "How is cross-contamination prevented for Halal meals?", a: "Segregated cookware, dedicated storage units, and isolated prep stations." },
-        { q: "Are prayer mats and Qibla coordinates provided?", a: "Yes, pre-positioned prior to check-in." },
-        { q: "Is there a mosque nearby?", a: "Yes, 4 minutes away." },
-        { q: "What halal breakfast options are available?", a: "Fully certified Halal breakfast served daily." }
-      ]);
+      setHotelFaqsState([{ q: "", a: "" }]);
     }
   };
 
@@ -2803,11 +2775,7 @@ export default function AdminCMS({
     setPackageHotelSlots([{ type: "predefined", hotelId: "" }]);
     setGalleryUrls(["", "", "", "", "", "", "", ""]);
     setFaqList([
-      { q: "Are all meals included in the package verified Halal?", a: "Yes, absolutely. We strictly partner with certified Halal kitchens, or pre-vetted pork-free and alcohol-free dining establishments." },
-      { q: "How does prayer-time coordination work during our tours?", a: "Our private guides and chauffeurs are fully aware of daily prayer schedules. Vehicles are stocked with clean prayer mats, Qibla compasses, and water spray bottles." },
-      { q: "Can this itinerary be fully customized to our group's preferences?", a: "Absolutely! This package serves as a master layout. You can adjust the duration, swap out hotels, or add specific experiences." },
-      { q: "What is the visa policy for traveling to Cambodia?", a: "Most international travelers can obtain a Tourist Visa (Type T) either online as an e-Visa before departure, or on arrival." },
-      { q: "What is your support and health safety protocol during the trip?", a: "We offer 24/7 dedicated local concierge support. All guests travel in top-tier private air-conditioned vehicles." }
+      { q: "", a: "" }
     ]);
     setPackView("wizard");
   };
@@ -2918,7 +2886,7 @@ export default function AdminCMS({
     if (pkg.faqs && pkg.faqs.length > 0) {
       setFaqList(pkg.faqs.map(f => ({ q: f.q, a: f.a })));
     } else {
-      setFaqList([]);
+      setFaqList([{ q: "", a: "" }]);
     }
     
     setPackView("wizard");
@@ -6927,37 +6895,88 @@ export default function AdminCMS({
                     {/* STEP 7: FAQ */}
                     {hotelFormStep === 7 && (
                       <div className="space-y-4 animate-fade-in">
-                        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
-                          {hotelFaqsState.map((faq, idx) => (
-                            <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200/50 space-y-3">
-                              <span className="text-[9px] font-mono font-bold uppercase text-brand-blue-accent block">Property FAQ {idx + 1}</span>
-                              <div className="space-y-2">
-                                <input
-                                  type="text"
-                                  value={faq.q}
-                                  onChange={(e) => {
-                                    const updated = [...hotelFaqsState];
-                                    updated[idx].q = e.target.value;
-                                    setHotelFaqsState(updated);
-                                  }}
-                                  placeholder="Question..."
-                                  className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-bold"
-                                />
-                                <textarea
-                                  rows={2}
-                                  value={faq.a}
-                                  onChange={(e) => {
-                                    const updated = [...hotelFaqsState];
-                                    updated[idx].a = e.target.value;
-                                    setHotelFaqsState(updated);
-                                  }}
-                                  placeholder="Answer..."
-                                  className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none resize-none text-slate-600 leading-relaxed"
-                                />
-                              </div>
-                            </div>
-                          ))}
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                          <div>
+                            <h4 className="text-xs font-bold font-mono text-brand-blue-accent uppercase tracking-wider">
+                              Hotel / Resort FAQs
+                            </h4>
+                            <p className="text-[11px] text-slate-500 font-sans">
+                              Provide clean custom FAQ entries regarding privacy, prayer amenities, and dining protocols.
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setHotelFaqsState(prev => [...prev, { q: "", a: "" }])}
+                              className="px-3 py-1.5 bg-[#0F1626] hover:bg-brand-blue-accent hover:text-[#0F1626] text-white text-[10px] font-mono font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+                            >
+                              + Add FAQ Item
+                            </button>
+                            {hotelFaqsState.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setHotelFaqsState([])}
+                                className="px-3 py-1.5 text-xs font-mono font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-colors cursor-pointer"
+                              >
+                                Clear All
+                              </button>
+                            )}
+                          </div>
                         </div>
+
+                        {hotelFaqsState.length === 0 ? (
+                          <div className="p-8 bg-slate-50 rounded-2xl border border-slate-200 text-center space-y-2">
+                            <p className="text-xs text-slate-500 font-sans">No FAQs configured for this hotel.</p>
+                            <button
+                              type="button"
+                              onClick={() => setHotelFaqsState([{ q: "", a: "" }])}
+                              className="text-xs font-mono font-bold text-brand-blue-accent underline cursor-pointer"
+                            >
+                              Add First FAQ Item
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                            {hotelFaqsState.map((faq, idx) => (
+                              <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200/50 space-y-3 relative">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[9px] font-mono font-bold uppercase text-brand-blue-accent block">Property FAQ {idx + 1}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setHotelFaqsState(prev => prev.filter((_, i) => i !== idx))}
+                                    className="text-rose-500 hover:text-rose-700 text-xs font-mono font-bold uppercase cursor-pointer"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                                <div className="space-y-2">
+                                  <input
+                                    type="text"
+                                    value={faq.q}
+                                    onChange={(e) => {
+                                      const updated = [...hotelFaqsState];
+                                      updated[idx].q = e.target.value;
+                                      setHotelFaqsState(updated);
+                                    }}
+                                    placeholder="Question..."
+                                    className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-bold"
+                                  />
+                                  <textarea
+                                    rows={2}
+                                    value={faq.a}
+                                    onChange={(e) => {
+                                      const updated = [...hotelFaqsState];
+                                      updated[idx].a = e.target.value;
+                                      setHotelFaqsState(updated);
+                                    }}
+                                    placeholder="Answer..."
+                                    className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none resize-none text-slate-600 leading-relaxed"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -7959,37 +7978,88 @@ export default function AdminCMS({
                     {/* STEP 5: FAQ */}
                     {diningFormStep === 5 && (
                       <div className="space-y-4 animate-fade-in">
-                        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
-                          {diningFaqs.map((faq, idx) => (
-                            <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200/50 space-y-3">
-                              <span className="text-[9px] font-mono font-bold uppercase text-brand-blue-accent block">Dining FAQ {idx + 1}</span>
-                              <div className="space-y-2">
-                                <input
-                                  type="text"
-                                  value={faq.q}
-                                  onChange={(e) => {
-                                    const updated = [...diningFaqs];
-                                    updated[idx].q = e.target.value;
-                                    setDiningFaqs(updated);
-                                  }}
-                                  placeholder="Question..."
-                                  className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-bold"
-                                />
-                                <textarea
-                                  rows={2}
-                                  value={faq.a}
-                                  onChange={(e) => {
-                                    const updated = [...diningFaqs];
-                                    updated[idx].a = e.target.value;
-                                    setDiningFaqs(updated);
-                                  }}
-                                  placeholder="Answer..."
-                                  className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none resize-none text-slate-600 leading-relaxed"
-                                />
-                              </div>
-                            </div>
-                          ))}
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                          <div>
+                            <h4 className="text-xs font-bold font-mono text-brand-blue-accent uppercase tracking-wider">
+                              Dining & Halal FAQs
+                            </h4>
+                            <p className="text-[11px] text-slate-500 font-sans">
+                              Provide clean custom FAQ entries regarding halal verification, alcohol policy, or prayer areas.
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setDiningFaqs(prev => [...prev, { q: "", a: "" }])}
+                              className="px-3 py-1.5 bg-[#0F1626] hover:bg-brand-blue-accent hover:text-[#0F1626] text-white text-[10px] font-mono font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+                            >
+                              + Add FAQ Item
+                            </button>
+                            {diningFaqs.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setDiningFaqs([])}
+                                className="px-3 py-1.5 text-xs font-mono font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-colors cursor-pointer"
+                              >
+                                Clear All
+                              </button>
+                            )}
+                          </div>
                         </div>
+
+                        {diningFaqs.length === 0 ? (
+                          <div className="p-8 bg-slate-50 rounded-2xl border border-slate-200 text-center space-y-2">
+                            <p className="text-xs text-slate-500 font-sans">No FAQs configured for this venue.</p>
+                            <button
+                              type="button"
+                              onClick={() => setDiningFaqs([{ q: "", a: "" }])}
+                              className="text-xs font-mono font-bold text-brand-blue-accent underline cursor-pointer"
+                            >
+                              Add First FAQ Item
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                            {diningFaqs.map((faq, idx) => (
+                              <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200/50 space-y-3 relative">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[9px] font-mono font-bold uppercase text-brand-blue-accent block">Dining FAQ {idx + 1}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setDiningFaqs(prev => prev.filter((_, i) => i !== idx))}
+                                    className="text-rose-500 hover:text-rose-700 text-xs font-mono font-bold uppercase cursor-pointer"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                                <div className="space-y-2">
+                                  <input
+                                    type="text"
+                                    value={faq.q}
+                                    onChange={(e) => {
+                                      const updated = [...diningFaqs];
+                                      updated[idx].q = e.target.value;
+                                      setDiningFaqs(updated);
+                                    }}
+                                    placeholder="Question..."
+                                    className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none text-[#0F1626] font-bold"
+                                  />
+                                  <textarea
+                                    rows={2}
+                                    value={faq.a}
+                                    onChange={(e) => {
+                                      const updated = [...diningFaqs];
+                                      updated[idx].a = e.target.value;
+                                      setDiningFaqs(updated);
+                                    }}
+                                    placeholder="Answer..."
+                                    className="w-full bg-white border border-slate-200 focus:border-brand-blue-accent rounded-xl px-3 py-1.5 text-xs outline-none resize-none text-slate-600 leading-relaxed"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 
