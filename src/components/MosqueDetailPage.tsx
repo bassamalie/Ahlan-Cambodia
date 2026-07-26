@@ -559,9 +559,15 @@ export default function MosqueDetailPage({
                       <p className="text-xs text-slate-500 font-mono truncate">
                         {rest.cuisine || "Halal Culinary"} • {rest.location || "Nearby"}
                       </p>
-                      <span className="inline-block mt-0.5 text-[9px] font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                        Halal Verified
-                      </span>
+                      {(rest.halalCertified || rest.halalStanding === "Halal Verified") ? (
+                        <span className="inline-block mt-0.5 text-[9px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
+                          Halal Verified
+                        </span>
+                      ) : (
+                        <span className="inline-block mt-0.5 text-[9px] font-mono font-bold text-brand-blue-accent bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-full border border-blue-100 transition-colors">
+                          Muslim Friendly
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
