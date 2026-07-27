@@ -2109,38 +2109,30 @@ async function setupViteAndListen() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "spa",
+      appType: "custom",
     });
 
-    // Intercept HTML requests in dev mode to inject dynamic meta tags
-    app.use(async (req, res, next) => {
-      const isHtmlRequest =
-        req.method === "GET" &&
-        req.headers.accept?.includes("text/html") &&
-        !req.path.startsWith("/api") &&
-        !req.path.startsWith("/@") &&
-        !req.path.startsWith("/src") &&
-        !req.path.startsWith("/node_modules") &&
-        !req.path.startsWith("/public") &&
-        !req.path.includes(".");
-
-      if (isHtmlRequest) {
-        try {
-          const fs = await import("fs");
-          const indexHtmlPath = path.join(process.cwd(), "index.html");
-          let html = fs.readFileSync(indexHtmlPath, "utf-8");
-          html = await vite.transformIndexHtml(req.originalUrl, html);
-          const meta = await resolveRequestMeta(req);
-          html = injectMetaTags(html, meta);
-          return res.status(200).set({ "Content-Type": "text/html" }).end(html);
-        } catch (e) {
-          return next(e);
-        }
-      }
-      next();
-    });
-
+    // 1. Vite middlewares handle all JavaScript modules, HMR, CSS, images, source maps & static files first
     app.use(vite.middlewares);
+
+    // 2. HTML request interceptor for SPA routing and dynamic meta tag injection
+    app.use(async (req, res, next) => {
+      if (req.method !== "GET" || req.path.startsWith("/api")) {
+        return next();
+      }
+
+      try {
+        const fs = await import("fs");
+        const indexHtmlPath = path.join(process.cwd(), "index.html");
+        let html = fs.readFileSync(indexHtmlPath, "utf-8");
+        html = await vite.transformIndexHtml(req.originalUrl, html);
+        const meta = await resolveRequestMeta(req);
+        html = injectMetaTags(html, meta);
+        return res.status(200).set({ "Content-Type": "text/html" }).send(html);
+      } catch (e) {
+        return next(e);
+      }
+    });
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     const indexHtmlPath = path.join(distPath, 'index.html');
