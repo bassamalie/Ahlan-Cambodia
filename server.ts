@@ -2114,7 +2114,17 @@ async function setupViteAndListen() {
 
     // Intercept HTML requests in dev mode to inject dynamic meta tags
     app.use(async (req, res, next) => {
-      if (req.method === "GET" && !req.path.startsWith("/api") && !req.path.includes(".")) {
+      const isHtmlRequest =
+        req.method === "GET" &&
+        req.headers.accept?.includes("text/html") &&
+        !req.path.startsWith("/api") &&
+        !req.path.startsWith("/@") &&
+        !req.path.startsWith("/src") &&
+        !req.path.startsWith("/node_modules") &&
+        !req.path.startsWith("/public") &&
+        !req.path.includes(".");
+
+      if (isHtmlRequest) {
         try {
           const fs = await import("fs");
           const indexHtmlPath = path.join(process.cwd(), "index.html");
