@@ -2109,35 +2109,55 @@ async function setupViteAndListen() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "custom",
+      appType: "spa",
     });
 
-    // 1. Vite middlewares handle all JavaScript modules, HMR, CSS, images, source maps & static files first
+    // 1. Vite middleware handles JavaScript modules, assets, static files, and dev requests first
     app.use(vite.middlewares);
 
-    // 2. HTML request interceptor for SPA routing and dynamic meta tag injection
+    // 2. Intercept page navigation requests to inject dynamic SEO meta tags
     app.use(async (req, res, next) => {
-      if (req.method !== "GET" || req.path.startsWith("/api")) {
+      const p = req.path || "";
+
+      // Explicitly skip pure asset, script, and module routes
+      const isAssetOrScript =
+        p.startsWith("/src") ||
+        p.startsWith("/@") ||
+        p.startsWith("/node_modules") ||
+        p.startsWith("/public") ||
+        /\.(ts|tsx|js|jsx|mjs|cjs|css|json|png|jpg|jpeg|gif|svg|ico|webp|avif|woff|woff2|ttf|eot)$/i.test(p);
+
+      if (isAssetOrScript || req.method !== "GET" || p.startsWith("/api")) {
         return next();
       }
 
-      try {
-        const fs = await import("fs");
-        const indexHtmlPath = path.join(process.cwd(), "index.html");
-        let html = fs.readFileSync(indexHtmlPath, "utf-8");
-        html = await vite.transformIndexHtml(req.originalUrl, html);
-        const meta = await resolveRequestMeta(req);
-        html = injectMetaTags(html, meta);
-        return res.status(200).set({ "Content-Type": "text/html" }).send(html);
-      } catch (e) {
-        return next(e);
+      // Check if this request accepts HTML (page navigation)
+      const isHtmlRequest =
+        req.headers.accept?.includes("text/html") ||
+        req.headers.accept === "*/*" ||
+        !req.headers.accept;
+
+      if (isHtmlRequest) {
+        try {
+          const fs = await import("fs");
+          const indexHtmlPath = path.join(process.cwd(), "index.html");
+          let html = fs.readFileSync(indexHtmlPath, "utf-8");
+          html = await vite.transformIndexHtml(req.originalUrl, html);
+          const meta = await resolveRequestMeta(req);
+          html = injectMetaTags(html, meta);
+          return res.status(200).set({ "Content-Type": "text/html" }).send(html);
+        } catch (e) {
+          return next(e);
+        }
       }
+      next();
     });
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     const indexHtmlPath = path.join(distPath, 'index.html');
 
     app.use(express.static(distPath, { index: false }));
+    app.use(express.static(path.join(process.cwd(), "public")));
 
     app.get('*', async (req, res) => {
       try {
